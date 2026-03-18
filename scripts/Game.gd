@@ -2,7 +2,7 @@ extends Node2D
 
 const BoardScene := preload("res://scenes/Board.tscn")
 const BlockScene := preload("res://scenes/Block.tscn")
-const MAX_LEVEL  := 4   # bump as more levels are added
+const MAX_LEVEL  := 5   # bump as more levels are added
 
 signal level_loaded(n: int)
 

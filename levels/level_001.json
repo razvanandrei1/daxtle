@@ -20,7 +20,7 @@
 	{
 	  "id": "B1",
 	  "dir": "right",
-	  "squares": [{"pos_x": 0, "pos_y": 0}],
+	  "squares": [{"pos_x": 0, "pos_y": 0},{"pos_x": 1, "pos_y": 0},{"pos_x": 1, "pos_y": 1}],
 	  "origin_x": 0,
 	  "origin_y": 1,
 	  "target_origin_x": 3,

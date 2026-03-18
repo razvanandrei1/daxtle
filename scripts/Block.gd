@@ -1,8 +1,6 @@
 class_name Block
 extends Node2D
 
-const ARROW_COLOR := Color(1.0, 1.0, 1.0, 0.90)
-
 var data: BlockData
 var value_a: float
 var color: Color
@@ -24,49 +22,29 @@ func _draw() -> void:
 	for sq in data.squares:
 		var rect := Rect2(Vector2(sq) * value_a, Vector2(value_a, value_a))
 		draw_rect(rect, color)
-	_draw_arrow()
+	_draw_chevrons()
 
 
-# --- Arrow ---
+# --- Chevrons ---
 
-func _draw_arrow() -> void:
-	var center := _block_center()
-	var s      := value_a * 0.30  # half-length of the arrow
+func _draw_chevrons() -> void:
+	var ch_color := color.darkened(0.35)
+	var half_h   := value_a * 0.28
+	var depth    := value_a * 0.18
+	var line_w   := maxf(2.0, value_a * 0.05)
 
-	var pts: PackedVector2Array
+	var axis: Vector2
 	match data.dir:
-		"right":
-			pts = PackedVector2Array([
-				center + Vector2( s,       0.0   ),
-				center + Vector2(-s * 0.5, -s * 0.75),
-				center + Vector2(-s * 0.5,  s * 0.75),
-			])
-		"left":
-			pts = PackedVector2Array([
-				center + Vector2(-s,       0.0   ),
-				center + Vector2( s * 0.5,  s * 0.75),
-				center + Vector2( s * 0.5, -s * 0.75),
-			])
-		"down":
-			pts = PackedVector2Array([
-				center + Vector2( 0.0,    s      ),
-				center + Vector2(-s * 0.75, -s * 0.5),
-				center + Vector2( s * 0.75, -s * 0.5),
-			])
-		"up":
-			pts = PackedVector2Array([
-				center + Vector2( 0.0,   -s      ),
-				center + Vector2( s * 0.75, s * 0.5),
-				center + Vector2(-s * 0.75, s * 0.5),
-			])
+		"right": axis = Vector2( 1,  0)
+		"left":  axis = Vector2(-1,  0)
+		"down":  axis = Vector2( 0,  1)
+		"up":    axis = Vector2( 0, -1)
+		_: return
+	var perp := Vector2(-axis.y, axis.x)
 
-	if pts.size() == 3:
-		draw_polygon(pts, PackedColorArray([ARROW_COLOR, ARROW_COLOR, ARROW_COLOR]))
-
-
-# Visual center of the block in local space
-func _block_center() -> Vector2:
-	var sum := Vector2.ZERO
 	for sq in data.squares:
-		sum += Vector2(sq) * value_a + Vector2(value_a, value_a) * 0.5
-	return sum / data.squares.size()
+		var c        := Vector2(sq) * value_a + Vector2(value_a, value_a) * 0.5
+		var tip      := c + axis  * depth
+		var base_top := c - axis  * depth + perp * half_h
+		var base_bot := c - axis  * depth - perp * half_h
+		draw_polyline(PackedVector2Array([base_top, tip, base_bot]), ch_color, line_w, true)
