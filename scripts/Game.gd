@@ -2,7 +2,8 @@ extends Node2D
 
 const BoardScene := preload("res://scenes/Board.tscn")
 const BlockScene := preload("res://scenes/Block.tscn")
-const MAX_LEVEL  := 5   # bump as more levels are added
+const MAX_LEVEL     := 5    # bump as more levels are added
+const MOVE_DURATION := 0.13 # seconds per slide animation
 
 signal level_loaded(n: int)
 
@@ -32,10 +33,23 @@ func _on_swipe(direction: String) -> void:
 
 	var movers := Movement.resolve(candidates, _blocks, _board_set, direction)
 
+	if movers.is_empty():
+		return
+
+	_swipe_detector.enabled = false
+
+	var tween := create_tween().set_parallel(true)
+
 	for block in movers:
 		block.grid_origin += block.data.dir_vector()
-		block.position = _board.grid_to_local(block.grid_origin)
-		block.queue_redraw()
+		var target_pos := _board.grid_to_local(block.grid_origin)
+		tween.tween_property(block, "position", target_pos, MOVE_DURATION) \
+			.set_trans(Tween.TRANS_CUBIC) \
+			.set_ease(Tween.EASE_OUT)
+
+	tween.finished.connect(func() -> void:
+		_swipe_detector.enabled = true  # T30 will also trigger win check here
+	)
 
 
 func go_next_level() -> void:
