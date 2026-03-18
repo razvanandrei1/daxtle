@@ -5,6 +5,10 @@ const BlockScene := preload("res://scenes/Block.tscn")
 const MAX_LEVEL     := 5    # bump as more levels are added
 const MOVE_DURATION := 0.13 # seconds per slide animation
 
+const WIN_BRIGHT := Color(1.5, 1.5, 1.5, 1.0)  # brightened modulate for glow pulse
+const WIN_NORMAL := Color(1.0, 1.0, 1.0, 1.0)
+const WIN_FADE   := Color(1.0, 1.0, 1.0, 0.0)
+
 signal level_loaded(n: int)
 
 var current_level: int = 1
@@ -96,8 +100,32 @@ func _check_win() -> bool:
 
 func _on_win() -> void:
 	_swipe_detector.enabled = false
-	# T32 — win animation goes here; for now advance immediately
-	_load_level(clamp(current_level + 1, 1, MAX_LEVEL))
+
+	var tween := create_tween().set_parallel(true)
+
+	for block in _blocks:
+		# Pulse 1
+		tween.tween_property(block, "modulate", WIN_BRIGHT, 0.14) \
+			.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
+		tween.tween_property(block, "modulate", WIN_NORMAL, 0.14) \
+			.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE).set_delay(0.14)
+		# Pulse 2
+		tween.tween_property(block, "modulate", WIN_BRIGHT, 0.14) \
+			.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE).set_delay(0.28)
+		tween.tween_property(block, "modulate", WIN_NORMAL, 0.14) \
+			.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE).set_delay(0.42)
+		# Fade out
+		tween.tween_property(block, "modulate", WIN_FADE, 0.35) \
+			.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD).set_delay(0.56)
+
+	# Board fades out shortly after blocks begin fading
+	tween.tween_property(_board, "modulate", WIN_FADE, 0.40) \
+		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD).set_delay(0.70)
+
+	tween.finished.connect(func() -> void:
+		_load_level(clamp(current_level + 1, 1, MAX_LEVEL))
+		_swipe_detector.enabled = true
+	)
 
 
 func go_next_level() -> void:
