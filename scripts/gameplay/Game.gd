@@ -183,8 +183,20 @@ func _on_dead_state() -> void:
 	tween.tween_property(_board, "position", origin,                        0.09)
 
 	tween.finished.connect(func() -> void:
-		await get_tree().create_timer(0.35).timeout
-		_load_level(current_level)
+		await get_tree().create_timer(0.25).timeout
+		_reset_blocks()
+	)
+
+
+func _reset_blocks() -> void:
+	var slide := create_tween().set_parallel(true)
+	for block in _blocks:
+		block.grid_origin = block.data.origin
+		var target_pos := _board.grid_to_local(block.grid_origin)
+		slide.tween_property(block, "position", target_pos, MOVE_DURATION * 2.5) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	slide.finished.connect(func() -> void:
+		_swipe_detector.enabled = true
 	)
 
 
