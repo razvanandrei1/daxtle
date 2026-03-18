@@ -23,6 +23,16 @@ static func load_level(level_number: int) -> Dictionary:
 	return json.get_data()
 
 
+static func get_blocks(level_data: Dictionary) -> Array[BlockData]:
+	if not level_data.has("B"):
+		push_error("LevelLoader: level data missing 'B' array")
+		return []
+	var blocks: Array[BlockData] = []
+	for entry in level_data["B"]:
+		blocks.append(BlockData.from_dict(entry))
+	return blocks
+
+
 static func get_board_squares(level_data: Dictionary) -> Array[Vector2i]:
 	if not level_data.has("A"):
 		push_error("LevelLoader: level data missing 'A' array")
