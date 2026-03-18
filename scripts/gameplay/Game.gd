@@ -2,7 +2,6 @@ extends Node2D
 
 const BoardScene := preload("res://scenes/Board.tscn")
 const BlockScene := preload("res://scenes/Block.tscn")
-const MAX_LEVEL     := 5    # bump as more levels are added
 const MOVE_DURATION := 0.13 # seconds per slide animation
 
 const WIN_BRIGHT := Color(1.5, 1.5, 1.5, 1.0)  # brightened modulate for glow pulse
@@ -132,7 +131,7 @@ func _on_win() -> void:
 		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD).set_delay(0.70)
 
 	tween.finished.connect(func() -> void:
-		_load_level(clamp(current_level + 1, 1, MAX_LEVEL))
+		_load_level(clamp(current_level + 1, 1, LevelLoader.count_levels()))
 		_swipe_detector.enabled = true
 	)
 
@@ -277,11 +276,11 @@ func _state_key(origins: Array) -> String:
 
 
 func go_next_level() -> void:
-	_load_level(clamp(current_level + 1, 1, MAX_LEVEL))
+	_load_level(clamp(current_level + 1, 1, LevelLoader.count_levels()))
 
 
 func go_prev_level() -> void:
-	_load_level(clamp(current_level - 1, 1, MAX_LEVEL))
+	_load_level(clamp(current_level - 1, 1, LevelLoader.count_levels()))
 
 
 func _load_level(level_number: int) -> void:
@@ -299,7 +298,7 @@ func _load_level(level_number: int) -> void:
 
 	# Board
 	var squares := LevelLoader.get_board_squares(level_data)
-	_board = BoardScene.instantiate()
+	_board = BoardScene.instantiate() as Board
 	add_child(_board)
 	value_a = _board.setup(squares)
 
@@ -310,7 +309,7 @@ func _load_level(level_number: int) -> void:
 	var blocks_data := LevelLoader.get_blocks(level_data)
 	_board.set_targets(blocks_data)
 	for block_data in blocks_data:
-		var block: Block = BlockScene.instantiate()
+		var block := BlockScene.instantiate() as Block
 		_board.add_child(block)
 		block.setup(block_data, value_a, _board)
 		_blocks.append(block)

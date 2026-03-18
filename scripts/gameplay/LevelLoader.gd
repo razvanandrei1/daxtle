@@ -3,6 +3,22 @@ class_name LevelLoader
 const LEVELS_PATH = "res://levels/"
 
 
+static func count_levels() -> int:
+	var dir := DirAccess.open(LEVELS_PATH)
+	if dir == null:
+		push_error("LevelLoader: could not open levels directory '%s'" % LEVELS_PATH)
+		return 0
+	var count := 0
+	dir.list_dir_begin()
+	var fname := dir.get_next()
+	while fname != "":
+		if not dir.current_is_dir() and fname.ends_with(".json"):
+			count += 1
+		fname = dir.get_next()
+	dir.list_dir_end()
+	return count
+
+
 static func load_level(level_number: int) -> Dictionary:
 	var filename = LEVELS_PATH + "level_%03d.json" % level_number
 	var file = FileAccess.open(filename, FileAccess.READ)
