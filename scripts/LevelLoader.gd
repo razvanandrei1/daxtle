@@ -9,7 +9,7 @@ static func load_level(level_number: int) -> Dictionary:
 	if file == null:
 		push_error("LevelLoader: could not open '%s' (error %d)" % [filename, FileAccess.get_open_error()])
 		return {}
-	var json_text = file.read_as_text()
+	var json_text = file.get_as_text()
 	file.close()
 
 	var json = JSON.new()
