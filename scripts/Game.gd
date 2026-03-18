@@ -1,7 +1,8 @@
 extends Node2D
 
 const BoardScene := preload("res://scenes/Board.tscn")
-const MAX_LEVEL := 4   # bump as more levels are added
+const BlockScene := preload("res://scenes/Block.tscn")
+const MAX_LEVEL  := 4   # bump as more levels are added
 
 signal level_loaded(n: int)
 
@@ -9,6 +10,7 @@ var current_level: int = 1
 var value_a: float = 0.0
 
 var _board: Board
+var _blocks: Array[Block] = []
 
 
 func _ready() -> void:
@@ -26,6 +28,7 @@ func go_prev_level() -> void:
 func _load_level(level_number: int) -> void:
 	if _board:
 		_board.queue_free()
+	_blocks.clear()
 
 	var level_data := LevelLoader.load_level(level_number)
 	if level_data.is_empty():
@@ -33,10 +36,19 @@ func _load_level(level_number: int) -> void:
 		return
 
 	current_level = level_number
-	var squares := LevelLoader.get_board_squares(level_data)
 
+	# Board
+	var squares := LevelLoader.get_board_squares(level_data)
 	_board = BoardScene.instantiate()
 	add_child(_board)
 	value_a = _board.setup(squares)
+
+	# Blocks — added as children of the board so they share its coordinate space
+	var blocks_data := LevelLoader.get_blocks(level_data)
+	for block_data in blocks_data:
+		var block: Block = BlockScene.instantiate()
+		_board.add_child(block)
+		block.setup(block_data, value_a, _board)
+		_blocks.append(block)
 
 	level_loaded.emit(current_level)

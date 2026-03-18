@@ -42,6 +42,11 @@ func square_rect(grid_pos: Vector2i) -> Rect2:
 	return _square_rect(grid_pos)
 
 
+# Converts a grid position to a local-space pixel position (top-left of that cell)
+func grid_to_local(grid_pos: Vector2i) -> Vector2:
+	return Vector2(grid_pos - _min_grid) * value_a
+
+
 func _square_rect(grid_pos: Vector2i) -> Rect2:
 	var local := Vector2(grid_pos - _min_grid) * value_a
 	return Rect2(local, Vector2(value_a, value_a))
