@@ -31,24 +31,56 @@ func _on_swipe(direction: String) -> void:
 	if candidates.is_empty():
 		return
 
-	var movers := Movement.resolve(candidates, _blocks, _board_set, direction)
+	var result   := Movement.resolve(candidates, _blocks, _board_set, direction)
+	var movers:  Array[Block] = result["movers"]
+	var invalid: Array[Block] = result["invalid"]
 
-	if movers.is_empty():
+	if movers.is_empty() and invalid.is_empty():
 		return
 
 	_swipe_detector.enabled = false
 
-	var tween := create_tween().set_parallel(true)
+	if not movers.is_empty():
+		var tween := create_tween().set_parallel(true)
+		for block in movers:
+			block.grid_origin += block.data.dir_vector()
+			var target_pos := _board.grid_to_local(block.grid_origin)
+			tween.tween_property(block, "position", target_pos, MOVE_DURATION) \
+				.set_trans(Tween.TRANS_CUBIC) \
+				.set_ease(Tween.EASE_OUT)
+		tween.finished.connect(func() -> void:
+			_swipe_detector.enabled = true  # T30 will also add win check here
+		)
 
-	for block in movers:
-		block.grid_origin += block.data.dir_vector()
-		var target_pos := _board.grid_to_local(block.grid_origin)
-		tween.tween_property(block, "position", target_pos, MOVE_DURATION) \
-			.set_trans(Tween.TRANS_CUBIC) \
-			.set_ease(Tween.EASE_OUT)
+	if not invalid.is_empty():
+		_shake_blocks(invalid, direction, movers.is_empty())
+
+
+func _shake_blocks(blocks: Array[Block], direction: String, re_enable_after: bool) -> void:
+	var dv := Vector2i.ZERO
+	match direction:
+		"right": dv = Vector2i( 1,  0)
+		"left":  dv = Vector2i(-1,  0)
+		"down":  dv = Vector2i( 0,  1)
+		_:       dv = Vector2i( 0, -1)
+
+	var nudge    := Vector2(dv) * value_a * 0.18
+	var duration := MOVE_DURATION
+
+	var tween := create_tween().set_parallel(true)
+	for block in blocks:
+		var origin_pos := block.position
+		# Nudge toward the wall …
+		tween.tween_property(block, "position", origin_pos + nudge, duration * 0.45) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		# … then spring back
+		tween.tween_property(block, "position", origin_pos, duration * 0.85) \
+			.set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT) \
+			.set_delay(duration * 0.45)
 
 	tween.finished.connect(func() -> void:
-		_swipe_detector.enabled = true  # T30 will also trigger win check here
+		if re_enable_after:
+			_swipe_detector.enabled = true
 	)
 
 
