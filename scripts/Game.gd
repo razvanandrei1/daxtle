@@ -11,10 +11,31 @@ var value_a: float = 0.0
 
 var _board: Board
 var _blocks: Array[Block] = []
+var _board_set: Dictionary = {}   # Vector2i -> true, for fast cell lookup
+var _swipe_detector: SwipeDetector
 
 
 func _ready() -> void:
+	_swipe_detector = $SwipeDetector
+	_swipe_detector.swiped.connect(_on_swipe)
 	_load_level(current_level)
+
+
+func _on_swipe(direction: String) -> void:
+	var candidates: Array[Block] = []
+	for block in _blocks:
+		if block.data.dir == direction:
+			candidates.append(block)
+
+	if candidates.is_empty():
+		return
+
+	var movers := Movement.resolve(candidates, _blocks, _board_set, direction)
+
+	for block in movers:
+		block.grid_origin += block.data.dir_vector()
+		block.position = _board.grid_to_local(block.grid_origin)
+		block.queue_redraw()
 
 
 func go_next_level() -> void:
@@ -29,6 +50,7 @@ func _load_level(level_number: int) -> void:
 	if _board:
 		_board.queue_free()
 	_blocks.clear()
+	_board_set.clear()
 
 	var level_data := LevelLoader.load_level(level_number)
 	if level_data.is_empty():
@@ -42,6 +64,9 @@ func _load_level(level_number: int) -> void:
 	_board = BoardScene.instantiate()
 	add_child(_board)
 	value_a = _board.setup(squares)
+
+	for sq in squares:
+		_board_set[sq] = true
 
 	# Blocks — added as children of the board so they share its coordinate space
 	var blocks_data := LevelLoader.get_blocks(level_data)
