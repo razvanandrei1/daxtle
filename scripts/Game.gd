@@ -172,9 +172,23 @@ func _is_dead_state() -> bool:
 
 func _on_dead_state() -> void:
 	_swipe_detector.enabled = false
-	await get_tree().create_timer(0.6).timeout
-	_load_level(current_level)
-	_swipe_detector.enabled = true
+
+	var origin := _board.position
+	var s      := value_a * 0.06  # shake amplitude
+
+	# Gentle oscillation with easing — blocks are children of board so they shake too
+	var tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(_board, "position", origin + Vector2( s,       0), 0.08)
+	tween.tween_property(_board, "position", origin + Vector2(-s,       0), 0.09)
+	tween.tween_property(_board, "position", origin + Vector2( s * 0.5, 0), 0.08)
+	tween.tween_property(_board, "position", origin + Vector2(-s * 0.5, 0), 0.08)
+	tween.tween_property(_board, "position", origin,                        0.09)
+
+	tween.finished.connect(func() -> void:
+		await get_tree().create_timer(0.35).timeout
+		_load_level(current_level)
+		_swipe_detector.enabled = true
+	)
 
 
 # Simulate one swipe on an abstract state (Array of Vector2i origins, one per block).

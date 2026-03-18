@@ -18,10 +18,14 @@ func setup(block_data: BlockData, va: float, board: Board) -> void:
 	queue_redraw()
 
 
+const SHRINK := 0.10  # each square drawn at 75% of value_a, centred in the cell
+
 func _draw() -> void:
+	var pad  := value_a * SHRINK * 0.5  # inset on each side to keep it centred
+	var size := value_a * (1.0 - SHRINK)
 	for sq in data.squares:
-		var rect := Rect2(Vector2(sq) * value_a, Vector2(value_a, value_a))
-		draw_rect(rect, color)
+		var origin := Vector2(sq) * value_a
+		draw_rect(Rect2(origin + Vector2(pad, pad), Vector2(size, size)), color)
 	_draw_chevrons()
 
 

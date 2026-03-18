@@ -3,8 +3,8 @@ extends Node2D
 
 const MARGIN := 0.10  # 10% margin on each side → 80% usable area
 
-const COLOR_LIGHT := Color(0.94, 0.92, 0.87)  # warm cream
-const COLOR_DARK  := Color(0.78, 0.75, 0.69)  # warm grey-beige
+var COLOR_SURFACE: Color  # set from GameTheme in setup()
+const GAP_PX        := 2.0                       # gap between squares in pixels
 
 var value_a: float = 0.0
 var board_squares: Array[Vector2i] = []
@@ -17,6 +17,7 @@ var _target_colors: Dictionary = {}  # Vector2i -> Color
 # Returns value_a so other systems can size themselves.
 func setup(squares: Array[Vector2i]) -> float:
 	board_squares = squares
+	COLOR_SURFACE = GameTheme.ACTIVE["surface"]
 
 	var viewport_size := get_viewport().get_visible_rect().size
 	value_a = _calculate_value_a(squares, viewport_size)
@@ -42,11 +43,13 @@ func set_targets(blocks_data: Array[BlockData]) -> void:
 
 
 func _draw() -> void:
+	var g := Vector2(GAP_PX, GAP_PX)
 	for sq in board_squares:
-		var color := COLOR_LIGHT if (sq.x + sq.y) % 2 == 0 else COLOR_DARK
-		draw_rect(_square_rect(sq), color)
+		var r := _square_rect(sq)
+		draw_rect(Rect2(r.position + g, r.size - g * 2), COLOR_SURFACE)
 	for cell in _target_colors:
-		draw_rect(_square_rect(cell), _target_colors[cell])
+		var r := _square_rect(cell)
+		draw_rect(Rect2(r.position + g, r.size - g * 2), _target_colors[cell])
 
 
 # Returns the local-space Rect2 for a grid position
