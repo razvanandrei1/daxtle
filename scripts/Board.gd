@@ -10,6 +10,7 @@ var value_a: float = 0.0
 var board_squares: Array[Vector2i] = []
 
 var _min_grid := Vector2i.ZERO
+var _target_colors: Dictionary = {}  # Vector2i -> Color
 
 
 # Called by Game after the node is in the scene tree.
@@ -31,10 +32,21 @@ func setup(squares: Array[Vector2i]) -> float:
 	return value_a
 
 
+func set_targets(blocks_data: Array[BlockData]) -> void:
+	_target_colors.clear()
+	for block_data in blocks_data:
+		var tint := BlockColors.get_target_color(block_data.id)
+		for sq in block_data.squares:
+			_target_colors[block_data.target_origin + sq] = tint
+	queue_redraw()
+
+
 func _draw() -> void:
 	for sq in board_squares:
 		var color := COLOR_LIGHT if (sq.x + sq.y) % 2 == 0 else COLOR_DARK
 		draw_rect(_square_rect(sq), color)
+	for cell in _target_colors:
+		draw_rect(_square_rect(cell), _target_colors[cell])
 
 
 # Returns the local-space Rect2 for a grid position

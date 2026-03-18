@@ -45,6 +45,7 @@ func _load_level(level_number: int) -> void:
 
 	# Blocks — added as children of the board so they share its coordinate space
 	var blocks_data := LevelLoader.get_blocks(level_data)
+	_board.set_targets(blocks_data)
 	for block_data in blocks_data:
 		var block: Block = BlockScene.instantiate()
 		_board.add_child(block)
