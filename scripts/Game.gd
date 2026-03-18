@@ -49,7 +49,10 @@ func _on_swipe(direction: String) -> void:
 				.set_trans(Tween.TRANS_CUBIC) \
 				.set_ease(Tween.EASE_OUT)
 		tween.finished.connect(func() -> void:
-			_swipe_detector.enabled = true  # T30 will also add win check here
+			if _check_win():
+				_on_win()
+			else:
+				_swipe_detector.enabled = true
 		)
 
 	if not invalid.is_empty():
@@ -82,6 +85,19 @@ func _shake_blocks(blocks: Array[Block], direction: String, re_enable_after: boo
 		if re_enable_after:
 			_swipe_detector.enabled = true
 	)
+
+
+func _check_win() -> bool:
+	for block in _blocks:
+		if block.grid_origin != block.data.target_origin:
+			return false
+	return true
+
+
+func _on_win() -> void:
+	_swipe_detector.enabled = false
+	# T32 — win animation goes here; for now advance immediately
+	_load_level(clamp(current_level + 1, 1, MAX_LEVEL))
 
 
 func go_next_level() -> void:
