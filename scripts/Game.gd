@@ -35,6 +35,13 @@ func _on_swipe(direction: String) -> void:
 	if candidates.is_empty():
 		return
 
+	var dv := Vector2i.ZERO
+	match direction:
+		"right": dv = Vector2i( 1,  0)
+		"left":  dv = Vector2i(-1,  0)
+		"down":  dv = Vector2i( 0,  1)
+		_:       dv = Vector2i( 0, -1)
+
 	var result   := Movement.resolve(candidates, _blocks, _board_set, direction)
 	var movers:  Array[Block] = result["movers"]
 	var invalid: Array[Block] = result["invalid"]
@@ -47,7 +54,7 @@ func _on_swipe(direction: String) -> void:
 	if not movers.is_empty():
 		var tween := create_tween().set_parallel(true)
 		for block in movers:
-			block.grid_origin += block.data.dir_vector()
+			block.grid_origin += dv  # always swipe direction, even for pushed blocks
 			var target_pos := _board.grid_to_local(block.grid_origin)
 			tween.tween_property(block, "position", target_pos, MOVE_DURATION) \
 				.set_trans(Tween.TRANS_CUBIC) \
@@ -55,6 +62,8 @@ func _on_swipe(direction: String) -> void:
 		tween.finished.connect(func() -> void:
 			if _check_win():
 				_on_win()
+			elif _is_dead_state():
+				_on_dead_state()
 			else:
 				_swipe_detector.enabled = true
 		)
@@ -126,6 +135,131 @@ func _on_win() -> void:
 		_load_level(clamp(current_level + 1, 1, MAX_LEVEL))
 		_swipe_detector.enabled = true
 	)
+
+
+# --- Dead-state detection (BFS over reachable states) ---
+
+const _BFS_STATE_LIMIT := 8000  # safety cap; keeps detection fast on small levels
+
+func _is_dead_state() -> bool:
+	var initial := _encode_state()
+	var targets := _encode_targets()
+
+	if initial == targets:
+		return false  # already won, not dead
+
+	var visited := {_state_key(initial): true}
+	var queue   := [initial]
+
+	while not queue.is_empty():
+		var state: Array = queue.pop_front()
+
+		for dir in ["left", "right", "up", "down"]:
+			var next := _bfs_sim_move(state, dir)
+
+			if next == targets:
+				return false  # winning state reachable
+
+			var key := _state_key(next)
+			if not visited.has(key):
+				if visited.size() >= _BFS_STATE_LIMIT:
+					return false  # hit limit — assume not stuck (safe default)
+				visited[key] = true
+				queue.append(next)
+
+	return true  # exhausted all reachable states, no win found
+
+
+func _on_dead_state() -> void:
+	_swipe_detector.enabled = false
+	await get_tree().create_timer(0.6).timeout
+	_load_level(current_level)
+	_swipe_detector.enabled = true
+
+
+# Simulate one swipe on an abstract state (Array of Vector2i origins, one per block).
+# Mirrors the push mechanic in Movement.resolve() without touching Block nodes.
+func _bfs_sim_move(origins: Array, direction: String) -> Array:
+	var dv := Vector2i.ZERO
+	match direction:
+		"right": dv = Vector2i( 1,  0)
+		"left":  dv = Vector2i(-1,  0)
+		"down":  dv = Vector2i( 0,  1)
+		_:       dv = Vector2i( 0, -1)
+
+	# Candidates: blocks whose dir matches
+	var active: Array[int] = []
+	for i in _blocks.size():
+		if _blocks[i].data.dir == direction:
+			active.append(i)
+
+	if active.is_empty():
+		return origins
+
+	# Push propagation
+	var frontier: Array[int] = active.duplicate()
+	while not frontier.is_empty():
+		var next_frontier: Array[int] = []
+		for ai in frontier:
+			var new_cells := _blocks[ai].data.cells(origins[ai] + dv)
+			for bi in _blocks.size():
+				if active.has(bi):
+					continue
+				for cell in _blocks[bi].data.cells(origins[bi]):
+					if new_cells.has(cell):
+						active.append(bi)
+						next_frontier.append(bi)
+						break
+		frontier = next_frontier
+
+	# Sort front-to-back
+	active.sort_custom(func(a: int, b: int) -> bool:
+		return (origins[a].x * dv.x + origins[a].y * dv.y) > \
+			   (origins[b].x * dv.x + origins[b].y * dv.y)
+	)
+
+	# Wall check — build new origins
+	var new_origins: Array = origins.duplicate()
+	var blocked_cells: Dictionary = {}
+
+	for ai in active:
+		var new_origin: Vector2i = origins[ai] + dv
+		var new_cells  := _blocks[ai].data.cells(new_origin)
+		var can_move   := true
+
+		for cell in new_cells:
+			if not _board_set.has(cell) or blocked_cells.has(cell):
+				can_move = false
+				break
+
+		if can_move:
+			new_origins[ai] = new_origin
+		else:
+			for cell in _blocks[ai].data.cells(origins[ai]):
+				blocked_cells[cell] = true
+
+	return new_origins
+
+
+func _encode_state() -> Array:
+	var s: Array = []
+	for block in _blocks:
+		s.append(block.grid_origin)
+	return s
+
+
+func _encode_targets() -> Array:
+	var t: Array = []
+	for block in _blocks:
+		t.append(block.data.target_origin)
+	return t
+
+
+func _state_key(origins: Array) -> String:
+	var parts: Array[String] = []
+	for o: Vector2i in origins:
+		parts.append("%d,%d" % [o.x, o.y])
+	return "|".join(parts)
 
 
 func go_next_level() -> void:
