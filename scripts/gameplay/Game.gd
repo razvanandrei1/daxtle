@@ -132,7 +132,6 @@ func _on_win() -> void:
 
 	tween.finished.connect(func() -> void:
 		_load_level(clamp(current_level + 1, 1, LevelLoader.count_levels()))
-		_swipe_detector.enabled = true
 	)
 
 
@@ -186,7 +185,6 @@ func _on_dead_state() -> void:
 	tween.finished.connect(func() -> void:
 		await get_tree().create_timer(0.35).timeout
 		_load_level(current_level)
-		_swipe_detector.enabled = true
 	)
 
 
@@ -315,3 +313,62 @@ func _load_level(level_number: int) -> void:
 		_blocks.append(block)
 
 	level_loaded.emit(current_level)
+	_play_intro_animation()
+
+
+# --- Level intro animation ---
+# Sequence: board fades in → blocks slide in from above (staggered) → arrows fade in.
+# Re-enables input when complete.
+
+const _INTRO_CHAIN_DELAY   := 0.10   # delay before chain starts
+const _INTRO_CHAIN_STAGGER := 0.04   # delay between successive squares
+const _INTRO_CHAIN_SCALE   := 0.66   # scale-up duration per square
+const _INTRO_CHAIN_GAP     := 0.01   # pause between chain end and first block
+const _INTRO_STAGGER       := 0.09   # delay between successive blocks
+const _INTRO_SLIDE_DUR     := 0.36   # each block's slide duration
+const _INTRO_ARROW_DUR     := 0.10   # arrow fade-in duration after block lands
+const _INTRO_HOLD          := 0.20   # pause after last arrow before input opens
+
+func _play_intro_animation() -> void:
+	_swipe_detector.enabled = false
+
+	# Chain scale across board squares — diagonal wave top-left → bottom-right
+	var sorted_squares := _board.board_squares.duplicate()
+	sorted_squares.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return (a.x + a.y) < (b.x + b.y)
+	)
+	for i in sorted_squares.size():
+		var sq: Vector2i = sorted_squares[i]
+		_board.set_cell_scale(sq, 0.0)
+		var delay := _INTRO_CHAIN_DELAY + i * _INTRO_CHAIN_STAGGER
+		var t     := create_tween()
+		t.tween_method(func(v: float) -> void: _board.set_cell_scale(sq, v),
+			0.0, 1.0, _INTRO_CHAIN_SCALE) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	# Blocks scale up after the chain finishes, same style as board squares
+	var chain_end := _INTRO_CHAIN_DELAY \
+		+ maxi(sorted_squares.size() - 1, 0) * _INTRO_CHAIN_STAGGER \
+		+ _INTRO_CHAIN_SCALE
+
+	for i in _blocks.size():
+		var block := _blocks[i]
+		block.block_scale = 0.0
+		block.arrow_alpha = 0.0
+
+		var delay := chain_end + _INTRO_CHAIN_GAP + i * _INTRO_STAGGER
+		var t     := create_tween()
+		t.tween_method(func(v: float) -> void: block.block_scale = v,
+			0.0, 1.0, _INTRO_SLIDE_DUR) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		t.tween_method(func(v: float) -> void: block.arrow_alpha = v,
+			0.0, 1.0, _INTRO_ARROW_DUR) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	# Enable input once all animations have finished
+	var total := chain_end + _INTRO_CHAIN_GAP \
+		+ maxi(_blocks.size() - 1, 0) * _INTRO_STAGGER \
+		+ _INTRO_SLIDE_DUR + _INTRO_ARROW_DUR + _INTRO_HOLD
+	get_tree().create_timer(total).timeout.connect(func() -> void:
+		_swipe_detector.enabled = true
+	)

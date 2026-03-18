@@ -11,6 +11,7 @@ var board_squares: Array[Vector2i] = []
 
 var _min_grid := Vector2i.ZERO
 var _target_colors: Dictionary = {}  # Vector2i -> Color
+var _cell_scale: Dictionary = {}  # Vector2i -> float (0..1), missing key = fully drawn
 
 
 # Called by Game after the node is in the scene tree.
@@ -42,14 +43,32 @@ func set_targets(blocks_data: Array[BlockData]) -> void:
 	queue_redraw()
 
 
+func set_cell_scale(cell: Vector2i, s: float) -> void:
+	if s >= 1.0:
+		_cell_scale.erase(cell)
+	else:
+		_cell_scale[cell] = s
+	queue_redraw()
+
+
 func _draw() -> void:
 	var g := Vector2(GAP_PX, GAP_PX)
 	for sq in board_squares:
-		var r := _square_rect(sq)
-		draw_rect(Rect2(r.position + g, r.size - g * 2), COLOR_SURFACE)
+		var r      := _square_rect(sq)
+		var s      := _cell_scale.get(sq, 1.0) as float
+		if s <= 0.0:
+			continue
+		var center := r.position + r.size * 0.5
+		var size   := (r.size - g * 2) * s
+		draw_rect(Rect2(center - size * 0.5, size), COLOR_SURFACE)
 	for cell in _target_colors:
-		var r := _square_rect(cell)
-		draw_rect(Rect2(r.position + g, r.size - g * 2), _target_colors[cell])
+		var r      := _square_rect(cell)
+		var s      := _cell_scale.get(cell, 1.0) as float
+		if s <= 0.0:
+			continue
+		var center := r.position + r.size * 0.5
+		var size   := (r.size - g * 2) * s
+		draw_rect(Rect2(center - size * 0.5, size), _target_colors[cell])
 
 
 # Returns the local-space Rect2 for a grid position
