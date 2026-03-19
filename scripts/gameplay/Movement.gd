@@ -11,7 +11,8 @@ static func resolve(
 	candidates: Array[Block],
 	all_blocks: Array[Block],
 	board_set: Dictionary,
-	direction: String
+	direction: String,
+	fixed_set: Dictionary = {}
 ) -> Dictionary:
 
 	var empty := {"movers": [] as Array[Block], "invalid": [] as Array[Block]}
@@ -69,7 +70,7 @@ static func resolve(
 				hits_wall = true
 				can_move  = false
 				break
-			if blocked_cells.has(cell):
+			if fixed_set.has(cell) or blocked_cells.has(cell):
 				can_move = false
 				break
 

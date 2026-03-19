@@ -120,12 +120,12 @@
 
 > These tasks are scoped and ready but are not part of the MVP release. Implement after MVP is shipped and validated.
 
-- [ ] **T57** Define `FixedBlockData` class (analogous to `BlockData`): stores shape and origin, no `id`, `dir`, or `target`
-- [ ] **T58** Extend `LevelLoader` with `get_fixed_blocks()` static method to parse the optional `"C"` array from level JSON; omitting `"C"` must be backward compatible
-- [ ] **T59** Create `FixedBlock` scene and `scripts/entities/FixedBlock.gd`: renders a neutral dark-colored rounded rectangle (no arrow), sized and positioned identically to B block squares
-- [ ] **T60** Add C block color to `GameTheme` for all three themes (dark neutral tone, distinct from surface and all B block colors)
-- [ ] **T61** Instantiate C blocks in `Game.gd` after board setup; store their occupied cells in a `_fixed_set` dictionary for fast lookup
-- [ ] **T62** Update `Movement.resolve()` to treat C block cells as impassable — a push chain reaching a C cell is immediately invalid
+- [x] **T57** Define `FixedBlockData` class (analogous to `BlockData`): stores shape and origin, no `id`, `dir`, or `target`
+- [x] **T58** Extend `LevelLoader` with `get_fixed_blocks()` static method to parse the optional `"C"` array from level JSON; omitting `"C"` must be backward compatible
+- [x] **T59** Create `FixedBlock` scene and `scripts/entities/FixedBlock.gd`: renders a neutral dark-colored rounded rectangle (no arrow), sized and positioned identically to B block squares
+- [x] **T60** Add C block color to `GameTheme` for all three themes (dark neutral tone, distinct from surface and all B block colors)
+- [x] **T61** Instantiate C blocks in `Game.gd` after board setup; store their occupied cells in a `_fixed_set` dictionary for fast lookup
+- [x] **T62** Update `Movement.resolve()` to treat C block cells as impassable — a push chain reaching a C cell is immediately invalid
 - [ ] **T63** Update BFS dead-state simulator (`_bfs_sim_move()`) to treat C block cells as permanently occupied for all B block movement
 - [ ] **T64** Integrate C blocks into the level initialization animation: C block squares scale up during the board wave (alongside A squares), before B blocks appear
 - [ ] **T65** Update level design constraints documentation and verify all existing levels remain valid (no `"C"` array → no change in behavior)

@@ -9,6 +9,7 @@ class_name GameTheme
 const WARM_SAND := {
 	"background": Color(0.96, 0.94, 0.89),
 	"surface":    Color(0.85, 0.82, 0.76),
+	"fixed":      Color(0.35, 0.32, 0.28),  # C — dark charcoal-brown
 	"blocks": [
 		Color(0.29, 0.51, 0.79),  # B1 — blue
 		Color(0.83, 0.38, 0.33),  # B2 — coral
@@ -20,6 +21,7 @@ const WARM_SAND := {
 const COOL_SLATE := {
 	"background": Color(0.91, 0.93, 0.95),
 	"surface":    Color(0.78, 0.82, 0.87),
+	"fixed":      Color(0.30, 0.33, 0.38),  # C — dark blue-gray
 	"blocks": [
 		Color(0.27, 0.47, 0.78),  # B1 — blue
 		Color(0.76, 0.33, 0.33),  # B2 — coral
@@ -31,6 +33,7 @@ const COOL_SLATE := {
 const DARK_CHARCOAL := {
 	"background": Color(0.13, 0.14, 0.16),
 	"surface":    Color(0.21, 0.23, 0.27),
+	"fixed":      Color(0.42, 0.44, 0.48),  # C — medium gray (lighter than surface for contrast)
 	"blocks": [
 		Color(0.38, 0.67, 0.96),  # B1 — blue
 		Color(0.96, 0.48, 0.42),  # B2 — coral

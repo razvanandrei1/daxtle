@@ -1,7 +1,8 @@
 extends Node2D
 
-const BoardScene := preload("res://scenes/Board.tscn")
-const BlockScene := preload("res://scenes/Block.tscn")
+const BoardScene      := preload("res://scenes/Board.tscn")
+const BlockScene      := preload("res://scenes/Block.tscn")
+const FixedBlockScene := preload("res://scenes/FixedBlock.tscn")
 const MOVE_DURATION := 0.13 # seconds per slide animation
 
 const WIN_BRIGHT := Color(1.5, 1.5, 1.5, 1.0)  # brightened modulate for glow pulse
@@ -15,7 +16,9 @@ var value_a: float = 0.0
 
 var _board: Board
 var _blocks: Array[Block] = []
+var _fixed_blocks: Array[FixedBlock] = []
 var _board_set: Dictionary = {}   # Vector2i -> true, for fast cell lookup
+var _fixed_set: Dictionary = {}   # Vector2i -> true, C block occupied cells
 var _swipe_detector: SwipeDetector
 
 
@@ -41,7 +44,7 @@ func _on_swipe(direction: String) -> void:
 		"down":  dv = Vector2i( 0,  1)
 		_:       dv = Vector2i( 0, -1)
 
-	var result   := Movement.resolve(candidates, _blocks, _board_set, direction)
+	var result   := Movement.resolve(candidates, _blocks, _board_set, direction, _fixed_set)
 	var movers:  Array[Block] = result["movers"]
 	var invalid: Array[Block] = result["invalid"]
 
@@ -297,7 +300,9 @@ func _load_level(level_number: int) -> void:
 	if _board:
 		_board.queue_free()
 	_blocks.clear()
+	_fixed_blocks.clear()
 	_board_set.clear()
+	_fixed_set.clear()
 
 	var level_data := LevelLoader.load_level(level_number)
 	if level_data.is_empty():
@@ -314,6 +319,16 @@ func _load_level(level_number: int) -> void:
 
 	for sq in squares:
 		_board_set[sq] = true
+
+	# Fixed blocks (C) — instantiated before B blocks so they render beneath them
+	var fixed_data := LevelLoader.get_fixed_blocks(level_data)
+	for fd in fixed_data:
+		var fb := FixedBlockScene.instantiate() as FixedBlock
+		_board.add_child(fb)
+		fb.setup(fd, value_a, _board)
+		_fixed_blocks.append(fb)
+		for cell in fd.cells():
+			_fixed_set[cell] = true
 
 	# Blocks — added as children of the board so they share its coordinate space
 	var blocks_data := LevelLoader.get_blocks(level_data)
