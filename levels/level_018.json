@@ -1,5 +1,5 @@
 {
-  "level": 5,
+  "level": 18,
   "A": [
     {
       "pos_x": 0,
@@ -18,6 +18,10 @@
       "pos_y": 3
     },
     {
+      "pos_x": 0,
+      "pos_y": 4
+    },
+    {
       "pos_x": 1,
       "pos_y": 0
     },
@@ -34,6 +38,14 @@
       "pos_y": 3
     },
     {
+      "pos_x": 1,
+      "pos_y": 4
+    },
+    {
+      "pos_x": 1,
+      "pos_y": 5
+    },
+    {
       "pos_x": 2,
       "pos_y": 0
     },
@@ -50,6 +62,14 @@
       "pos_y": 3
     },
     {
+      "pos_x": 2,
+      "pos_y": 4
+    },
+    {
+      "pos_x": 2,
+      "pos_y": 5
+    },
+    {
       "pos_x": 3,
       "pos_y": 0
     },
@@ -63,7 +83,55 @@
     },
     {
       "pos_x": 3,
+      "pos_y": 4
+    },
+    {
+      "pos_x": 3,
+      "pos_y": 5
+    },
+    {
+      "pos_x": 4,
+      "pos_y": 0
+    },
+    {
+      "pos_x": 4,
+      "pos_y": 1
+    },
+    {
+      "pos_x": 4,
+      "pos_y": 2
+    },
+    {
+      "pos_x": 4,
       "pos_y": 3
+    },
+    {
+      "pos_x": 4,
+      "pos_y": 4
+    },
+    {
+      "pos_x": 4,
+      "pos_y": 5
+    },
+    {
+      "pos_x": 5,
+      "pos_y": 1
+    },
+    {
+      "pos_x": 5,
+      "pos_y": 2
+    },
+    {
+      "pos_x": 5,
+      "pos_y": 3
+    },
+    {
+      "pos_x": 5,
+      "pos_y": 4
+    },
+    {
+      "pos_x": 5,
+      "pos_y": 5
     }
   ],
   "B": [
@@ -77,9 +145,9 @@
         }
       ],
       "origin_x": 0,
-      "origin_y": 1,
-      "target_origin_x": 3,
-      "target_origin_y": 1
+      "origin_y": 2,
+      "target_origin_x": 4,
+      "target_origin_y": 2
     },
     {
       "id": "B2",
@@ -93,7 +161,7 @@
       "origin_x": 2,
       "origin_y": 0,
       "target_origin_x": 2,
-      "target_origin_y": 3
+      "target_origin_y": 4
     },
     {
       "id": "B3",
@@ -104,10 +172,24 @@
           "pos_y": 0
         }
       ],
-      "origin_x": 3,
-      "origin_y": 2,
-      "target_origin_x": 0,
-      "target_origin_y": 2
+      "origin_x": 5,
+      "origin_y": 1,
+      "target_origin_x": 1,
+      "target_origin_y": 1
+    },
+    {
+      "id": "B4",
+      "dir": "up",
+      "squares": [
+        {
+          "pos_x": 0,
+          "pos_y": 0
+        }
+      ],
+      "origin_x": 4,
+      "origin_y": 4,
+      "target_origin_x": 4,
+      "target_origin_y": 1
     }
   ]
 }

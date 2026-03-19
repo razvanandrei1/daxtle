@@ -26,6 +26,13 @@ func _input(event: InputEvent) -> void:
 			_tracking = false
 			_evaluate(event.position)
 
+	if event is InputEventKey and event.pressed and not event.echo:
+		match event.keycode:
+			KEY_LEFT:  swiped.emit("left")
+			KEY_RIGHT: swiped.emit("right")
+			KEY_UP:    swiped.emit("up")
+			KEY_DOWN:  swiped.emit("down")
+
 
 func _evaluate(end_pos: Vector2) -> void:
 	var delta := end_pos - _start

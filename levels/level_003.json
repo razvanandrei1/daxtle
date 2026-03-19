@@ -1,27 +1,82 @@
 {
   "level": 3,
   "A": [
-	{"pos_x": 1, "pos_y": 0},
-	{"pos_x": 0, "pos_y": 1}, {"pos_x": 1, "pos_y": 1}, {"pos_x": 2, "pos_y": 1},
-	{"pos_x": 1, "pos_y": 2}
+	{
+	  "pos_x": 0,
+	  "pos_y": 0
+	},
+	{
+	  "pos_x": 0,
+	  "pos_y": 1
+	},
+	{
+	  "pos_x": 0,
+	  "pos_y": 2
+	},
+	{
+	  "pos_x": 1,
+	  "pos_y": 0
+	},
+	{
+	  "pos_x": 1,
+	  "pos_y": 1
+	},
+	{
+	  "pos_x": 1,
+	  "pos_y": 2
+	},
+	{
+	  "pos_x": 2,
+	  "pos_y": 0
+	},
+	{
+	  "pos_x": 2,
+	  "pos_y": 1
+	},
+	{
+	  "pos_x": 2,
+	  "pos_y": 2
+	},
+	{
+	  "pos_x": 3,
+	  "pos_y": 0
+	},
+	{
+	  "pos_x": 3,
+	  "pos_y": 1
+	},
+	{
+	  "pos_x": 3,
+	  "pos_y": 2
+	}
   ],
   "B": [
 	{
 	  "id": "B1",
 	  "dir": "right",
-	  "squares": [{"pos_x": 0, "pos_y": 0}],
+	  "squares": [
+		{
+		  "pos_x": 0,
+		  "pos_y": 0
+		}
+	  ],
 	  "origin_x": 0,
 	  "origin_y": 1,
-	  "target_origin_x": 2,
+	  "target_origin_x": 3,
 	  "target_origin_y": 1
 	},
 	{
 	  "id": "B2",
 	  "dir": "down",
-	  "squares": [{"pos_x": 0, "pos_y": 0}],
-	  "origin_x": 1,
+	  "squares": [
+		{
+		  "pos_x": 0,
+		  "pos_y": 0
+		}
+	  ],
+	  "origin_x": 2,
 	  "origin_y": 0,
-	  "target_origin_x": 1,
+	  "target_origin_x": 2,
 	  "target_origin_y": 2
 	}
   ]

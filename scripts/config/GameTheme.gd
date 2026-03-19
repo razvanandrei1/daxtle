@@ -43,3 +43,7 @@ const DARK_CHARCOAL := {
 # Change this constant to switch the entire game's colour scheme.
 # Options: WARM_SAND | COOL_SLATE | DARK_CHARCOAL
 const ACTIVE := WARM_SAND
+
+# ── Layout constants ────────────────────────────────────────────────────────
+const GAP_FRACTION    := 0.042   # gap between cells as a fraction of cell size
+const CORNER_FRACTION := 0.08   # corner radius as a fraction of cell size

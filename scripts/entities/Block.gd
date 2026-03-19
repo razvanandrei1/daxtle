@@ -30,17 +30,24 @@ func setup(block_data: BlockData, va: float, board: Board) -> void:
 	queue_redraw()
 
 
-const SHRINK := 0.10  # each square drawn at 90% of value_a, centred in the cell
-
 func _draw() -> void:
 	if block_scale <= 0.0:
 		return
-	var base := value_a * (1.0 - SHRINK)
-	var size := base * block_scale
+	var sq_size := value_a * (1.0 - GameTheme.GAP_FRACTION)
+	var radius  := value_a * GameTheme.CORNER_FRACTION
+	var size    := sq_size * block_scale
+	var r       := radius * block_scale
 	for sq in data.squares:
 		var center := Vector2(sq) * value_a + Vector2(value_a, value_a) * 0.5
-		draw_rect(Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), color)
+		_draw_rounded_rect(Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), color, r)
 	_draw_arrow()
+
+
+func _draw_rounded_rect(rect: Rect2, col: Color, radius: float) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = col
+	style.set_corner_radius_all(int(radius))
+	style.draw(get_canvas_item(), rect)
 
 
 # --- Direction arrow ---

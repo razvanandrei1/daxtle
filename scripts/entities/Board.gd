@@ -4,7 +4,6 @@ extends Node2D
 const MARGIN := 0.10  # 10% margin on each side → 80% usable area
 
 var COLOR_SURFACE: Color  # set from GameTheme in setup()
-const GAP_PX        := 2.0                       # gap between squares in pixels
 
 var value_a: float = 0.0
 var board_squares: Array[Vector2i] = []
@@ -52,23 +51,31 @@ func set_cell_scale(cell: Vector2i, s: float) -> void:
 
 
 func _draw() -> void:
-	var g := Vector2(GAP_PX, GAP_PX)
+	var sq_size := value_a * (1.0 - GameTheme.GAP_FRACTION)
+	var radius  := value_a * GameTheme.CORNER_FRACTION
 	for sq in board_squares:
+		var s := _cell_scale.get(sq, 1.0) as float
+		if s <= 0.0:
+			continue
 		var r      := _square_rect(sq)
-		var s      := _cell_scale.get(sq, 1.0) as float
-		if s <= 0.0:
-			continue
 		var center := r.position + r.size * 0.5
-		var size   := (r.size - g * 2) * s
-		draw_rect(Rect2(center - size * 0.5, size), COLOR_SURFACE)
+		var size   := sq_size * s
+		_draw_rounded_rect(Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), COLOR_SURFACE, radius * s)
 	for cell in _target_colors:
-		var r      := _square_rect(cell)
-		var s      := _cell_scale.get(cell, 1.0) as float
+		var s := _cell_scale.get(cell, 1.0) as float
 		if s <= 0.0:
 			continue
+		var r      := _square_rect(cell)
 		var center := r.position + r.size * 0.5
-		var size   := (r.size - g * 2) * s
-		draw_rect(Rect2(center - size * 0.5, size), _target_colors[cell])
+		var size   := sq_size * s
+		_draw_rounded_rect(Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), _target_colors[cell], radius * s)
+
+
+func _draw_rounded_rect(rect: Rect2, col: Color, radius: float) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = col
+	style.set_corner_radius_all(int(radius))
+	style.draw(get_canvas_item(), rect)
 
 
 # Returns the local-space Rect2 for a grid position

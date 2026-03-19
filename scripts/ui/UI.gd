@@ -16,7 +16,7 @@ func _ready() -> void:
 
 
 func set_level(n: int) -> void:
-	_label.text = "Level %d" % n
+	_label.text = "%d" % n
 
 
 # Centre the nav bar horizontally, 16 px from the top
