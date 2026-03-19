@@ -254,7 +254,7 @@ func _bfs_sim_move(origins: Array, direction: String) -> Array:
 		var can_move   := true
 
 		for cell in new_cells:
-			if not _board_set.has(cell) or blocked_cells.has(cell):
+			if not _board_set.has(cell) or _fixed_set.has(cell) or blocked_cells.has(cell):
 				can_move = false
 				break
 
@@ -370,6 +370,24 @@ func _play_intro_animation() -> void:
 		var delay := _INTRO_CHAIN_DELAY + i * _INTRO_CHAIN_STAGGER
 		var t     := create_tween()
 		t.tween_method(func(v: float) -> void: _board.set_cell_scale(sq, v),
+			0.0, 1.0, _INTRO_CHAIN_SCALE) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	# Fixed blocks (C) scale in during the same wave, timed by their diagonal position
+	for fb in _fixed_blocks:
+		fb.block_scale = 0.0
+		var fb_diag := fb.data.origin.x + fb.data.origin.y
+		for sq in fb.data.squares:
+			var cell := fb.data.origin + sq
+			fb_diag = mini(fb_diag, cell.x + cell.y)
+		var wave_index := 0
+		for j in sorted_squares.size():
+			if (sorted_squares[j].x + sorted_squares[j].y) <= fb_diag:
+				wave_index = j
+		var delay := _INTRO_CHAIN_DELAY + wave_index * _INTRO_CHAIN_STAGGER
+		var captured_fb := fb
+		var t := create_tween()
+		t.tween_method(func(v: float) -> void: captured_fb.block_scale = v,
 			0.0, 1.0, _INTRO_CHAIN_SCALE) \
 			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
