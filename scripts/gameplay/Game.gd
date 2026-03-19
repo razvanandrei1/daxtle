@@ -11,7 +11,7 @@ const WIN_FADE   := Color(1.0, 1.0, 1.0, 0.0)
 
 signal level_loaded(n: int)
 
-var current_level: int = 1
+var current_level: int = 20
 var value_a: float = 0.0
 
 var _board: Board

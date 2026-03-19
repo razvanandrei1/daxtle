@@ -129,7 +129,7 @@
 - [x] **T63** Update BFS dead-state simulator (`_bfs_sim_move()`) to treat C block cells as permanently occupied for all B block movement
 - [x ] **T64** Integrate C blocks into the level initialization animation: C block squares scale up during the board wave (alongside A squares), before B blocks appear
 - [ x] **T65** Update level design constraints documentation and verify all existing levels remain valid (no `"C"` array → no change in behavior)
-- [ ] **T66** Author 3–5 test levels using C blocks to validate the mechanic and difficulty curve; verify each is solvable and no dead state exists from initial position
+- [x] **T66** Author 3–5 test levels using C blocks to validate the mechanic and difficulty curve; verify each is solvable and no dead state exists from initial position
 
 ---
 
