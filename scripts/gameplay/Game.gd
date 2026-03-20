@@ -1,9 +1,9 @@
 extends Node2D
 
-const BoardScene      := preload("res://scenes/Board.tscn")
-const BlockScene      := preload("res://scenes/Block.tscn")
-const FixedBlockScene := preload("res://scenes/FixedBlock.tscn")
-const TeleportScene   := preload("res://scenes/Teleport.tscn")
+const BoardScene      := preload("res://scenes/entities/Board.tscn")
+const BlockScene      := preload("res://scenes/entities/Block.tscn")
+const FixedBlockScene := preload("res://scenes/entities/FixedBlock.tscn")
+const TeleportScene   := preload("res://scenes/entities/Teleport.tscn")
 const MOVE_DURATION := 0.13 # seconds per slide animation
 
 const WIN_BRIGHT := Color(1.5, 1.5, 1.5, 1.0)  # brightened modulate for glow pulse
@@ -51,10 +51,11 @@ func _on_swipe(direction: String) -> void:
 		"down":  dv = Vector2i( 0,  1)
 		_:       dv = Vector2i( 0, -1)
 
-	var result          := Movement.resolve(candidates, _blocks, _board_set, direction, _fixed_set, _teleport_map)
-	var movers:          Array[Block] = result["movers"]
-	var invalid:         Array[Block] = result["invalid"]
-	var teleport_exits:  Dictionary   = result["teleport_exits"]
+	var result            := Movement.resolve(candidates, _blocks, _board_set, direction, _fixed_set, _teleport_map)
+	var movers:            Array[Block] = result["movers"]
+	var invalid:           Array[Block] = result["invalid"]
+	var teleport_exits:    Dictionary   = result["teleport_exits"]
+	var teleport_entries:  Dictionary   = result["teleport_entries"]
 
 	if movers.is_empty() and invalid.is_empty():
 		return
@@ -62,24 +63,62 @@ func _on_swipe(direction: String) -> void:
 	_swipe_detector.enabled = false
 
 	if not movers.is_empty():
-		var tween := create_tween().set_parallel(true)
+		# Separate normal movers from teleporters so they can use different animations
+		var par := create_tween().set_parallel(true)
+		var has_teleport := false
+		var max_tp_dur   := 0.0
+
 		for block in movers:
 			if teleport_exits.has(block):
+				has_teleport = true
+
+				var entry:     Vector2i = teleport_entries[block]
+				var exit_cell: Vector2i = _teleport_map[entry]
+				var entry_pos := _board.grid_to_local(entry)
+				var exit_pos  := _board.grid_to_local(exit_cell)
+
 				block.grid_origin = teleport_exits[block]
+				var final_pos := _board.grid_to_local(block.grid_origin)
+				var has_cont  := (final_pos != exit_pos)
+
+				_pulse_portal_pair(entry, exit_cell)
+
+				# Sequential per-block tween: slide → shrink → jump → pop → slide
+				const SHRINK := 0.07
+				const POP    := 0.10
+				var tp := create_tween()
+				tp.tween_property(block, "position", entry_pos, MOVE_DURATION) \
+					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+				tp.tween_property(block, "scale", Vector2.ZERO, SHRINK) \
+					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+				tp.tween_callback(func(): block.position = exit_pos)
+				tp.tween_property(block, "scale", Vector2.ONE, POP) \
+					.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+				if has_cont:
+					tp.tween_property(block, "position", final_pos, MOVE_DURATION) \
+						.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+				max_tp_dur = maxf(max_tp_dur,
+					MOVE_DURATION + SHRINK + POP + (MOVE_DURATION if has_cont else 0.0))
 			else:
 				block.grid_origin += dv
-			var target_pos := _board.grid_to_local(block.grid_origin)
-			tween.tween_property(block, "position", target_pos, MOVE_DURATION) \
-				.set_trans(Tween.TRANS_CUBIC) \
-				.set_ease(Tween.EASE_OUT)
-		tween.finished.connect(func() -> void:
+				var target_pos := _board.grid_to_local(block.grid_origin)
+				par.tween_property(block, "position", target_pos, MOVE_DURATION) \
+					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+		var on_done := func() -> void:
 			if _check_win():
 				_on_win()
 			elif _is_dead_state():
 				_on_dead_state()
 			else:
 				_swipe_detector.enabled = true
-		)
+
+		if has_teleport:
+			var total_dur := maxf(max_tp_dur, MOVE_DURATION)
+			get_tree().create_timer(total_dur).timeout.connect(on_done)
+		else:
+			par.finished.connect(on_done)
 
 	if not invalid.is_empty():
 		_shake_blocks(invalid, direction, movers.is_empty())
@@ -277,7 +316,23 @@ func _bfs_sim_move(origins: Array, direction: String) -> Array:
 						can_move = false
 						break
 				if can_move:
-					new_origins[ai] = exit
+					# T72 — continuation: try one extra step past exit
+					var cont := exit + dv
+					if _board_set.has(cont) and not _fixed_set.has(cont) \
+							and not blocked_cells.has(cont) and not _teleport_map.has(cont):
+						var cont_ok := true
+						for bi2 in _blocks.size():
+							if bi2 == ai or active.has(bi2):
+								continue
+							for cell in _blocks[bi2].data.cells(origins[bi2]):
+								if cell == cont:
+									cont_ok = false
+									break
+							if not cont_ok:
+								break
+						new_origins[ai] = cont if cont_ok else exit
+					else:
+						new_origins[ai] = exit
 			else:
 				new_origins[ai] = new_origin
 
@@ -360,13 +415,16 @@ func _load_level(level_number: int) -> void:
 
 	# Teleport portals (T) — added before blocks so they render beneath them
 	var teleport_data := LevelLoader.get_teleports(level_data)
-	for td in teleport_data:
+	for i in teleport_data.size():
+		var td: TeleportData = teleport_data[i]
+		var pair_col := GameTheme.get_teleport_color(i)
 		_teleport_map[td.portal_a] = td.portal_b
-		_teleport_map[td.portal_b] = td.portal_a
+		if not td.one_way:
+			_teleport_map[td.portal_b] = td.portal_a
 		for cell in [td.portal_a, td.portal_b]:
 			var tp := TeleportScene.instantiate() as Teleport
 			_board.add_child(tp)
-			tp.setup(cell, value_a, _board)
+			tp.setup(cell, value_a, _board, pair_col)
 			_teleports.append(tp)
 
 	# Blocks — added as children of the board so they share its coordinate space
@@ -475,3 +533,16 @@ func _play_intro_animation() -> void:
 	get_tree().create_timer(total).timeout.connect(func() -> void:
 		_swipe_detector.enabled = true
 	)
+
+# --- Teleport portal visual feedback ---
+
+# Flash the two nodes of a portal pair when a block passes through.
+func _pulse_portal_pair(entry: Vector2i, exit_cell: Vector2i) -> void:
+	const PULSE := Color(2.0, 2.0, 2.0, 1.0)
+	for tp in _teleports:
+		if tp.portal_cell == entry or tp.portal_cell == exit_cell:
+			var t := create_tween()
+			t.tween_property(tp, "modulate", PULSE, 0.08) \
+				.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
+			t.tween_property(tp, "modulate", Color.WHITE, 0.28) \
+				.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)

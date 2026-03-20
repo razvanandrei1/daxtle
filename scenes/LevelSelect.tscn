@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://cld7rfb8gsivv"]
 
-[ext_resource type="Script" path="res://scripts/ui/LevelSelect.gd" id="1"]
+[ext_resource type="Script" uid="uid://c3o0vfl6vkbq4" path="res://scripts/ui/LevelSelect.gd" id="1"]
 
-[node name="LevelSelect" type="Node2D"]
+[node name="LevelSelect" type="Node2D" unique_id=204195828]
 script = ExtResource("1")
