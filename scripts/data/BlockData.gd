@@ -1,8 +1,7 @@
 class_name BlockData
 
 var id: String
-var dir: String              # "left" | "right" | "up" | "down"
-var squares: Array[Vector2i] # shape offsets relative to origin
+var dir: String              # "left" | "right" | "up" | "down" | "none"
 var origin: Vector2i         # starting grid position
 var target_origin: Vector2i  # target grid position
 
@@ -13,18 +12,12 @@ static func from_dict(d: Dictionary) -> BlockData:
 	b.dir           = d["dir"]
 	b.origin        = Vector2i(d["origin_x"],        d["origin_y"])
 	b.target_origin = Vector2i(d["target_origin_x"], d["target_origin_y"])
-	b.squares       = []
-	for sq in d["squares"]:
-		b.squares.append(Vector2i(sq["pos_x"], sq["pos_y"]))
 	return b
 
 
-# Returns all grid cells this block currently occupies given an origin position
+# Returns the grid cell this block occupies at a given origin
 func cells(at_origin: Vector2i) -> Array[Vector2i]:
-	var result: Array[Vector2i] = []
-	for sq in squares:
-		result.append(at_origin + sq)
-	return result
+	return [at_origin]
 
 
 func dir_vector() -> Vector2i:

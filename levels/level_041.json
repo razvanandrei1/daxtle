@@ -1,25 +1,91 @@
 {
-  "level": 41,
   "A": [
-    {"pos_x": 0, "pos_y": 0}, {"pos_x": 1, "pos_y": 0}, {"pos_x": 2, "pos_y": 0}, {"pos_x": 3, "pos_y": 0}, {"pos_x": 4, "pos_y": 0},
-    {"pos_x": 0, "pos_y": 1}, {"pos_x": 1, "pos_y": 1}, {"pos_x": 2, "pos_y": 1}, {"pos_x": 3, "pos_y": 1}, {"pos_x": 4, "pos_y": 1},
-    {"pos_x": 0, "pos_y": 2}, {"pos_x": 1, "pos_y": 2}, {"pos_x": 2, "pos_y": 2}, {"pos_x": 3, "pos_y": 2}, {"pos_x": 4, "pos_y": 2}
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      2
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      4,
+      2
+    ]
   ],
   "B": [
     {
-      "id": "B1", "dir": "right",
-      "squares": [{"pos_x": 0, "pos_y": 0}],
-      "origin_x": 0, "origin_y": 1,
-      "target_origin_x": 4, "target_origin_y": 1
+      "id": "B1",
+      "dir": "right",
+      "origin_x": 0,
+      "origin_y": 1,
+      "target_origin_x": 4,
+      "target_origin_y": 1
     },
     {
-      "id": "B2", "dir": "down",
-      "squares": [{"pos_x": 0, "pos_y": 0}],
-      "origin_x": 2, "origin_y": 0,
-      "target_origin_x": 2, "target_origin_y": 2
+      "id": "B2",
+      "dir": "down",
+      "origin_x": 2,
+      "origin_y": 0,
+      "target_origin_x": 2,
+      "target_origin_y": 2
     }
   ],
   "T": [
-    {"id": "T1", "ax": 1, "ay": 1, "bx": 3, "by": 1}
+    {
+      "id": "T1",
+      "ax": 1,
+      "ay": 1,
+      "bx": 3,
+      "by": 1
+    }
   ]
 }

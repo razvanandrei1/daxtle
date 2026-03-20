@@ -10,9 +10,11 @@ func _ready() -> void:
 	RenderingServer.set_default_clear_color(GameTheme.ACTIVE["background"])
 	_main_menu.play_pressed.connect(_on_play_pressed)
 	_ui.back_pressed.connect(_on_back_pressed)
+	_ui.reset_pressed.connect(func() -> void: _game.reset_level())
 	_level_select.level_selected.connect(_on_level_selected)
 	_level_select.back_pressed.connect(_on_level_select_back)
 	_game.level_loaded.connect(func(n: int) -> void: _ui.set_level(n))
+	_game.first_move.connect(func() -> void: _ui.show_reset())
 
 	# Start on main menu — hide everything else
 	_game.visible              = false

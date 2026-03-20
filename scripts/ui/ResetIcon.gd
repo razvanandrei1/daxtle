@@ -1,32 +1,46 @@
-class_name BackArrow
+class_name ResetIcon
 extends Node2D
 
 signal pressed
 
-const ARROW_SIZE    := 58.0   # overall arrow size
-const HIT_PADDING   := 16.0   # extra tap area around the arrow
-const ARC_STEPS     := 6
+const ICON_SIZE   := 58.0
+const HIT_PADDING := 16.0
+const ARC_STEPS   := 6
 
 var _color: Color
 
 
 func _ready() -> void:
 	_color = GameTheme.ACTIVE["text"]
-	# Offset drawing so (0,0) is the center — scale then pivots from center
-	position += Vector2(ARROW_SIZE * 0.5, ARROW_SIZE * 0.5)
+	position += Vector2(ICON_SIZE * 0.5, ICON_SIZE * 0.5)
 
 
 func _draw() -> void:
-	var half_len   := ARROW_SIZE * 0.50
-	var half_width := ARROW_SIZE * 0.38
-	var radius     := ARROW_SIZE * 0.14
+	var r      := ICON_SIZE * 0.36
+	var weight := ICON_SIZE * 0.09
 
-	var center := Vector2.ZERO
-	var tip    := center + Vector2(-half_len, 0.0)
-	var tr     := center + Vector2(half_len * 0.45, -half_width)
-	var br     := center + Vector2(half_len * 0.45, half_width)
+	# Draw a smooth ¾ arc (from ~40° past 12 o'clock, sweeping 280°)
+	var gap     := PI * 0.28  # gap at the top where the arrowhead sits
+	var start_a := -PI * 0.5 + gap
+	var end_a   := -PI * 0.5 + TAU - gap * 0.15
+	draw_arc(Vector2.ZERO, r, start_a, end_a, 48, _color, weight, true)
 
-	_draw_rounded_triangle(tip, tr, br, _color, radius)
+	# Arrowhead at the start of the arc (clockwise direction)
+	# The arrow tip points in the tangent direction of the arc at start_a
+	var tip_on_arc := Vector2(r, 0.0).rotated(start_a)
+
+	# Tangent at start_a points clockwise (perpendicular inward to the arc direction)
+	var tangent := Vector2(-sin(start_a), cos(start_a))  # clockwise tangent
+	var normal  := Vector2(cos(start_a), sin(start_a))   # outward radial
+
+	var arrow_len := ICON_SIZE * 0.22
+	var arrow_w   := ICON_SIZE * 0.15
+
+	var tip := tip_on_arc + tangent * arrow_len * 0.6
+	var al  := tip_on_arc + normal * arrow_w - tangent * arrow_len * 0.3
+	var ar  := tip_on_arc - normal * arrow_w - tangent * arrow_len * 0.3
+
+	_draw_rounded_triangle(tip, al, ar, _color, ICON_SIZE * 0.05)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -40,7 +54,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	else:
 		return
 
-	var half := ARROW_SIZE * 0.5 + HIT_PADDING
+	var half := ICON_SIZE * 0.5 + HIT_PADDING
 	var hit := Rect2(
 		global_position - Vector2(half, half),
 		Vector2(half * 2.0, half * 2.0)

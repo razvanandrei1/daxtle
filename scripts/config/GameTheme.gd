@@ -78,6 +78,19 @@ const CORNER_FRACTION := 0.08    # corner radius as a fraction of cell size
 
 # ── Teleport portal colour ───────────────────────────────────────────────────
 # Returns the colour for teleport pair at the given index (0-based), cycling if needed.
+# ── Safe area (notch / status bar / home indicator) ────────────────────────
+# Returns the top inset in pixels (0 on devices without a notch).
+static func get_safe_area_top() -> float:
+	var safe := DisplayServer.get_display_safe_area()
+	return safe.position.y
+
+# Returns the bottom inset in pixels.
+static func get_safe_area_bottom() -> float:
+	var safe   := DisplayServer.get_display_safe_area()
+	var screen := DisplayServer.screen_get_size()
+	return screen.y - safe.end.y
+
+
 static func get_teleport_color(pair_index: int) -> Color:
 	var colors: Array = ACTIVE["teleport"]
 	return colors[pair_index % colors.size()]

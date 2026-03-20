@@ -73,5 +73,5 @@ static func get_board_squares(level_data: Dictionary) -> Array[Vector2i]:
 		return []
 	var squares: Array[Vector2i] = []
 	for entry in level_data["A"]:
-		squares.append(Vector2i(entry["pos_x"], entry["pos_y"]))
+		squares.append(Vector2i(entry[0], entry[1]))
 	return squares

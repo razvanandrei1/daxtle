@@ -37,9 +37,8 @@ func _draw() -> void:
 	var radius  := value_a * GameTheme.CORNER_FRACTION
 	var size    := sq_size * block_scale
 	var r       := radius * block_scale
-	for sq in data.squares:
-		var center := Vector2(sq) * value_a + Vector2(value_a, value_a) * 0.5
-		_draw_rounded_rect(Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), color, r)
+	var center := Vector2(value_a, value_a) * 0.5
+	_draw_rounded_rect(Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), color, r)
 	_draw_arrow()
 
 
@@ -68,19 +67,22 @@ func _draw_arrow() -> void:
 		"left":  axis = Vector2(-1,  0)
 		"down":  axis = Vector2( 0,  1)
 		"up":    axis = Vector2( 0, -1)
-		_: return
+		_:
+			# Cargo block — draw a small dot instead of an arrow
+			var c := Vector2(value_a, value_a) * 0.5
+			draw_circle(c, value_a * 0.09 * block_scale, arrow_color)
+			return
 	var perp := Vector2(-axis.y, axis.x)
 
-	var half_len   := value_a * ARROW_LENGTH * 0.5
-	var half_width := value_a * ARROW_WIDTH
-	var radius     := value_a * GameTheme.CORNER_FRACTION
+	var half_len   := value_a * ARROW_LENGTH * 0.5 * block_scale
+	var half_width := value_a * ARROW_WIDTH * block_scale
+	var radius     := value_a * GameTheme.CORNER_FRACTION * block_scale
 
-	for sq in data.squares:
-		var c   := Vector2(sq) * value_a + Vector2(value_a, value_a) * 0.5
-		var tip := c + axis * half_len
-		var bl  := c - axis * half_len + perp * half_width
-		var br  := c - axis * half_len - perp * half_width
-		_draw_rounded_triangle(tip, bl, br, arrow_color, radius)
+	var c   := Vector2(value_a, value_a) * 0.5
+	var tip := c + axis * half_len
+	var bl  := c - axis * half_len + perp * half_width
+	var br  := c - axis * half_len - perp * half_width
+	_draw_rounded_triangle(tip, bl, br, arrow_color, radius)
 
 
 func _draw_rounded_triangle(v0: Vector2, v1: Vector2, v2: Vector2, col: Color, radius: float) -> void:

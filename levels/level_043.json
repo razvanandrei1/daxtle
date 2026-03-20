@@ -1,27 +1,151 @@
 {
-  "level": 43,
   "A": [
-    {"pos_x": 0, "pos_y": 0}, {"pos_x": 1, "pos_y": 0}, {"pos_x": 2, "pos_y": 0}, {"pos_x": 3, "pos_y": 0}, {"pos_x": 4, "pos_y": 0}, {"pos_x": 5, "pos_y": 0},
-    {"pos_x": 0, "pos_y": 1}, {"pos_x": 1, "pos_y": 1}, {"pos_x": 2, "pos_y": 1}, {"pos_x": 3, "pos_y": 1}, {"pos_x": 4, "pos_y": 1}, {"pos_x": 5, "pos_y": 1},
-    {"pos_x": 0, "pos_y": 2}, {"pos_x": 1, "pos_y": 2}, {"pos_x": 2, "pos_y": 2}, {"pos_x": 3, "pos_y": 2}, {"pos_x": 4, "pos_y": 2}, {"pos_x": 5, "pos_y": 2},
-    {"pos_x": 0, "pos_y": 3}, {"pos_x": 1, "pos_y": 3}, {"pos_x": 2, "pos_y": 3}, {"pos_x": 3, "pos_y": 3}, {"pos_x": 4, "pos_y": 3}, {"pos_x": 5, "pos_y": 3},
-    {"pos_x": 0, "pos_y": 4}, {"pos_x": 1, "pos_y": 4}, {"pos_x": 2, "pos_y": 4}, {"pos_x": 3, "pos_y": 4}, {"pos_x": 4, "pos_y": 4}, {"pos_x": 5, "pos_y": 4}
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      5,
+      0
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      2
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      4,
+      2
+    ],
+    [
+      5,
+      2
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      3,
+      3
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      5,
+      3
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      4,
+      4
+    ],
+    [
+      5,
+      4
+    ]
   ],
   "B": [
     {
-      "id": "B1", "dir": "right",
-      "squares": [{"pos_x": 0, "pos_y": 0}],
-      "origin_x": 0, "origin_y": 2,
-      "target_origin_x": 5, "target_origin_y": 2
+      "id": "B1",
+      "dir": "right",
+      "origin_x": 0,
+      "origin_y": 2,
+      "target_origin_x": 5,
+      "target_origin_y": 2
     },
     {
-      "id": "B2", "dir": "up",
-      "squares": [{"pos_x": 0, "pos_y": 0}],
-      "origin_x": 4, "origin_y": 2,
-      "target_origin_x": 4, "target_origin_y": 0
+      "id": "B2",
+      "dir": "up",
+      "origin_x": 4,
+      "origin_y": 2,
+      "target_origin_x": 4,
+      "target_origin_y": 0
     }
   ],
   "T": [
-    {"id": "T1", "ax": 1, "ay": 2, "bx": 3, "by": 2}
+    {
+      "id": "T1",
+      "ax": 1,
+      "ay": 2,
+      "bx": 3,
+      "by": 2
+    }
   ]
 }

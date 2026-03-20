@@ -15,10 +15,13 @@ var _play_scale:     float = 1.0
 var _settings_scale: float = 1.0
 
 
+var _safe_top: float
+
 func _ready() -> void:
 	_text_col = GameTheme.ACTIVE["text"]
 	_sub_col  = GameTheme.ACTIVE["text"]
 	_sub_col.a = 0.5
+	_safe_top = GameTheme.get_safe_area_top()
 
 
 func _draw() -> void:
@@ -27,7 +30,7 @@ func _draw() -> void:
 	# Title — "DAXTLE" top center
 	var title_fs := 72
 	var title_w  := _font_bold.get_string_size("DAXTLE", HORIZONTAL_ALIGNMENT_LEFT, -1, title_fs).x
-	var title_y  := vp.y * 0.28
+	var title_y  := maxf(vp.y * 0.28, _safe_top + 60.0)
 	draw_string(_font_bold, Vector2((vp.x - title_w) * 0.5, title_y),
 		"DAXTLE", HORIZONTAL_ALIGNMENT_LEFT, -1, title_fs, _text_col)
 

@@ -11,8 +11,10 @@ const WIN_NORMAL := Color(1.0, 1.0, 1.0, 1.0)
 const WIN_FADE   := Color(1.0, 1.0, 1.0, 0.0)
 
 signal level_loaded(n: int)
+signal first_move
 
 var current_level: int = 20
+var _moved: bool = false
 var value_a: float = 0.0
 
 var _board: Board
@@ -59,6 +61,10 @@ func _on_swipe(direction: String) -> void:
 
 	if movers.is_empty() and invalid.is_empty():
 		return
+
+	if not _moved:
+		_moved = true
+		first_move.emit()
 
 	_swipe_detector.enabled = false
 
@@ -109,8 +115,8 @@ func _on_swipe(direction: String) -> void:
 		var on_done := func() -> void:
 			if _check_win():
 				_on_win()
-			elif _is_dead_state():
-				_on_dead_state()
+			elif _is_stuck():
+				_on_stuck()
 			else:
 				_swipe_detector.enabled = true
 
@@ -159,75 +165,27 @@ func _check_win() -> bool:
 	return true
 
 
-func _on_win() -> void:
-	_swipe_detector.enabled = false
-
-	var tween := create_tween().set_parallel(true)
-
-	for block in _blocks:
-		# Pulse 1
-		tween.tween_property(block, "modulate", WIN_BRIGHT, 0.14) \
-			.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
-		tween.tween_property(block, "modulate", WIN_NORMAL, 0.14) \
-			.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE).set_delay(0.14)
-		# Pulse 2
-		tween.tween_property(block, "modulate", WIN_BRIGHT, 0.14) \
-			.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE).set_delay(0.28)
-		tween.tween_property(block, "modulate", WIN_NORMAL, 0.14) \
-			.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE).set_delay(0.42)
-		# Fade out
-		tween.tween_property(block, "modulate", WIN_FADE, 0.35) \
-			.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD).set_delay(0.56)
-
-	# Board fades out shortly after blocks begin fading
-	tween.tween_property(_board, "modulate", WIN_FADE, 0.40) \
-		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD).set_delay(0.70)
-
-	tween.finished.connect(func() -> void:
-		_load_level(clamp(current_level + 1, 1, LevelLoader.count_levels()))
-	)
+# Returns true if no block can move in any direction from the current state.
+func _is_stuck() -> bool:
+	for dir in ["left", "right", "up", "down"]:
+		var candidates: Array[Block] = []
+		for block in _blocks:
+			if block.data.dir == dir:
+				candidates.append(block)
+		if candidates.is_empty():
+			continue
+		var result := Movement.resolve(candidates, _blocks, _board_set, dir, _fixed_set, _teleport_map)
+		if not (result["movers"] as Array[Block]).is_empty():
+			return false
+	return true
 
 
-# --- Dead-state detection (BFS over reachable states) ---
-
-const _BFS_STATE_LIMIT := 8000  # safety cap; keeps detection fast on small levels
-
-func _is_dead_state() -> bool:
-	var initial := _encode_state()
-	var targets := _encode_targets()
-
-	if initial == targets:
-		return false  # already won, not dead
-
-	var visited := {_state_key(initial): true}
-	var queue   := [initial]
-
-	while not queue.is_empty():
-		var state: Array = queue.pop_front()
-
-		for dir in ["left", "right", "up", "down"]:
-			var next := _bfs_sim_move(state, dir)
-
-			if next == targets:
-				return false  # winning state reachable
-
-			var key := _state_key(next)
-			if not visited.has(key):
-				if visited.size() >= _BFS_STATE_LIMIT:
-					return false  # hit limit — assume not stuck (safe default)
-				visited[key] = true
-				queue.append(next)
-
-	return true  # exhausted all reachable states, no win found
-
-
-func _on_dead_state() -> void:
+func _on_stuck() -> void:
 	_swipe_detector.enabled = false
 
 	var origin := _board.position
-	var s      := value_a * 0.06  # shake amplitude
+	var s      := value_a * 0.06
 
-	# Gentle oscillation with easing — blocks are children of board so they shake too
 	var tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(_board, "position", origin + Vector2( s,       0), 0.08)
 	tween.tween_property(_board, "position", origin + Vector2(-s,       0), 0.09)
@@ -237,11 +195,99 @@ func _on_dead_state() -> void:
 
 	tween.finished.connect(func() -> void:
 		await get_tree().create_timer(0.25).timeout
-		_reset_blocks()
+		reset_level()
 	)
 
 
-func _reset_blocks() -> void:
+func _on_win() -> void:
+	_swipe_detector.enabled = false
+
+	# --- Phase 1: 2 flashes on B blocks ---
+	var flash := create_tween().set_parallel(true)
+	for block in _blocks:
+		flash.tween_property(block, "modulate", WIN_FADE, 0.10).set_delay(0.08)
+		flash.tween_property(block, "modulate", WIN_NORMAL, 0.10).set_delay(0.18)
+		flash.tween_property(block, "modulate", WIN_FADE, 0.10).set_delay(0.34)
+		flash.tween_property(block, "modulate", WIN_NORMAL, 0.10).set_delay(0.44)
+
+	flash.finished.connect(func() -> void:
+		_play_exit_chain()
+	)
+
+
+func _play_exit_chain() -> void:
+	# Reverse chain: bottom-right → top-left
+	var sorted_squares := _board.board_squares.duplicate()
+	sorted_squares.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return (a.x + a.y) > (b.x + b.y)
+	)
+	var n       := sorted_squares.size()
+	var stagger := _INTRO_CHAIN_TOTAL / maxi(n - 1, 1)
+
+	# Board squares scale down in reverse wave
+	for i in n:
+		var sq: Vector2i = sorted_squares[i]
+		var delay := i * stagger
+		var t := create_tween()
+		t.tween_method(func(v: float) -> void: _board.set_cell_scale(sq, v),
+			1.0, 0.0, _INTRO_CHAIN_SCALE) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+
+	# B blocks scale down during the same wave, timed by their cell diagonal
+	for block in _blocks:
+		var diag := block.grid_origin.x + block.grid_origin.y
+		var wave_index := 0
+		for j in n:
+			if (sorted_squares[j].x + sorted_squares[j].y) >= diag:
+				wave_index = j
+		var delay := wave_index * stagger
+		var captured := block
+		var t := create_tween()
+		t.tween_method(func(v: float) -> void: captured.block_scale = v,
+			1.0, 0.0, _INTRO_CHAIN_SCALE) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+
+	# Fixed blocks scale down in the same wave
+	for fb in _fixed_blocks:
+		var fb_diag := fb.data.origin.x + fb.data.origin.y
+		for sq in fb.data.squares:
+			var cell := fb.data.origin + sq
+			fb_diag = maxi(fb_diag, cell.x + cell.y)
+		var wave_index := 0
+		for j in n:
+			if (sorted_squares[j].x + sorted_squares[j].y) >= fb_diag:
+				wave_index = j
+		var delay := wave_index * stagger
+		var captured := fb
+		var t := create_tween()
+		t.tween_method(func(v: float) -> void: captured.block_scale = v,
+			1.0, 0.0, _INTRO_CHAIN_SCALE) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+
+	# Teleport portals scale down in the same wave
+	for tp in _teleports:
+		var diag := tp.portal_cell.x + tp.portal_cell.y
+		var wave_index := 0
+		for j in n:
+			if (sorted_squares[j].x + sorted_squares[j].y) >= diag:
+				wave_index = j
+		var delay := wave_index * stagger
+		var captured := tp
+		var t := create_tween()
+		t.tween_method(func(v: float) -> void: captured.block_scale = v,
+			1.0, 0.0, _INTRO_CHAIN_SCALE) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+
+	var total := _INTRO_CHAIN_TOTAL + _INTRO_CHAIN_SCALE + 0.15
+	get_tree().create_timer(total).timeout.connect(func() -> void:
+		_load_level(clamp(current_level + 1, 1, LevelLoader.count_levels()))
+	)
+
+
+func reset_level() -> void:
+	_swipe_detector.enabled = false
+	_moved = false
+	level_loaded.emit(current_level)  # triggers UI to hide reset icon via set_level
 	var slide := create_tween().set_parallel(true)
 	for block in _blocks:
 		block.grid_origin = block.data.origin
@@ -251,117 +297,6 @@ func _reset_blocks() -> void:
 	slide.finished.connect(func() -> void:
 		_swipe_detector.enabled = true
 	)
-
-
-# Simulate one swipe on an abstract state (Array of Vector2i origins, one per block).
-# Mirrors the push mechanic in Movement.resolve() without touching Block nodes.
-func _bfs_sim_move(origins: Array, direction: String) -> Array:
-	var dv := Vector2i.ZERO
-	match direction:
-		"right": dv = Vector2i( 1,  0)
-		"left":  dv = Vector2i(-1,  0)
-		"down":  dv = Vector2i( 0,  1)
-		_:       dv = Vector2i( 0, -1)
-
-	# Candidates: blocks whose dir matches
-	var active: Array[int] = []
-	for i in _blocks.size():
-		if _blocks[i].data.dir == direction:
-			active.append(i)
-
-	if active.is_empty():
-		return origins
-
-	# Push propagation
-	var frontier: Array[int] = active.duplicate()
-	while not frontier.is_empty():
-		var next_frontier: Array[int] = []
-		for ai in frontier:
-			var new_cells := _blocks[ai].data.cells(origins[ai] + dv)
-			for bi in _blocks.size():
-				if active.has(bi):
-					continue
-				for cell in _blocks[bi].data.cells(origins[bi]):
-					if new_cells.has(cell):
-						active.append(bi)
-						next_frontier.append(bi)
-						break
-		frontier = next_frontier
-
-	# Sort front-to-back
-	active.sort_custom(func(a: int, b: int) -> bool:
-		return (origins[a].x * dv.x + origins[a].y * dv.y) > \
-			   (origins[b].x * dv.x + origins[b].y * dv.y)
-	)
-
-	# Wall check — build new origins
-	var new_origins: Array = origins.duplicate()
-	var blocked_cells: Dictionary = {}
-
-	for ai in active:
-		var new_origin: Vector2i = origins[ai] + dv
-		var can_move   := true
-
-		# Check entrance is a valid board cell
-		for cell in _blocks[ai].data.cells(new_origin):
-			if not _board_set.has(cell) or _fixed_set.has(cell) or blocked_cells.has(cell):
-				can_move = false
-				break
-
-		if can_move:
-			if _teleport_map.has(new_origin):
-				var exit := _teleport_map[new_origin] as Vector2i
-				for cell in _blocks[ai].data.cells(exit):
-					if not _board_set.has(cell) or _fixed_set.has(cell) or blocked_cells.has(cell):
-						can_move = false
-						break
-				if can_move:
-					# T72 — continuation: try one extra step past exit
-					var cont := exit + dv
-					if _board_set.has(cont) and not _fixed_set.has(cont) \
-							and not blocked_cells.has(cont) and not _teleport_map.has(cont):
-						var cont_ok := true
-						for bi2 in _blocks.size():
-							if bi2 == ai or active.has(bi2):
-								continue
-							for cell in _blocks[bi2].data.cells(origins[bi2]):
-								if cell == cont:
-									cont_ok = false
-									break
-							if not cont_ok:
-								break
-						new_origins[ai] = cont if cont_ok else exit
-					else:
-						new_origins[ai] = exit
-			else:
-				new_origins[ai] = new_origin
-
-		if not can_move:
-			for cell in _blocks[ai].data.cells(origins[ai]):
-				blocked_cells[cell] = true
-
-	return new_origins
-
-
-func _encode_state() -> Array:
-	var s: Array = []
-	for block in _blocks:
-		s.append(block.grid_origin)
-	return s
-
-
-func _encode_targets() -> Array:
-	var t: Array = []
-	for block in _blocks:
-		t.append(block.data.target_origin)
-	return t
-
-
-func _state_key(origins: Array) -> String:
-	var parts: Array[String] = []
-	for o: Vector2i in origins:
-		parts.append("%d,%d" % [o.x, o.y])
-	return "|".join(parts)
 
 
 func go_next_level() -> void:
@@ -436,6 +371,7 @@ func _load_level(level_number: int) -> void:
 		block.setup(block_data, value_a, _board)
 		_blocks.append(block)
 
+	_moved = false
 	level_loaded.emit(current_level)
 	_play_intro_animation()
 

@@ -21,6 +21,7 @@ var _frame_size:    Vector2
 var _frame_stride:  float
 var _grid_origin:   Vector2   # grid origin inside frame (relative)
 var _frame_y:       float     # y position of frames
+var _safe_top:      float     # notch / status bar inset
 var _total_levels:  int
 var _total_pages:   int
 var _current_page:  int = 0
@@ -44,7 +45,12 @@ var _pulse_scale:   float = 1.0    # animated scale of the pulsed cell
 func _ready() -> void:
 	_total_levels = LevelLoader.count_levels()
 	_total_pages  = maxi(ceili(float(_total_levels) / LEVELS_PER_PAGE), 1)
+	_safe_top     = GameTheme.get_safe_area_top()
+	var vp        := get_viewport().get_visible_rect().size
+	var margin_x  := vp.x * Board.MARGIN
 	_back.pressed.connect(func() -> void: back_pressed.emit())
+	var title_cy := _safe_top + 32.0 + 62.0 * 0.5  # aligned with title vertical center
+	_back.position = Vector2(margin_x, title_cy)
 	_compute_layout()
 
 
@@ -55,7 +61,7 @@ func _compute_layout() -> void:
 	var inner_w  := frame_w - FRAME_PADDING * 2.0
 	var cell_w   := (inner_w - CELL_GAP * (COLS - 1)) / COLS
 
-	var avail_h  := vp.y - TOP_OFFSET - BOT_RESERVE
+	var avail_h  := vp.y - (TOP_OFFSET + _safe_top) - BOT_RESERVE
 	var inner_h  := avail_h - FRAME_PADDING * 2.0
 	var cell_h   := (inner_h - CELL_GAP * (ROWS - 1)) / ROWS
 
@@ -67,7 +73,7 @@ func _compute_layout() -> void:
 	_frame_size  = Vector2(frame_w, grid_h + FRAME_PADDING * 2.0)
 	_grid_origin = Vector2((frame_w - grid_w) * 0.5, FRAME_PADDING)
 	_frame_stride = frame_w + PAGE_GAP
-	_frame_y     = TOP_OFFSET + (avail_h - _frame_size.y) * 0.5
+	_frame_y     = TOP_OFFSET + _safe_top + (avail_h - _frame_size.y) * 0.5
 
 	_scroll_x = -_current_page * _frame_stride
 
@@ -82,10 +88,10 @@ func _draw() -> void:
 	var title_text := "Level select"
 	var title_w  := _font.get_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_fs).x
 	var title_asc := _font.get_ascent(title_fs)
-	var title_y  := 32.0 + (88.0 - 32.0 + title_asc) * 0.5
+	var title_y  := _safe_top + 32.0 + 62.0 * 0.5 + title_asc * 0.5
 	draw_string(_font, Vector2((vp.x - title_w) * 0.5, title_y),
 		title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_fs,
-		GameTheme.ACTIVE["surface"].darkened(0.30))
+		GameTheme.ACTIVE["text"])
 
 	# Frames
 	for page in _total_pages:
