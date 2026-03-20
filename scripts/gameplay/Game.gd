@@ -348,9 +348,8 @@ func _load_level(level_number: int) -> void:
 # Re-enables input when complete.
 
 const _INTRO_CHAIN_DELAY   := 0.10   # delay before chain starts
-const _INTRO_CHAIN_STAGGER := 0.04   # delay between successive squares
+const _INTRO_CHAIN_TOTAL   := 0.72   # total chain spread duration (stagger span), constant regardless of square count
 const _INTRO_CHAIN_SCALE   := 0.66   # scale-up duration per square
-const _INTRO_CHAIN_GAP     := 0.01   # pause between chain end and first block
 const _INTRO_STAGGER       := 0.09   # delay between successive blocks
 const _INTRO_SLIDE_DUR     := 0.36   # each block's slide duration
 const _INTRO_ARROW_DUR     := 0.10   # arrow fade-in duration after block lands
@@ -364,10 +363,12 @@ func _play_intro_animation() -> void:
 	sorted_squares.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
 		return (a.x + a.y) < (b.x + b.y)
 	)
-	for i in sorted_squares.size():
+	var n := sorted_squares.size()
+	var stagger := _INTRO_CHAIN_TOTAL / maxi(n - 1, 1)
+	for i in n:
 		var sq: Vector2i = sorted_squares[i]
 		_board.set_cell_scale(sq, 0.0)
-		var delay := _INTRO_CHAIN_DELAY + i * _INTRO_CHAIN_STAGGER
+		var delay := _INTRO_CHAIN_DELAY + i * stagger
 		var t     := create_tween()
 		t.tween_method(func(v: float) -> void: _board.set_cell_scale(sq, v),
 			0.0, 1.0, _INTRO_CHAIN_SCALE) \
@@ -384,24 +385,22 @@ func _play_intro_animation() -> void:
 		for j in sorted_squares.size():
 			if (sorted_squares[j].x + sorted_squares[j].y) <= fb_diag:
 				wave_index = j
-		var delay := _INTRO_CHAIN_DELAY + wave_index * _INTRO_CHAIN_STAGGER
+		var delay := _INTRO_CHAIN_DELAY + wave_index * stagger
 		var captured_fb := fb
 		var t := create_tween()
 		t.tween_method(func(v: float) -> void: captured_fb.block_scale = v,
 			0.0, 1.0, _INTRO_CHAIN_SCALE) \
 			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-	# Blocks scale up after the chain finishes, same style as board squares
-	var chain_end := _INTRO_CHAIN_DELAY \
-		+ maxi(sorted_squares.size() - 1, 0) * _INTRO_CHAIN_STAGGER \
-		+ _INTRO_CHAIN_SCALE
+	# Blocks scale up immediately after the chain finishes (no gap)
+	var chain_end := _INTRO_CHAIN_DELAY + _INTRO_CHAIN_TOTAL + _INTRO_CHAIN_SCALE
 
 	for i in _blocks.size():
 		var block := _blocks[i]
 		block.block_scale = 0.0
 		block.arrow_alpha = 0.0
 
-		var delay := chain_end + _INTRO_CHAIN_GAP + i * _INTRO_STAGGER
+		var delay := chain_end + i * _INTRO_STAGGER
 		var t     := create_tween()
 		t.tween_method(func(v: float) -> void: block.block_scale = v,
 			0.0, 1.0, _INTRO_SLIDE_DUR) \
@@ -411,9 +410,10 @@ func _play_intro_animation() -> void:
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 	# Enable input once all animations have finished
-	var total := chain_end + _INTRO_CHAIN_GAP \
+	var total := chain_end \
 		+ maxi(_blocks.size() - 1, 0) * _INTRO_STAGGER \
 		+ _INTRO_SLIDE_DUR + _INTRO_ARROW_DUR + _INTRO_HOLD
+
 	get_tree().create_timer(total).timeout.connect(func() -> void:
 		_swipe_detector.enabled = true
 	)

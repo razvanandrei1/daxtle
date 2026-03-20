@@ -51,9 +51,10 @@ func _draw_rounded_rect(rect: Rect2, col: Color, radius: float) -> void:
 
 
 # --- Direction arrow ---
-# Drawn as a filled triangle: clean and readable at any size.
+# Drawn as a rounded triangle matching the square corner style.
 const ARROW_LENGTH := 0.36  # tip-to-base as a fraction of value_a
 const ARROW_WIDTH  := 0.22  # half-width at base as a fraction of value_a
+const ARC_STEPS    := 6     # points per rounded corner arc
 
 func _draw_arrow() -> void:
 	if arrow_alpha <= 0.0:
@@ -72,13 +73,50 @@ func _draw_arrow() -> void:
 
 	var half_len   := value_a * ARROW_LENGTH * 0.5
 	var half_width := value_a * ARROW_WIDTH
+	var radius     := value_a * GameTheme.CORNER_FRACTION
 
 	for sq in data.squares:
-		var c    := Vector2(sq) * value_a + Vector2(value_a, value_a) * 0.5
-		var tip  := c + axis * half_len
-		var bl   := c - axis * half_len + perp * half_width
-		var br   := c - axis * half_len - perp * half_width
-		draw_polygon(
-			PackedVector2Array([tip, bl, br]),
-			PackedColorArray([arrow_color, arrow_color, arrow_color])
-		)
+		var c   := Vector2(sq) * value_a + Vector2(value_a, value_a) * 0.5
+		var tip := c + axis * half_len
+		var bl  := c - axis * half_len + perp * half_width
+		var br  := c - axis * half_len - perp * half_width
+		_draw_rounded_triangle(tip, bl, br, arrow_color, radius)
+
+
+func _draw_rounded_triangle(v0: Vector2, v1: Vector2, v2: Vector2, col: Color, radius: float) -> void:
+	var verts: Array[Vector2] = [v0, v1, v2]
+	var pts := PackedVector2Array()
+
+	for i in 3:
+		var prev: Vector2 = verts[(i + 2) % 3]
+		var curr: Vector2 = verts[i]
+		var next: Vector2 = verts[(i + 1) % 3]
+
+		var d1 := (prev - curr).normalized()
+		var d2 := (next - curr).normalized()
+
+		var dot_val    := clampf(d1.dot(d2), -1.0, 1.0)
+		var half_angle := acos(dot_val) * 0.5
+		if half_angle < 0.01:
+			pts.append(curr)
+			continue
+
+		var bisector   := (d1 + d2).normalized()
+		var arc_center := curr + bisector * (radius / sin(half_angle))
+		var t1         := curr + d1 * radius
+		var t2         := curr + d2 * radius
+
+		var a1   := (t1 - arc_center).angle()
+		var a2   := (t2 - arc_center).angle()
+		var diff := a2 - a1
+		while diff >  PI: diff -= TAU
+		while diff < -PI: diff += TAU
+
+		for j in (ARC_STEPS + 1):
+			var a := a1 + diff * float(j) / float(ARC_STEPS)
+			pts.append(arc_center + Vector2(cos(a), sin(a)) * radius)
+
+	draw_colored_polygon(pts, col)
+	var outline := pts.duplicate()
+	outline.append(pts[0])
+	draw_polyline(outline, col, 1.5, true)
