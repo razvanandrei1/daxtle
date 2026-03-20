@@ -1,5 +1,5 @@
 {
-  "A": [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0,1],[5, 0,1]],
+  "A": [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0, 1], [5, 0, 1]],
   "B": [
 	{
 	  "id": 1, "dir": "right",
@@ -10,5 +10,5 @@
 	  "origin": [2, 0]
 	}
   ],
-  "message": "Some blocks can move only when pushed by others."
+  "message": "Some blocks can't move on their own. Push them!"
 }
