@@ -14,7 +14,7 @@ var _start := Vector2.ZERO
 var _tracking := false
 
 
-func _input(event: InputEvent) -> void:
+func _unhandled_input(event: InputEvent) -> void:
 	if not enabled:
 		return
 

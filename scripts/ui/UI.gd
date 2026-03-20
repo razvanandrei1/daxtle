@@ -1,13 +1,13 @@
 extends CanvasLayer
 
-signal back_pressed
 signal reset_pressed
+signal menu_pressed
 
-@onready var _back:    BackArrow  = $BackArrow
-@onready var _reset:   ResetIcon  = $ResetIcon
-@onready var _level:   Label      = $LevelLabel
+@onready var _menu:      MenuIcon       = $MenuIcon
+@onready var _reset:     ResetIcon      = $ResetIcon
+@onready var _level:     Label          = $LevelLabel
 @onready var _msg_panel: PanelContainer = $MessagePanel
-@onready var _msg_label: Label     = $MessagePanel/MessageLabel
+@onready var _msg_label: Label          = $MessagePanel/MessageLabel
 
 
 func _ready() -> void:
@@ -17,14 +17,14 @@ func _ready() -> void:
 	var margin_x := vp.x * Board.MARGIN
 	var top_y    := safe_top + 32.0
 
-	_back.pressed.connect(func(): back_pressed.emit())
+	_menu.pressed.connect(func(): menu_pressed.emit())
 	_reset.pressed.connect(func(): reset_pressed.emit())
 
 	# Level label vertical center
 	var label_h  := 62.0
 	var label_cy := top_y + label_h * 0.5
 
-	_back.position  = Vector2(margin_x, label_cy)
+	_menu.position  = Vector2(margin_x, label_cy)
 	_reset.position = Vector2(vp.x - margin_x, label_cy)
 	_level.offset_top    = top_y
 	_level.offset_bottom = top_y + label_h
@@ -75,12 +75,6 @@ func set_message(text: String, board_bottom: float) -> void:
 	var zone_top := board_bottom + 20.0
 	var zone_bot := vp.y - maxf(safe_bot, 40.0)
 	var zone_h   := zone_bot - zone_top
-
-	# Reset anchors to top-left for absolute positioning
-	_msg_panel.anchor_left   = 0.0
-	_msg_panel.anchor_top    = 0.0
-	_msg_panel.anchor_right  = 0.0
-	_msg_panel.anchor_bottom = 0.0
 
 	# 80% of screen width, centered horizontally
 	var panel_w := vp.x * 0.80

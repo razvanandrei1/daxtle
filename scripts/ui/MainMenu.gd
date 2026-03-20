@@ -2,6 +2,7 @@ class_name MainMenu
 extends Node2D
 
 signal play_pressed
+signal select_level_pressed
 signal settings_pressed
 
 var _font:      Font  = GameTheme.FONT_BOLD
@@ -9,10 +10,12 @@ var _font_bold: Font  = GameTheme.FONT_BOLD
 var _text_col:  Color
 var _sub_col:   Color
 
-var _play_rect:     Rect2
-var _settings_rect: Rect2
-var _play_scale:     float = 1.0
-var _settings_scale: float = 1.0
+var _play_rect:         Rect2
+var _select_rect:       Rect2
+var _settings_rect:     Rect2
+var _play_scale:         float = 1.0
+var _select_scale:       float = 1.0
+var _settings_scale:     float = 1.0
 
 # Title animation
 const TITLE_LETTERS := "DAXTLE"
@@ -75,13 +78,19 @@ func _play_title_intro() -> void:
 
 
 func replay_intro() -> void:
-	# No-op: keep the screen as-is when returning from level select
-	pass
+	# Kill any paused tweens from initial intro
+	for tw in get_tree().get_processed_tweens():
+		if tw.is_valid():
+			tw.kill()
+	# Set everything to final visible state
+	_letter_scales.fill(1.0)
+	_slide_progress = 1.0
+	_ui_alpha = 1.0
+	queue_redraw()
 
 
 func _draw() -> void:
 	var vp := get_viewport().get_visible_rect().size
-
 	# Title blocks (always drawn, position animated)
 	_draw_title_blocks(vp)
 
@@ -90,10 +99,13 @@ func _draw() -> void:
 		return
 
 	# Play button
-	_play_rect = _draw_button("Play", vp.x * 0.5, vp.y * 0.52, _play_scale, true)
+	_play_rect = _draw_button("Play", vp.x * 0.5, vp.y * 0.48, _play_scale, true)
+
+	# Select Level button
+	_select_rect = _draw_button("Level Select", vp.x * 0.5, vp.y * 0.58, _select_scale, false)
 
 	# Settings button
-	_settings_rect = _draw_button("Settings", vp.x * 0.5, vp.y * 0.62, _settings_scale, false)
+	_settings_rect = _draw_button("Settings", vp.x * 0.5, vp.y * 0.68, _settings_scale, false)
 
 	# Subtitle
 	var sub_fs   := 22
@@ -194,7 +206,7 @@ func _draw_button(text: String, cx: float, cy: float, btn_scale: float, filled: 
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _ui_alpha < 0.9:
+	if _ui_alpha < 0.9 or not is_visible_in_tree():
 		return
 
 	var pos: Vector2
@@ -210,6 +222,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _play_rect.has_point(pos):
 		get_viewport().set_input_as_handled()
 		_pulse_button("play")
+	elif _select_rect.has_point(pos):
+		get_viewport().set_input_as_handled()
+		_pulse_button("select")
 	elif _settings_rect.has_point(pos):
 		get_viewport().set_input_as_handled()
 		_pulse_button("settings")
@@ -218,21 +233,26 @@ func _unhandled_input(event: InputEvent) -> void:
 func _pulse_button(which: String) -> void:
 	var tween := create_tween()
 	tween.tween_method(func(v: float) -> void:
-		if which == "play": _play_scale = v
-		else: _settings_scale = v
+		match which:
+			"play":     _play_scale = v
+			"select":   _select_scale = v
+			"settings": _settings_scale = v
 		queue_redraw()
 	, 1.0, 1.12, 0.09).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_method(func(v: float) -> void:
-		if which == "play": _play_scale = v
-		else: _settings_scale = v
+		match which:
+			"play":     _play_scale = v
+			"select":   _select_scale = v
+			"settings": _settings_scale = v
 		queue_redraw()
 	, 1.12, 1.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.finished.connect(func() -> void:
 		_play_scale = 1.0
+		_select_scale = 1.0
 		_settings_scale = 1.0
 		queue_redraw()
-		if which == "play":
-			play_pressed.emit()
-		else:
-			settings_pressed.emit()
+		match which:
+			"play":     play_pressed.emit()
+			"select":   select_level_pressed.emit()
+			"settings": settings_pressed.emit()
 	)

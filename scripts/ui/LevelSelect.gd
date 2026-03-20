@@ -2,7 +2,7 @@ class_name LevelSelect
 extends Node2D
 
 signal level_selected(n: int)
-signal back_pressed
+signal menu_pressed
 
 const COLS              := 4
 const ROWS              := 5
@@ -39,18 +39,10 @@ var _pulse_level:   int = -1       # level number being pulsed, -1 = none
 var _pulse_scale:   float = 1.0    # animated scale of the pulsed cell
 
 
-@onready var _back: BackArrow = $BackArrow
-
-
 func _ready() -> void:
 	_total_levels = LevelLoader.count_levels()
 	_total_pages  = maxi(ceili(float(_total_levels) / LEVELS_PER_PAGE), 1)
 	_safe_top     = GameTheme.get_safe_area_top()
-	var vp        := get_viewport().get_visible_rect().size
-	var margin_x  := vp.x * Board.MARGIN
-	_back.pressed.connect(func() -> void: back_pressed.emit())
-	var title_cy := _safe_top + 32.0 + 62.0 * 0.5  # aligned with title vertical center
-	_back.position = Vector2(margin_x, title_cy)
 	_compute_layout()
 
 
@@ -144,6 +136,8 @@ func _draw() -> void:
 # ── Input ────────────────────────────────────────────────────────────────────
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
 	# Touch start / end
 	if event is InputEventScreenTouch:
 		var t := event as InputEventScreenTouch

@@ -12,7 +12,6 @@ var _color: Color
 
 func _ready() -> void:
 	_color = GameTheme.ACTIVE["text"]
-	position += Vector2(ICON_SIZE * 0.5, ICON_SIZE * 0.5)
 
 
 func _draw() -> void:
@@ -44,6 +43,8 @@ func _draw() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
 	var pos: Vector2
 	if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
 		pos = (event as InputEventScreenTouch).position

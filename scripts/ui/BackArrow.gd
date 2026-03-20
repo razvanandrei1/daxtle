@@ -12,8 +12,6 @@ var _color: Color
 
 func _ready() -> void:
 	_color = GameTheme.ACTIVE["text"]
-	# Offset drawing so (0,0) is the center — scale then pivots from center
-	position += Vector2(ARROW_SIZE * 0.5, ARROW_SIZE * 0.5)
 
 
 func _draw() -> void:
@@ -30,6 +28,8 @@ func _draw() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
 	var pos: Vector2
 	if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
 		pos = (event as InputEventScreenTouch).position
@@ -47,7 +47,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	)
 	if hit.has_point(pos):
 		get_viewport().set_input_as_handled()
-		GameTheme.play_tap_pulse(self, func() -> void: pressed.emit())
+		pressed.emit()
+		GameTheme.play_tap_pulse(self, func() -> void: pass)
 
 
 func _draw_rounded_triangle(v0: Vector2, v1: Vector2, v2: Vector2, col: Color, radius: float) -> void:

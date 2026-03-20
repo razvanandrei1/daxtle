@@ -19,6 +19,7 @@ var _has_message: bool = false
 
 var current_level: int = 20
 var _moved: bool = false
+var _active: bool = false  # false while stopped or transitioning out
 var value_a: float = 0.0
 
 var _board: Board
@@ -41,7 +42,18 @@ func load_level(n: int) -> void:
 	_load_level(n)
 
 
+func stop() -> void:
+	_active = false
+	_swipe_detector.enabled = false
+	for tw in _intro_tweens:
+		if tw:
+			tw.kill()
+	_intro_tweens.clear()
+
+
 func _on_swipe(direction: String) -> void:
+	if not _active:
+		return
 	var candidates: Array[Block] = []
 	for block in _blocks:
 		if block.data.dir == direction:
@@ -199,7 +211,8 @@ func _on_stuck() -> void:
 
 	tween.finished.connect(func() -> void:
 		await get_tree().create_timer(0.25).timeout
-		reset_level()
+		if _active:
+			reset_level()
 	)
 
 
@@ -209,6 +222,8 @@ func _on_win() -> void:
 	if _has_message:
 		dismiss_message.emit()
 		await get_tree().create_timer(0.40).timeout
+		if not _active:
+			return
 
 	# --- Phase 1: 2 flashes on B blocks ---
 	var flash := create_tween().set_parallel(true)
@@ -288,7 +303,8 @@ func _play_exit_chain() -> void:
 
 	var total := _INTRO_CHAIN_TOTAL + _INTRO_CHAIN_SCALE + 0.15
 	get_tree().create_timer(total).timeout.connect(func() -> void:
-		_load_level(clamp(current_level + 1, 1, LevelLoader.count_levels()))
+		if _active:
+			_load_level(clamp(current_level + 1, 1, LevelLoader.count_levels()))
 	)
 
 
@@ -385,6 +401,7 @@ func _load_level(level_number: int) -> void:
 		_blocks.append(block)
 
 	_moved = false
+	_active = true
 	level_loaded.emit(current_level)
 	var mn_y := _board.board_squares[0].y
 	var mx_y := mn_y
@@ -489,6 +506,8 @@ func _play_intro_animation() -> void:
 		+ _INTRO_SLIDE_DUR + _INTRO_ARROW_DUR + _INTRO_HOLD
 
 	get_tree().create_timer(total).timeout.connect(func() -> void:
+		if not _active:
+			return
 		_swipe_detector.enabled = true
 		intro_finished.emit()
 	)
