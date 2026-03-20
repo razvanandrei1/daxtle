@@ -15,6 +15,9 @@ func _ready() -> void:
 	_level_select.back_pressed.connect(_on_level_select_back)
 	_game.level_loaded.connect(func(n: int) -> void: _ui.set_level(n))
 	_game.first_move.connect(func() -> void: _ui.show_reset())
+	_game.message_changed.connect(func(text: String, bb: float) -> void: _ui.set_message(text, bb))
+	_game.intro_finished.connect(func() -> void: _ui.animate_message())
+	_game.dismiss_message.connect(func() -> void: _ui.dismiss_message())
 
 	# Start on main menu — hide everything else
 	_game.visible              = false

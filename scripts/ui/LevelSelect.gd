@@ -4,11 +4,11 @@ extends Node2D
 signal level_selected(n: int)
 signal back_pressed
 
-const COLS              := 3
-const ROWS              := 4
-const LEVELS_PER_PAGE   := COLS * ROWS   # 12 — full grid per page
+const COLS              := 4
+const ROWS              := 5
+const LEVELS_PER_PAGE   := COLS * ROWS   # 20 — full grid per page
 const FRAME_PADDING     := 32.0
-const CELL_GAP          := 14.0
+const CELL_GAP          := 28.0
 const PAGE_GAP          := 40.0
 const FRAME_MARGIN      := 48.0
 const TOP_OFFSET        := 200.0
@@ -81,8 +81,6 @@ func _compute_layout() -> void:
 func _draw() -> void:
 	var vp     := get_viewport().get_visible_rect().size
 	var radius := _cell_size * GameTheme.CORNER_FRACTION
-	var frame_radius := radius * 2.5
-
 	# Title — centered, matching game scene level number style
 	var title_fs := 62
 	var title_text := "Level select"
@@ -93,16 +91,11 @@ func _draw() -> void:
 		title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_fs,
 		GameTheme.ACTIVE["text"])
 
-	# Frames
+	# Frames (no background)
 	for page in _total_pages:
 		var fx := FRAME_MARGIN + page * _frame_stride + _scroll_x
 		if fx + _frame_size.x < -50.0 or fx > vp.x + 50.0:
 			continue
-
-		# Frame background
-		var frame_col := GameTheme.ACTIVE["surface"]
-		frame_col.a    = 0.2
-		_draw_rounded_rect(Rect2(Vector2(fx, _frame_y), _frame_size), frame_col, frame_radius)
 
 		# Level cells
 		for row in ROWS:
@@ -135,10 +128,10 @@ func _draw() -> void:
 						draw_rect.position.y + (draw_rect.size.y + ascent) * 0.5),
 						num, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, GameTheme.ACTIVE["text"])
 
-	# Page dots
-	var dot_y   := _frame_y + _frame_size.y + 30.0
-	var dot_r   := 6.0
-	var dot_gap := 24.0
+	# Page dots — positioned above the bottom
+	var dot_y   := vp.y - 80.0
+	var dot_r   := 8.0
+	var dot_gap := 28.0
 	var dots_w  := _total_pages * dot_r * 2.0 + (_total_pages - 1) * dot_gap
 	var dot_x0  := (vp.x - dots_w) * 0.5 + dot_r
 

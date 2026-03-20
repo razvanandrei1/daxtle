@@ -12,6 +12,10 @@ const WIN_FADE   := Color(1.0, 1.0, 1.0, 0.0)
 
 signal level_loaded(n: int)
 signal first_move
+signal message_changed(text: String, board_bottom: float)
+signal intro_finished
+signal dismiss_message
+var _has_message: bool = false
 
 var current_level: int = 20
 var _moved: bool = false
@@ -202,6 +206,10 @@ func _on_stuck() -> void:
 func _on_win() -> void:
 	_swipe_detector.enabled = false
 
+	if _has_message:
+		dismiss_message.emit()
+		await get_tree().create_timer(0.40).timeout
+
 	# --- Phase 1: 2 flashes on B blocks ---
 	var flash := create_tween().set_parallel(true)
 	for block in _blocks:
@@ -364,6 +372,11 @@ func _load_level(level_number: int) -> void:
 
 	# Blocks — added as children of the board so they share its coordinate space
 	var blocks_data := LevelLoader.get_blocks(level_data)
+	var targets     := LevelLoader.get_targets(level_data)
+	for bd in blocks_data:
+		var block_num := int(bd.id.substr(1))
+		if targets.has(block_num):
+			bd.target_origin = targets[block_num]
 	_board.set_targets(blocks_data)
 	for block_data in blocks_data:
 		var block := BlockScene.instantiate() as Block
@@ -373,6 +386,15 @@ func _load_level(level_number: int) -> void:
 
 	_moved = false
 	level_loaded.emit(current_level)
+	var mn_y := _board.board_squares[0].y
+	var mx_y := mn_y
+	for sq in _board.board_squares:
+		mn_y = mini(mn_y, sq.y)
+		mx_y = maxi(mx_y, sq.y)
+	var board_bottom := _board.position.y + (mx_y - mn_y + 1) * value_a
+	var msg := LevelLoader.get_message(level_data)
+	_has_message = not msg.is_empty()
+	message_changed.emit(msg, board_bottom)
 	_play_intro_animation()
 
 
@@ -468,6 +490,7 @@ func _play_intro_animation() -> void:
 
 	get_tree().create_timer(total).timeout.connect(func() -> void:
 		_swipe_detector.enabled = true
+		intro_finished.emit()
 	)
 
 # --- Teleport portal visual feedback ---

@@ -1,29 +1,17 @@
 {
-  "A": [[0, 0], [1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2]],
+  "A": [[0, 0], [1, 0], [2, 0], [3, 0, 1], [0, 1], [1, 1], [2, 1, 2], [0, 2], [1, 2, 3]],
   "B": [
     {
-      "id": "B1",
-      "dir": "right",
-      "origin_x": 0,
-      "origin_y": 0,
-      "target_origin_x": 3,
-      "target_origin_y": 0
+      "id": 1, "dir": "right",
+      "origin": [0, 0]
     },
     {
-      "id": "B2",
-      "dir": "down",
-      "origin_x": 2,
-      "origin_y": 0,
-      "target_origin_x": 2,
-      "target_origin_y": 1
+      "id": 2, "dir": "down",
+      "origin": [2, 0]
     },
     {
-      "id": "B3",
-      "dir": "down",
-      "origin_x": 1,
-      "origin_y": 0,
-      "target_origin_x": 1,
-      "target_origin_y": 2
+      "id": 3, "dir": "down",
+      "origin": [1, 0]
     }
   ]
 }

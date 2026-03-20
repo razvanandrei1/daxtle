@@ -25,3 +25,16 @@ grow_horizontal = 2
 theme_override_font_sizes/font_size = 38
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="MessagePanel" type="PanelContainer" parent="."]
+offset_left = 108.0
+offset_top = 1400.0
+offset_right = 972.0
+offset_bottom = 1500.0
+
+[node name="MessageLabel" type="Label" parent="MessagePanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2

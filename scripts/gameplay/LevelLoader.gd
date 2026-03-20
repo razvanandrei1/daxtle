@@ -67,6 +67,10 @@ static func get_teleports(level_data: Dictionary) -> Array[TeleportData]:
 	return pairs
 
 
+static func get_message(level_data: Dictionary) -> String:
+	return level_data.get("message", "")
+
+
 static func get_board_squares(level_data: Dictionary) -> Array[Vector2i]:
 	if not level_data.has("A"):
 		push_error("LevelLoader: level data missing 'A' array")
@@ -75,3 +79,15 @@ static func get_board_squares(level_data: Dictionary) -> Array[Vector2i]:
 	for entry in level_data["A"]:
 		squares.append(Vector2i(entry[0], entry[1]))
 	return squares
+
+
+# Returns a mapping of block id (int) -> target cell (Vector2i)
+# from A entries with a 3rd element: [x, y, block_id]
+static func get_targets(level_data: Dictionary) -> Dictionary:
+	var targets := {}
+	if not level_data.has("A"):
+		return targets
+	for entry in level_data["A"]:
+		if entry.size() >= 3:
+			targets[int(entry[2])] = Vector2i(entry[0], entry[1])
+	return targets

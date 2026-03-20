@@ -8,10 +8,9 @@ var target_origin: Vector2i  # target grid position
 
 static func from_dict(d: Dictionary) -> BlockData:
 	var b := BlockData.new()
-	b.id            = d["id"]
+	b.id            = "B%d" % int(d["id"])
 	b.dir           = d["dir"]
-	b.origin        = Vector2i(d["origin_x"],        d["origin_y"])
-	b.target_origin = Vector2i(d["target_origin_x"], d["target_origin_y"])
+	b.origin        = Vector2i(d["origin"][0], d["origin"][1])
 	return b
 
 
