@@ -3,6 +3,7 @@ extends Node2D
 const BoardScene      := preload("res://scenes/Board.tscn")
 const BlockScene      := preload("res://scenes/Block.tscn")
 const FixedBlockScene := preload("res://scenes/FixedBlock.tscn")
+const TeleportScene   := preload("res://scenes/Teleport.tscn")
 const MOVE_DURATION := 0.13 # seconds per slide animation
 
 const WIN_BRIGHT := Color(1.5, 1.5, 1.5, 1.0)  # brightened modulate for glow pulse
@@ -17,8 +18,10 @@ var value_a: float = 0.0
 var _board: Board
 var _blocks: Array[Block] = []
 var _fixed_blocks: Array[FixedBlock] = []
-var _board_set: Dictionary = {}   # Vector2i -> true, for fast cell lookup
-var _fixed_set: Dictionary = {}   # Vector2i -> true, C block occupied cells
+var _board_set:    Dictionary = {}   # Vector2i -> true, for fast cell lookup
+var _fixed_set:    Dictionary = {}   # Vector2i -> true, C block occupied cells
+var _teleport_map: Dictionary = {}   # Vector2i -> Vector2i, portal entrance -> exit
+var _teleports:    Array[Teleport] = []
 var _swipe_detector: SwipeDetector
 var _intro_tweens: Array[Tween] = []
 
@@ -48,9 +51,10 @@ func _on_swipe(direction: String) -> void:
 		"down":  dv = Vector2i( 0,  1)
 		_:       dv = Vector2i( 0, -1)
 
-	var result   := Movement.resolve(candidates, _blocks, _board_set, direction, _fixed_set)
-	var movers:  Array[Block] = result["movers"]
-	var invalid: Array[Block] = result["invalid"]
+	var result          := Movement.resolve(candidates, _blocks, _board_set, direction, _fixed_set, _teleport_map)
+	var movers:          Array[Block] = result["movers"]
+	var invalid:         Array[Block] = result["invalid"]
+	var teleport_exits:  Dictionary   = result["teleport_exits"]
 
 	if movers.is_empty() and invalid.is_empty():
 		return
@@ -60,7 +64,10 @@ func _on_swipe(direction: String) -> void:
 	if not movers.is_empty():
 		var tween := create_tween().set_parallel(true)
 		for block in movers:
-			block.grid_origin += dv  # always swipe direction, even for pushed blocks
+			if teleport_exits.has(block):
+				block.grid_origin = teleport_exits[block]
+			else:
+				block.grid_origin += dv
 			var target_pos := _board.grid_to_local(block.grid_origin)
 			tween.tween_property(block, "position", target_pos, MOVE_DURATION) \
 				.set_trans(Tween.TRANS_CUBIC) \
@@ -254,17 +261,27 @@ func _bfs_sim_move(origins: Array, direction: String) -> Array:
 
 	for ai in active:
 		var new_origin: Vector2i = origins[ai] + dv
-		var new_cells  := _blocks[ai].data.cells(new_origin)
 		var can_move   := true
 
-		for cell in new_cells:
+		# Check entrance is a valid board cell
+		for cell in _blocks[ai].data.cells(new_origin):
 			if not _board_set.has(cell) or _fixed_set.has(cell) or blocked_cells.has(cell):
 				can_move = false
 				break
 
 		if can_move:
-			new_origins[ai] = new_origin
-		else:
+			if _teleport_map.has(new_origin):
+				var exit := _teleport_map[new_origin] as Vector2i
+				for cell in _blocks[ai].data.cells(exit):
+					if not _board_set.has(cell) or _fixed_set.has(cell) or blocked_cells.has(cell):
+						can_move = false
+						break
+				if can_move:
+					new_origins[ai] = exit
+			else:
+				new_origins[ai] = new_origin
+
+		if not can_move:
 			for cell in _blocks[ai].data.cells(origins[ai]):
 				blocked_cells[cell] = true
 
@@ -310,8 +327,10 @@ func _load_level(level_number: int) -> void:
 		_board.queue_free()
 	_blocks.clear()
 	_fixed_blocks.clear()
+	_teleports.clear()
 	_board_set.clear()
 	_fixed_set.clear()
+	_teleport_map.clear()
 
 	var level_data := LevelLoader.load_level(level_number)
 	if level_data.is_empty():
@@ -338,6 +357,17 @@ func _load_level(level_number: int) -> void:
 		_fixed_blocks.append(fb)
 		for cell in fd.cells():
 			_fixed_set[cell] = true
+
+	# Teleport portals (T) — added before blocks so they render beneath them
+	var teleport_data := LevelLoader.get_teleports(level_data)
+	for td in teleport_data:
+		_teleport_map[td.portal_a] = td.portal_b
+		_teleport_map[td.portal_b] = td.portal_a
+		for cell in [td.portal_a, td.portal_b]:
+			var tp := TeleportScene.instantiate() as Teleport
+			_board.add_child(tp)
+			tp.setup(cell, value_a, _board)
+			_teleports.append(tp)
 
 	# Blocks — added as children of the board so they share its coordinate space
 	var blocks_data := LevelLoader.get_blocks(level_data)
@@ -400,6 +430,22 @@ func _play_intro_animation() -> void:
 		var t := create_tween()
 		_intro_tweens.append(t)
 		t.tween_method(func(v: float) -> void: captured_fb.block_scale = v,
+			0.0, 1.0, _INTRO_CHAIN_SCALE) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	# Teleport portals scale in during the same wave, timed by their cell diagonal
+	for tp in _teleports:
+		tp.block_scale = 0.0
+		var diag := tp.portal_cell.x + tp.portal_cell.y
+		var wave_index := 0
+		for j in sorted_squares.size():
+			if (sorted_squares[j].x + sorted_squares[j].y) <= diag:
+				wave_index = j
+		var delay      := _INTRO_CHAIN_DELAY + wave_index * stagger
+		var captured   := tp
+		var t          := create_tween()
+		_intro_tweens.append(t)
+		t.tween_method(func(v: float) -> void: captured.block_scale = v,
 			0.0, 1.0, _INTRO_CHAIN_SCALE) \
 			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 

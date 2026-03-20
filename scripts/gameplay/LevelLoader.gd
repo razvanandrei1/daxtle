@@ -58,6 +58,15 @@ static func get_fixed_blocks(level_data: Dictionary) -> Array[FixedBlockData]:
 	return blocks
 
 
+static func get_teleports(level_data: Dictionary) -> Array[TeleportData]:
+	if not level_data.has("T"):
+		return []
+	var pairs: Array[TeleportData] = []
+	for entry in level_data["T"]:
+		pairs.append(TeleportData.from_dict(entry))
+	return pairs
+
+
 static func get_board_squares(level_data: Dictionary) -> Array[Vector2i]:
 	if not level_data.has("A"):
 		push_error("LevelLoader: level data missing 'A' array")

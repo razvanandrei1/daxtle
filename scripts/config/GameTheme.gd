@@ -49,4 +49,8 @@ const ACTIVE := WARM_SAND
 
 # ── Layout constants ────────────────────────────────────────────────────────
 const GAP_FRACTION    := 0.042   # gap between cells as a fraction of cell size
-const CORNER_FRACTION := 0.08   # corner radius as a fraction of cell size
+const CORNER_FRACTION := 0.08    # corner radius as a fraction of cell size
+
+# ── Teleport portal colour ───────────────────────────────────────────────────
+# A single accent colour used for all T elements, theme-independent.
+const TELEPORT_COLOR := Color(0.58, 0.28, 0.86)
