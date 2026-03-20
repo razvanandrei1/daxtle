@@ -15,6 +15,11 @@ run/main_scene="res://scenes/ui/Main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[gui]
+
+theme/custom_font="res://assets/fonts/Nunito-Bold.tres"
+theme/custom_font_color=Color(0.17, 0.45, 0.40, 1)
+
 [display]
 
 window/size/viewport_width=1080

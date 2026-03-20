@@ -4,7 +4,12 @@
       "Bash(for f:*)",
       "Bash(do echo:*)",
       "Read(//Users/razvanandrei/daxtle/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(python3:*)",
+      "Bash(curl -sL \"https://github.com/googlefonts/nunito/raw/main/fonts/ttf/Nunito-Medium.ttf\" -o /Users/razvanandrei/daxtle/assets/fonts/Nunito-Medium.ttf)",
+      "Bash(curl -sL \"https://github.com/googlefonts/nunito/raw/main/fonts/ttf/Nunito-SemiBold.ttf\" -o /Users/razvanandrei/daxtle/assets/fonts/Nunito-SemiBold.ttf)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/googlefonts/nunito/main/fonts/ttf/Nunito-Medium.ttf\" -o /Users/razvanandrei/daxtle/assets/fonts/Nunito-Medium.ttf)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/googlefonts/nunito/main/fonts/ttf/Nunito-SemiBold.ttf\" -o /Users/razvanandrei/daxtle/assets/fonts/Nunito-SemiBold.ttf)"
     ]
   }
 }

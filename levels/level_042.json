@@ -1,0 +1,25 @@
+{
+  "level": 42,
+  "A": [
+    {"pos_x": 0, "pos_y": 0}, {"pos_x": 1, "pos_y": 0}, {"pos_x": 2, "pos_y": 0}, {"pos_x": 3, "pos_y": 0}, {"pos_x": 4, "pos_y": 0}, {"pos_x": 5, "pos_y": 0},
+    {"pos_x": 0, "pos_y": 1}, {"pos_x": 1, "pos_y": 1}, {"pos_x": 2, "pos_y": 1}, {"pos_x": 3, "pos_y": 1}, {"pos_x": 4, "pos_y": 1}, {"pos_x": 5, "pos_y": 1},
+    {"pos_x": 0, "pos_y": 2}, {"pos_x": 1, "pos_y": 2}, {"pos_x": 2, "pos_y": 2}, {"pos_x": 3, "pos_y": 2}, {"pos_x": 4, "pos_y": 2}, {"pos_x": 5, "pos_y": 2}
+  ],
+  "B": [
+    {
+      "id": "B1", "dir": "up",
+      "squares": [{"pos_x": 0, "pos_y": 0}],
+      "origin_x": 0, "origin_y": 2,
+      "target_origin_x": 0, "target_origin_y": 0
+    },
+    {
+      "id": "B2", "dir": "left",
+      "squares": [{"pos_x": 0, "pos_y": 0}],
+      "origin_x": 5, "origin_y": 1,
+      "target_origin_x": 0, "target_origin_y": 1
+    }
+  ],
+  "T": [
+    {"id": "T1", "ax": 4, "ay": 1, "bx": 1, "by": 1}
+  ]
+}
