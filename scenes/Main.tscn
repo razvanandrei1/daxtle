@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://cjnrhty1la388"]
+
+[ext_resource type="Script" uid="uid://bkdxcp288vijh" path="res://scripts/ui/Main.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://5puajvtcogs5" path="res://scenes/Game.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://cepb1yv61iogs" path="res://scenes/UI.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://cld7rfb8gsivv" path="res://scenes/LevelSelect.tscn" id="4"]
+
+[node name="Main" type="Node" unique_id=1921209632]
+script = ExtResource("1")
+
+[node name="Game" parent="." unique_id=1628121520 instance=ExtResource("2")]
+
+[node name="UI" parent="." unique_id=1562383566 instance=ExtResource("3")]
+
+[node name="LevelSelect" parent="." unique_id=470594383 instance=ExtResource("4")]
