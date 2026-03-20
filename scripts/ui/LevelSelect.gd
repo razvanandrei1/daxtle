@@ -39,10 +39,17 @@ var _pulse_level:   int = -1       # level number being pulsed, -1 = none
 var _pulse_scale:   float = 1.0    # animated scale of the pulsed cell
 
 
+@onready var _menu: MenuIcon = $MenuIcon
+
 func _ready() -> void:
 	_total_levels = LevelLoader.count_levels()
 	_total_pages  = maxi(ceili(float(_total_levels) / LEVELS_PER_PAGE), 1)
 	_safe_top     = GameTheme.get_safe_area_top()
+	var vp       := get_viewport().get_visible_rect().size
+	var margin_x := vp.x * Board.MARGIN
+	var title_cy := _safe_top + 32.0 + 62.0 * 0.5
+	_menu.pressed.connect(func() -> void: menu_pressed.emit())
+	_menu.position = Vector2(margin_x, title_cy)
 	_compute_layout()
 
 

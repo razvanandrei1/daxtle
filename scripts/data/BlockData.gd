@@ -3,7 +3,7 @@ class_name BlockData
 var id: String
 var dir: String              # "left" | "right" | "up" | "down" | "none"
 var origin: Vector2i         # starting grid position
-var target_origin: Vector2i  # target grid position
+var target_origins: Array[Vector2i] = []  # one or more valid target positions
 
 
 static func from_dict(d: Dictionary) -> BlockData:

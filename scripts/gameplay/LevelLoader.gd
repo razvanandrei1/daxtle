@@ -81,7 +81,7 @@ static func get_board_squares(level_data: Dictionary) -> Array[Vector2i]:
 	return squares
 
 
-# Returns a mapping of block id (int) -> target cell (Vector2i)
+# Returns a mapping of block id (int) -> Array[Vector2i] of target cells
 # from A entries with a 3rd element: [x, y, block_id]
 static func get_targets(level_data: Dictionary) -> Dictionary:
 	var targets := {}
@@ -89,5 +89,9 @@ static func get_targets(level_data: Dictionary) -> Dictionary:
 		return targets
 	for entry in level_data["A"]:
 		if entry.size() >= 3:
-			targets[int(entry[2])] = Vector2i(entry[0], entry[1])
+			var bid := int(entry[2])
+			var cell := Vector2i(entry[0], entry[1])
+			if not targets.has(bid):
+				targets[bid] = []
+			targets[bid].append(cell)
 	return targets

@@ -13,6 +13,7 @@ func _ready() -> void:
 	_ui.menu_pressed.connect(_on_menu_pressed)
 	_ui.reset_pressed.connect(func() -> void: _game.reset_level())
 	_level_select.level_selected.connect(_on_level_selected)
+	_level_select.menu_pressed.connect(_on_menu_pressed)
 	_game.level_loaded.connect(_on_level_loaded)
 	_game.first_move.connect(func() -> void: _ui.show_reset())
 	_game.message_changed.connect(func(text: String, bb: float) -> void: _ui.set_message(text, bb))

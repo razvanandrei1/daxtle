@@ -36,7 +36,9 @@ func setup(squares: Array[Vector2i]) -> float:
 func set_targets(blocks_data: Array[BlockData]) -> void:
 	_target_colors.clear()
 	for block_data in blocks_data:
-		_target_colors[block_data.target_origin] = BlockColors.get_target_color(block_data.id)
+		var tint := BlockColors.get_target_color(block_data.id)
+		for cell in block_data.target_origins:
+			_target_colors[cell] = tint
 	queue_redraw()
 
 

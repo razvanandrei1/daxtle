@@ -42,6 +42,40 @@ func load_level(n: int) -> void:
 	_load_level(n)
 
 
+# Debug: skip intro animation and jump to a level instantly
+func _debug_load(n: int) -> void:
+	n = clampi(n, 1, LevelLoader.count_levels())
+	stop()
+	_load_level(n)
+	# Skip intro — set everything to final state immediately
+	for tw in _intro_tweens:
+		if tw:
+			tw.kill()
+	_intro_tweens.clear()
+	for sq in _board.board_squares:
+		_board.set_cell_scale(sq, 1.0)
+	for fb in _fixed_blocks:
+		fb.block_scale = 1.0
+	for tp in _teleports:
+		tp.block_scale = 1.0
+	for block in _blocks:
+		block.block_scale = 1.0
+		block.arrow_alpha = 1.0
+	_swipe_detector.enabled = true
+	_active = true
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _active:
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		match event.keycode:
+			KEY_COMMA:
+				_debug_load(current_level - 1)
+			KEY_PERIOD:
+				_debug_load(current_level + 1)
+
+
 func stop() -> void:
 	_active = false
 	_swipe_detector.enabled = false
@@ -176,7 +210,7 @@ func _shake_blocks(blocks: Array[Block], direction: String, re_enable_after: boo
 
 func _check_win() -> bool:
 	for block in _blocks:
-		if block.grid_origin != block.data.target_origin:
+		if not block.data.target_origins.has(block.grid_origin):
 			return false
 	return true
 
@@ -392,7 +426,7 @@ func _load_level(level_number: int) -> void:
 	for bd in blocks_data:
 		var block_num := int(bd.id.substr(1))
 		if targets.has(block_num):
-			bd.target_origin = targets[block_num]
+			bd.target_origins.assign(targets[block_num])
 	_board.set_targets(blocks_data)
 	for block_data in blocks_data:
 		var block := BlockScene.instantiate() as Block
