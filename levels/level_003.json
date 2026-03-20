@@ -1,70 +1,21 @@
 {
-  "A": [
-    [
-      0,
-      0
-    ],
-    [
-      1,
-      0
-    ],
-    [
-      2,
-      0
-    ],
-    [
-      3,
-      0
-    ],
-    [
-      0,
-      1
-    ],
-    [
-      1,
-      1
-    ],
-    [
-      2,
-      1
-    ],
-    [
-      3,
-      1
-    ],
-    [
-      0,
-      2
-    ],
-    [
-      1,
-      2
-    ],
-    [
-      2,
-      2
-    ],
-    [
-      3,
-      2
-    ]
-  ],
+  "A": [[0, 0], [1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1], [3, 1], [0, 2], [1, 2], [2, 2], [3, 2]],
   "B": [
-    {
-      "id": "B1",
-      "dir": "right",
-      "origin_x": 0,
-      "origin_y": 0,
-      "target_origin_x": 3,
-      "target_origin_y": 0
-    },
-    {
-      "id": "B2",
-      "dir": "left",
-      "origin_x": 3,
-      "origin_y": 2,
-      "target_origin_x": 0,
-      "target_origin_y": 2
-    }
+	{
+	  "id": "B1",
+	  "dir": "right",
+	  "origin_x": 0,
+	  "origin_y": 0,
+	  "target_origin_x": 3,
+	  "target_origin_y": 0
+	},
+	{
+	  "id": "B2",
+	  "dir": "left",
+	  "origin_x": 3,
+	  "origin_y": 2,
+	  "target_origin_x": 0,
+	  "target_origin_y": 2
+	}
   ]
 }

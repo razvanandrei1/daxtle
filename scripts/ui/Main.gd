@@ -46,6 +46,7 @@ func _on_level_select_back() -> void:
 	_level_select.process_mode = Node.PROCESS_MODE_DISABLED
 	_main_menu.visible         = true
 	_main_menu.process_mode    = Node.PROCESS_MODE_INHERIT
+	_main_menu.replay_intro()
 
 
 func _on_back_pressed() -> void:
