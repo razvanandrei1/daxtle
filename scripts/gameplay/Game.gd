@@ -20,12 +20,16 @@ var _fixed_blocks: Array[FixedBlock] = []
 var _board_set: Dictionary = {}   # Vector2i -> true, for fast cell lookup
 var _fixed_set: Dictionary = {}   # Vector2i -> true, C block occupied cells
 var _swipe_detector: SwipeDetector
+var _intro_tweens: Array[Tween] = []
 
 
 func _ready() -> void:
 	_swipe_detector = $SwipeDetector
 	_swipe_detector.swiped.connect(_on_swipe)
-	_load_level(current_level)
+
+
+func load_level(n: int) -> void:
+	_load_level(n)
 
 
 func _on_swipe(direction: String) -> void:
@@ -297,6 +301,11 @@ func go_prev_level() -> void:
 
 
 func _load_level(level_number: int) -> void:
+	for tw in _intro_tweens:
+		if tw:
+			tw.kill()
+	_intro_tweens.clear()
+
 	if _board:
 		_board.queue_free()
 	_blocks.clear()
@@ -370,6 +379,7 @@ func _play_intro_animation() -> void:
 		_board.set_cell_scale(sq, 0.0)
 		var delay := _INTRO_CHAIN_DELAY + i * stagger
 		var t     := create_tween()
+		_intro_tweens.append(t)
 		t.tween_method(func(v: float) -> void: _board.set_cell_scale(sq, v),
 			0.0, 1.0, _INTRO_CHAIN_SCALE) \
 			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -388,6 +398,7 @@ func _play_intro_animation() -> void:
 		var delay := _INTRO_CHAIN_DELAY + wave_index * stagger
 		var captured_fb := fb
 		var t := create_tween()
+		_intro_tweens.append(t)
 		t.tween_method(func(v: float) -> void: captured_fb.block_scale = v,
 			0.0, 1.0, _INTRO_CHAIN_SCALE) \
 			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -402,6 +413,7 @@ func _play_intro_animation() -> void:
 
 		var delay := chain_end + i * _INTRO_STAGGER
 		var t     := create_tween()
+		_intro_tweens.append(t)
 		t.tween_method(func(v: float) -> void: block.block_scale = v,
 			0.0, 1.0, _INTRO_SLIDE_DUR) \
 			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
