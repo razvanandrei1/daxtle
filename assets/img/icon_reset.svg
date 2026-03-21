@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 58 58" width="58" height="58">
+  <!-- Circular refresh arrow: ¾ arc with arrowhead -->
+  <path d="M 33,10 A 18,18 0 1 0 44,29"
+        fill="none" stroke="#2B7366" stroke-width="6"
+        stroke-linecap="round"/>
+  <!-- Arrowhead at the gap -->
+  <path d="M 28,4 L 35,11 L 26,14"
+        fill="none" stroke="#2B7366" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

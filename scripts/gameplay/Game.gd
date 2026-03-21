@@ -84,6 +84,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_debug_load(current_level - 1)
 			KEY_PERIOD:
 				_debug_load(current_level + 1)
+			KEY_R:
+				_debug_load(current_level)
 
 
 func stop() -> void:

@@ -15,4 +15,4 @@ static func get_color(block_id: String) -> Color:
 # Returns a muted version of a block's colour for use as a target zone tint.
 static func get_target_color(block_id: String) -> Color:
 	var c := get_color(block_id)
-	return Color(c.r, c.g, c.b, 0.35)
+	return Color(c.r, c.g, c.b, 0.50)
