@@ -47,7 +47,7 @@ func _ready() -> void:
 	_safe_top     = GameTheme.get_safe_area_top()
 	var vp       := get_viewport().get_visible_rect().size
 	var margin_x := vp.x * Board.MARGIN
-	var title_cy := _safe_top + 32.0 + 62.0 * 0.5
+	var title_cy := _safe_top + Globals.TOP_OFFSET + Globals.LABEL_HEIGHT * 0.5
 	_menu.pressed.connect(func() -> void: menu_pressed.emit())
 	_menu.position = Vector2(margin_x, title_cy)
 	_compute_layout()
@@ -85,7 +85,7 @@ func _draw() -> void:
 	var title_text := "Level select"
 	var title_w  := _font.get_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_fs).x
 	var title_asc := _font.get_ascent(title_fs)
-	var title_y  := _safe_top + 32.0 + 62.0 * 0.5 + title_asc * 0.5
+	var title_y  := _safe_top + Globals.TOP_OFFSET + Globals.LABEL_HEIGHT * 0.5 + title_asc * 0.5
 	draw_string(_font, Vector2((vp.x - title_w) * 0.5, title_y),
 		title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_fs,
 		GameTheme.ACTIVE["text"])

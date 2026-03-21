@@ -46,6 +46,10 @@ var _intro_tweens: Array[Tween] = []
 func _ready() -> void:
 	_swipe_detector = $SwipeDetector
 	_swipe_detector.swiped.connect(_on_swipe)
+	_swipe_detector.double_tapped.connect(func() -> void:
+		if _active and _moved:
+			reset_level()
+	)
 
 
 func load_level(n: int) -> void:
@@ -145,6 +149,7 @@ func _on_swipe(direction: String) -> void:
 			else:
 				block.grid_origin += dv
 			block.position = _board.grid_to_local(block.grid_origin)
+
 		if _check_win():
 			_on_win()
 		elif _is_stuck():
@@ -200,6 +205,7 @@ func _on_swipe(direction: String) -> void:
 					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 		var on_done := func() -> void:
+	
 			if _check_win():
 				_on_win()
 			elif _is_stuck():
@@ -315,14 +321,17 @@ func _on_win() -> void:
 		dismiss_message.emit()
 
 	Haptics.win()
+	# Hide targets before the flash so blocks flash cleanly on plain board
+	_board.clear_targets()
+
 	# --- Quick double fade flash on B blocks ---
-	# Flash: 70ms out → 25ms wait → 120ms in = 215ms, 10ms gap between flashes
+	# Flash: 100ms out → 35ms wait → 160ms in = 295ms, 15ms gap between flashes
 	var flash := create_tween().set_parallel(true)
 	for block in _blocks:
-		flash.tween_property(block, "modulate:a", 0.0, 0.07)
-		flash.tween_property(block, "modulate:a", 1.0, 0.12).set_delay(0.095)
-		flash.tween_property(block, "modulate:a", 0.0, 0.07).set_delay(0.225)
-		flash.tween_property(block, "modulate:a", 1.0, 0.12).set_delay(0.32)
+		flash.tween_property(block, "modulate:a", 0.0, 0.10)
+		flash.tween_property(block, "modulate:a", 1.0, 0.16).set_delay(0.135)
+		flash.tween_property(block, "modulate:a", 0.0, 0.10).set_delay(0.31)
+		flash.tween_property(block, "modulate:a", 1.0, 0.16).set_delay(0.445)
 
 	flash.finished.connect(func() -> void:
 		_play_exit_chain()
@@ -413,6 +422,7 @@ func reset_level() -> void:
 		for block in _blocks:
 			block.grid_origin = block.data.origin
 			block.position = _board.grid_to_local(block.grid_origin)
+
 		_swipe_detector.enabled = true
 		return
 
@@ -423,6 +433,7 @@ func reset_level() -> void:
 		slide.tween_property(block, "position", target_pos, MOVE_DURATION * 2.5) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	slide.finished.connect(func() -> void:
+
 		_swipe_detector.enabled = true
 	)
 

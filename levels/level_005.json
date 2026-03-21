@@ -10,5 +10,5 @@
 	  "origin": [0, 0]
 	}
   ],
-  "message": "The order is important. Do not get stuck by moving the wrong block at the wrong time!"
+  "message": "Do not get stuck by moving the wrong block at the wrong time!\nDouble-tap to quickly reload the position."
 }

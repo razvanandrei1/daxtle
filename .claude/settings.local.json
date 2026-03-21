@@ -43,7 +43,9 @@
       "Bash(TEMPLATE_DIR=\"/tmp/godot-build/misc/dist/apple_embedded_xcode\" cp /tmp/splash@2x.png \"$TEMPLATE_DIR/godot_apple_embedded/Images.xcassets/SplashImage.imageset/splash@2x.png\" cp /tmp/splash@3x.png \"$TEMPLATE_DIR/godot_apple_embedded/Images.xcassets/SplashImage.imageset/splash@3x.png\" cd \"$TEMPLATE_DIR\")",
       "Bash(unzip:*)",
       "Bash(/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/razvanandrei/daxtle --export-release \"iOS\" /tmp/test_ios_export)",
-      "Bash(find /Users/razvanandrei/daxtle/build/ios -name SplashImage* -o -name splash*)"
+      "Bash(find /Users/razvanandrei/daxtle/build/ios -name SplashImage* -o -name splash*)",
+      "Bash(pip3 install:*)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }

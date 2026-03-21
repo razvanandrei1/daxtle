@@ -113,12 +113,12 @@ func _draw() -> void:
 	_settings_rect = _draw_button("Settings", vp.x * 0.5, vp.y * 0.68, _settings_scale, false)
 
 	# Subtitle
-	var sub_fs   := 32
+	var sub_fs   := 22
 	var sub_text := "This is a MVP project"
 	var sub_col  := _sub_col
 	sub_col.a     = 0.5 * _ui_alpha
-	var sub_tw   := _font_bold.get_string_size(sub_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_fs).x
-	draw_string(_font_bold, Vector2((vp.x - sub_tw) * 0.5, vp.y * 0.85),
+	var sub_tw   := _font.get_string_size(sub_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_fs).x
+	draw_string(_font, Vector2((vp.x - sub_tw) * 0.5, vp.y * 0.85),
 		sub_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_fs, sub_col)
 
 

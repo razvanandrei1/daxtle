@@ -3,7 +3,7 @@ extends Node2D
 
 signal pressed
 
-const ICON_SIZE   := 74.0
+const ICON_SIZE   := 111.0
 const HIT_PADDING := 16.0
 
 var _texture: Texture2D

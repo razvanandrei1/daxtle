@@ -15,24 +15,25 @@ func _ready() -> void:
 	var safe_top := GameTheme.get_safe_area_top()
 	var vp       := get_viewport().get_visible_rect().size
 	var margin_x := vp.x * Board.MARGIN
-	var top_y    := safe_top + 32.0
+	var top_y    := safe_top + Globals.TOP_OFFSET
 
 	_menu.pressed.connect(func(): menu_pressed.emit())
 	_reset.pressed.connect(func(): reset_pressed.emit())
 
 	# Level label vertical center
-	var label_h  := 62.0
+	var label_h  := Globals.LABEL_HEIGHT
 	var label_cy := top_y + label_h * 0.5
 
 	_menu.position  = Vector2(margin_x, label_cy)
 	_reset.position = Vector2(vp.x - margin_x, label_cy)
-	_level.offset_top    = top_y
+	_level.offset_top    = top_y - 8
 	_level.offset_bottom = top_y + label_h
+	_level.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 	# Level label styling
 	_level.add_theme_color_override("font_color", text_col)
 	_level.add_theme_font_override("font", GameTheme.FONT_BOLD)
-	_level.add_theme_font_size_override("font_size", 62)
+	_level.add_theme_font_size_override("font_size", 93)
 
 	# Message styling
 	var msg_col := text_col
@@ -44,18 +45,26 @@ func _ready() -> void:
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color.TRANSPARENT
 	var border_col := GameTheme.ACTIVE["text"]
-	border_col.a = 0.5
+	border_col.a = 1.0
 	panel_style.border_color = border_col
-	panel_style.set_border_width_all(3)
+	panel_style.set_border_width_all(4)  # updated dynamically via update_panel_border()
 	panel_style.set_corner_radius_all(16)
-	panel_style.content_margin_left = 36
-	panel_style.content_margin_right = 36
-	panel_style.content_margin_top = 20
-	panel_style.content_margin_bottom = 20
+	panel_style.content_margin_left = 44
+	panel_style.content_margin_right = 44
+	panel_style.content_margin_top = 28
+	panel_style.content_margin_bottom = 28
 	_msg_panel.add_theme_stylebox_override("panel", panel_style)
 	_msg_panel.visible = false
 
 	_reset.visible = false
+
+
+func update_panel_border(value_a: float) -> void:
+	var style: StyleBoxFlat = _msg_panel.get_theme_stylebox("panel") as StyleBoxFlat
+	if style:
+		var border_w := int(value_a * 0.041)
+		style.set_border_width_all(border_w)
+		style.set_corner_radius_all(int(value_a * GameTheme.CORNER_FRACTION))
 
 
 func set_level(n: int) -> void:
@@ -79,8 +88,8 @@ func set_message(text: String, board_bottom: float) -> void:
 	# 80% of screen width, centered horizontally
 	var panel_w := vp.x * 0.80
 	var panel_x := (vp.x - panel_w) * 0.5
-	var pad_x   := 36.0
-	var pad_y   := 20.0
+	var pad_x   := 44.0
+	var pad_y   := 28.0
 
 	# Compute text height manually
 	var font := GameTheme.FONT_BOLD

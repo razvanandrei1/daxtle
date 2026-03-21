@@ -127,6 +127,7 @@ func _on_level_selected(n: int) -> void:
 
 func _on_level_loaded(n: int) -> void:
 	_ui.set_level(n)
+	_ui.update_panel_border(_game.value_a)
 	SaveData.set_last_level(n)
 
 

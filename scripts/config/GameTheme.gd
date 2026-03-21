@@ -1,8 +1,8 @@
 class_name GameTheme
 
 # ── Font ──────────────────────────────────────────────────────────────────
-const FONT:      Font = preload("res://assets/fonts/Nunito-Bold.tres")
-const FONT_BOLD: Font = preload("res://assets/fonts/Nunito-Bold.tres")
+const FONT:      Font = preload("res://assets/fonts/Fredoka-Bold.tres")
+const FONT_BOLD: Font = preload("res://assets/fonts/Fredoka-Bold.tres")
 
 # ── Palette definitions ────────────────────────────────────────────────────
 # Each theme is a Dictionary with keys:
@@ -22,7 +22,7 @@ const WARM_SAND := {
 		Color(0.88, 0.65, 0.20),  # B4 — amber
 	],
 	"teleport": [
-		Color(0.58, 0.28, 0.86),  # T1 — purple
+		Color(0.65, 0.45, 0.78),  # T1 — muted purple
 		Color(0.22, 0.71, 0.87),  # T2 — cyan
 		Color(0.95, 0.55, 0.12),  # T3 — orange
 		Color(0.35, 0.82, 0.46),  # T4 — green
@@ -73,7 +73,7 @@ const DARK_CHARCOAL := {
 const ACTIVE := WARM_SAND
 
 # ── Layout constants ────────────────────────────────────────────────────────
-const GAP_FRACTION    := 0.042   # gap between cells as a fraction of cell size
+const GAP_FRACTION    := 0.064   # gap between cells as a fraction of cell size
 const CORNER_FRACTION := 0.08    # corner radius as a fraction of cell size
 
 # ── Teleport portal colour ───────────────────────────────────────────────────
