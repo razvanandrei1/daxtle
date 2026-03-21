@@ -281,7 +281,6 @@ func _on_stuck() -> void:
 func _on_win() -> void:
 	_swipe_detector.enabled = false
 	AudioManager.play_sfx("win")
-	Haptics.win()
 	hide_reset.emit()
 
 	if Globals.DEBUG_MODE:
@@ -295,17 +294,16 @@ func _on_win() -> void:
 
 	if _has_message:
 		dismiss_message.emit()
-		await get_tree().create_timer(0.40).timeout
-		if not _active:
-			return
 
-	# --- Phase 1: 2 flashes on B blocks ---
+	Haptics.win()
+	# --- Quick double fade flash on B blocks ---
+	# Flash: 70ms out → 25ms wait → 120ms in = 215ms, 10ms gap between flashes
 	var flash := create_tween().set_parallel(true)
 	for block in _blocks:
-		flash.tween_property(block, "modulate", WIN_FADE, 0.10).set_delay(0.08)
-		flash.tween_property(block, "modulate", WIN_NORMAL, 0.10).set_delay(0.18)
-		flash.tween_property(block, "modulate", WIN_FADE, 0.10).set_delay(0.34)
-		flash.tween_property(block, "modulate", WIN_NORMAL, 0.10).set_delay(0.44)
+		flash.tween_property(block, "modulate:a", 0.0, 0.07)
+		flash.tween_property(block, "modulate:a", 1.0, 0.12).set_delay(0.095)
+		flash.tween_property(block, "modulate:a", 0.0, 0.07).set_delay(0.225)
+		flash.tween_property(block, "modulate:a", 1.0, 0.12).set_delay(0.32)
 
 	flash.finished.connect(func() -> void:
 		_play_exit_chain()

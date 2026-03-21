@@ -17,15 +17,15 @@ func tap() -> void:
 		Input.vibrate_handheld(TAP_MS)
 
 
-## Win pattern: 3 taps with rising intensity, spaced 120ms apart
+## Win pattern: 3 taps with rising intensity, spaced 200ms apart
 func win() -> void:
 	if not _enabled or not _is_mobile:
 		return
 	Input.vibrate_handheld(10)
-	get_tree().create_timer(0.12).timeout.connect(func() -> void:
+	get_tree().create_timer(0.20).timeout.connect(func() -> void:
 		Input.vibrate_handheld(20)
 	)
-	get_tree().create_timer(0.26).timeout.connect(func() -> void:
+	get_tree().create_timer(0.42).timeout.connect(func() -> void:
 		Input.vibrate_handheld(35)
 	)
 
