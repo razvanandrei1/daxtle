@@ -24,6 +24,7 @@ Haptics="*res://scripts/Haptics.gd"
 [boot_splash]
 
 bg_color=Color(0.96, 0.94, 0.89, 1)
+show_image=false
 
 [display]
 

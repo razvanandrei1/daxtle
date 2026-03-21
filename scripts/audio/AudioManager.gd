@@ -32,6 +32,7 @@ func _ready() -> void:
 
 	_music_player = AudioStreamPlayer.new()
 	_music_player.bus = "Master"
+	_music_player.volume_db = -12.0  # music sits below SFX
 	add_child(_music_player)
 
 	for i in SFX_POOL_SIZE:
@@ -69,6 +70,12 @@ func play_music() -> void:
 
 func stop_music() -> void:
 	_music_player.stop()
+
+
+func get_sfx_duration(sfx_name: String) -> float:
+	if not _sfx_streams.has(sfx_name):
+		return 0.0
+	return _sfx_streams[sfx_name].get_length()
 
 
 func play_sfx(sfx_name: String) -> void:

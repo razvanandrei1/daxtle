@@ -8,8 +8,8 @@
   <!-- Row 0, Col 0: Green block with right arrow -->
   <rect x="197" y="197" width="294" height="294" rx="23" fill="#D9D1C2"/>
   <rect x="197" y="197" width="294" height="294" rx="23" fill="#3DA391"/>
-  <path d="M 399,344 L 307,289 L 307,399 Z"
-        fill="#2B7366" stroke="#2B7366" stroke-width="29"
+  <path d="M 390,344 L 314,296 L 314,392 Z"
+        fill="#2B7366" stroke="#2B7366" stroke-width="42"
         stroke-linejoin="round" stroke-linecap="round"/>
 
   <!-- Row 0, Col 1: Green target (empty) -->
@@ -27,7 +27,7 @@
   <!-- Row 1, Col 1: Red block with left arrow -->
   <rect x="533" y="533" width="294" height="294" rx="23" fill="#D9D1C2"/>
   <rect x="533" y="533" width="294" height="294" rx="23" fill="#D4615A"/>
-  <path d="M 625,680 L 717,625 L 717,735 Z"
-        fill="#A33B35" stroke="#A33B35" stroke-width="29"
+  <path d="M 634,680 L 710,632 L 710,728 Z"
+        fill="#A33B35" stroke="#A33B35" stroke-width="42"
         stroke-linejoin="round" stroke-linecap="round"/>
 </svg>

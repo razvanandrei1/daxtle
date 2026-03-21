@@ -11,7 +11,8 @@ const BoardScene      := preload("res://scenes/entities/Board.tscn")
 const BlockScene      := preload("res://scenes/entities/Block.tscn")
 const FixedBlockScene := preload("res://scenes/entities/FixedBlock.tscn")
 const TeleportScene   := preload("res://scenes/entities/Teleport.tscn")
-const MOVE_DURATION := 0.13  # seconds per slide animation
+const _MOVE_DURATION_DEFAULT := 0.13  # fallback if no slide SFX loaded
+var MOVE_DURATION: float = _MOVE_DURATION_DEFAULT
 
 const WIN_BRIGHT := Color(1.5, 1.5, 1.5, 1.0)
 const WIN_NORMAL := Color(1.0, 1.0, 1.0, 1.0)
@@ -44,6 +45,11 @@ var _intro_tweens: Array[Tween] = []
 
 
 func _ready() -> void:
+	# Match slide animation duration to the slide sound effect
+	var sfx_dur := AudioManager.get_sfx_duration("slide")
+	if sfx_dur > 0.0:
+		MOVE_DURATION = sfx_dur
+
 	_swipe_detector = $SwipeDetector
 	_swipe_detector.swiped.connect(_on_swipe)
 	_swipe_detector.double_tapped.connect(func() -> void:
@@ -324,14 +330,18 @@ func _on_win() -> void:
 	# Hide targets before the flash so blocks flash cleanly on plain board
 	_board.clear_targets()
 
-	# --- Quick double fade flash on B blocks ---
-	# Flash: 100ms out → 35ms wait → 160ms in = 295ms, 15ms gap between flashes
+	# --- Smooth double fade flash on B blocks ---
+	# Flash: 150ms out → 50ms wait → 200ms in = 400ms, 30ms gap between flashes
 	var flash := create_tween().set_parallel(true)
 	for block in _blocks:
-		flash.tween_property(block, "modulate:a", 0.0, 0.10)
-		flash.tween_property(block, "modulate:a", 1.0, 0.16).set_delay(0.135)
-		flash.tween_property(block, "modulate:a", 0.0, 0.10).set_delay(0.31)
-		flash.tween_property(block, "modulate:a", 1.0, 0.16).set_delay(0.445)
+		flash.tween_property(block, "modulate:a", 0.0, 0.15) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		flash.tween_property(block, "modulate:a", 1.0, 0.20).set_delay(0.20) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		flash.tween_property(block, "modulate:a", 0.0, 0.15).set_delay(0.43) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		flash.tween_property(block, "modulate:a", 1.0, 0.20).set_delay(0.63) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 	flash.finished.connect(func() -> void:
 		_play_exit_chain()
