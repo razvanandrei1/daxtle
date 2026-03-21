@@ -236,6 +236,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _pulse_button(which: String) -> void:
+	AudioManager.play_sfx("click")
 	Haptics.tap()
 	var tween := create_tween()
 	tween.tween_method(func(v: float) -> void:

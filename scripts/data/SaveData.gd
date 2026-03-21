@@ -10,6 +10,14 @@ class_name SaveData
 const SAVE_PATH := "user://save.json"
 
 
+static func get_progress_level() -> int:
+	return _get_int("progress_level", 1)
+
+
+static func set_progress_level(n: int) -> void:
+	_set_field("progress_level", n)
+
+
 static func get_last_level() -> int:
 	if not FileAccess.file_exists(SAVE_PATH):
 		return 1
@@ -60,6 +68,19 @@ static func get_haptics_enabled() -> bool:
 
 static func set_haptics_enabled(on: bool) -> void:
 	_set_field("haptics_enabled", on)
+
+
+static func _get_int(key: String, default: int) -> int:
+	if not FileAccess.file_exists(SAVE_PATH):
+		return default
+	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if file == null:
+		return default
+	var json := JSON.new()
+	if json.parse(file.get_as_text()) != OK:
+		return default
+	var data: Dictionary = json.get_data()
+	return data.get(key, default)
 
 
 static func _get_bool(key: String, default: bool) -> bool:

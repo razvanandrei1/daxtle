@@ -14,6 +14,7 @@ const SFX_PATHS := {
 	"reset":    "res://assets/audio/sfx_reset.wav",
 	"win":      "res://assets/audio/sfx_win.wav",
 	"teleport": "res://assets/audio/sfx_teleport.wav",
+	"click":    "res://assets/audio/click.wav",
 }
 
 const SFX_POOL_SIZE := 4

@@ -41,15 +41,15 @@ func _draw() -> void:
 
 	# Toggle rows
 	var row_w   := vp.x * 0.70
-	var row_h   := 72.0
+	var row_h   := 86.0
 	var row_x   := (vp.x - row_w) * 0.5
-	var start_y := vp.y * 0.38
-	var row_gap := 28.0
+	var start_y := vp.y * 0.36
+	var row_gap := 40.0
 	var radius  := row_h * 0.22
 
 	_music_rect = _draw_toggle_row("Music", AudioManager.is_music_enabled(),
 		row_x, start_y, row_w, row_h, radius, _music_scale)
-	_sfx_rect = _draw_toggle_row("Sound", AudioManager.is_sfx_enabled(),
+	_sfx_rect = _draw_toggle_row("Sound Effects", AudioManager.is_sfx_enabled(),
 		row_x, start_y + row_h + row_gap, row_w, row_h, radius, _sfx_scale)
 
 	if OS.get_name() == "iOS" or OS.get_name() == "Android":
@@ -132,6 +132,7 @@ func _pulse_toggle(which: String) -> void:
 	if _animating:
 		return
 	_animating = true
+	AudioManager.play_sfx("click")
 	Haptics.tap()
 	var tween := create_tween()
 	tween.tween_method(func(v: float) -> void:

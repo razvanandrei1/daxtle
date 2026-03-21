@@ -37,6 +37,7 @@ var _is_dragging:   bool = false
 # Pulse feedback
 var _pulse_level:   int = -1       # level number being pulsed, -1 = none
 var _pulse_scale:   float = 1.0    # animated scale of the pulsed cell
+var _progress:      int = 1        # highest unlocked level
 
 
 @onready var _menu: MenuIcon = $MenuIcon
@@ -45,6 +46,12 @@ func _ready() -> void:
 	_total_levels = LevelLoader.count_levels()
 	_total_pages  = maxi(ceili(float(_total_levels) / LEVELS_PER_PAGE), 1)
 	_safe_top     = GameTheme.get_safe_area_top()
+	_progress     = SaveData.get_progress_level()
+	visibility_changed.connect(func() -> void:
+		if visible:
+			_progress = SaveData.get_progress_level()
+			queue_redraw()
+	)
 	var vp       := get_viewport().get_visible_rect().size
 	var margin_x := vp.x * Board.MARGIN
 	var title_cy := _safe_top + Globals.TOP_OFFSET + Globals.LABEL_HEIGHT * 0.5
@@ -109,23 +116,41 @@ func _draw() -> void:
 					var dim := GameTheme.ACTIVE["surface"]
 					dim.a   = 0.35
 					_draw_rounded_rect(rect, dim, radius)
+				elif level_n > _progress:
+					# Locked — dimmed surface with faded number
+					var locked_col := GameTheme.ACTIVE["surface"]
+					locked_col.a = 0.35
+					_draw_rounded_rect(rect, locked_col, radius)
+					var num     := "%d" % level_n
+					var fs      := int(_cell_size * 0.38)
+					var tw      := _font.get_string_size(num, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+					var ascent  := _font.get_ascent(fs)
+					var text_col := GameTheme.ACTIVE["text"]
+					text_col.a = 0.2
+					draw_string(_font, Vector2(
+						rect.position.x + (rect.size.x - tw) * 0.5,
+						rect.position.y + (rect.size.y + ascent) * 0.5),
+						num, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, text_col)
 				else:
-					# Apply pulse scale if this cell is being pulsed
+					# Unlocked or completed
 					var draw_rect := rect
 					if level_n == _pulse_level and _pulse_scale != 1.0:
 						var center := rect.get_center()
 						var sz     := rect.size * _pulse_scale
 						draw_rect  = Rect2(center - sz * 0.5, sz)
 
-					_draw_rounded_rect(draw_rect, GameTheme.ACTIVE["surface"], radius)
+					var is_completed := level_n < _progress
+					var bg_col := GameTheme.ACTIVE["blocks"][0] if is_completed else GameTheme.ACTIVE["surface"]
+					_draw_rounded_rect(draw_rect, bg_col, radius)
 					var num     := "%d" % level_n
 					var fs      := int(_cell_size * 0.38 * (1.0 if level_n != _pulse_level else _pulse_scale))
 					var tw      := _font.get_string_size(num, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 					var ascent  := _font.get_ascent(fs)
+					var text_col := GameTheme.ACTIVE["background"] if is_completed else GameTheme.ACTIVE["text"]
 					draw_string(_font, Vector2(
 						draw_rect.position.x + (draw_rect.size.x - tw) * 0.5,
 						draw_rect.position.y + (draw_rect.size.y + ascent) * 0.5),
-						num, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, GameTheme.ACTIVE["text"])
+						num, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, text_col)
 
 	# Page dots — positioned above the bottom (hide if single page)
 	if _total_pages <= 1:
@@ -228,7 +253,7 @@ func _handle_tap(pos: Vector2) -> void:
 		for col in COLS:
 			var idx     := row * COLS + col
 			var level_n := _current_page * LEVELS_PER_PAGE + idx + 1
-			if level_n > _total_levels:
+			if level_n > _total_levels or level_n > _progress:
 				continue
 			var cx := fx + _grid_origin.x + col * (_cell_size + CELL_GAP)
 			var cy := _frame_y + _grid_origin.y + row * (_cell_size + CELL_GAP)
@@ -239,6 +264,7 @@ func _handle_tap(pos: Vector2) -> void:
 
 
 func _play_pulse(level_n: int) -> void:
+	AudioManager.play_sfx("click")
 	Haptics.tap()
 	_pulse_level = level_n
 	_pulse_scale = 1.0

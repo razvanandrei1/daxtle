@@ -314,6 +314,11 @@ func _on_win() -> void:
 	AudioManager.play_sfx("win")
 	hide_reset.emit()
 
+	# Advance progress if this is the furthest level completed
+	var next := current_level + 1
+	if next > SaveData.get_progress_level():
+		SaveData.set_progress_level(next)
+
 	if Globals.DEBUG_MODE:
 		if _has_message:
 			dismiss_message.emit()
