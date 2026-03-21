@@ -37,8 +37,13 @@ func _ready() -> void:
 	_safe_top = GameTheme.get_safe_area_top()
 
 	_letter_scales.resize(TITLE_LETTERS.length())
-	_letter_scales.fill(0.0)
-	_play_title_intro()
+	if Globals.DEBUG_MODE:
+		_letter_scales.fill(1.0)
+		_slide_progress = 1.0
+		_ui_alpha = 1.0
+	else:
+		_letter_scales.fill(0.0)
+		_play_title_intro()
 
 
 func _play_title_intro() -> void:

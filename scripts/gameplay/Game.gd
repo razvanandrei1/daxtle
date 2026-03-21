@@ -66,7 +66,7 @@ func _debug_load(n: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _active:
+	if not _active or not Globals.DEBUG_MODE:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
@@ -118,7 +118,25 @@ func _on_swipe(direction: String) -> void:
 
 	_swipe_detector.enabled = false
 
+	if Globals.DEBUG_MODE:
+		if not movers.is_empty():
+			AudioManager.play_sfx("slide")
+		for block in movers:
+			if teleport_exits.has(block):
+				block.grid_origin = teleport_exits[block]
+			else:
+				block.grid_origin += dv
+			block.position = _board.grid_to_local(block.grid_origin)
+		if _check_win():
+			_on_win()
+		elif _is_stuck():
+			_on_stuck()
+		else:
+			_swipe_detector.enabled = true
+		return
+
 	if not movers.is_empty():
+		AudioManager.play_sfx("slide")
 		# Separate normal movers from teleporters so they can use different animations
 		var par := create_tween().set_parallel(true)
 		var has_teleport := false
@@ -181,6 +199,7 @@ func _on_swipe(direction: String) -> void:
 
 
 func _shake_blocks(blocks: Array[Block], direction: String, re_enable_after: bool) -> void:
+	AudioManager.play_sfx("invalid")
 	var dv := Vector2i.ZERO
 	match direction:
 		"right": dv = Vector2i( 1,  0)
@@ -233,6 +252,10 @@ func _is_stuck() -> bool:
 func _on_stuck() -> void:
 	_swipe_detector.enabled = false
 
+	if Globals.DEBUG_MODE:
+		reset_level()
+		return
+
 	var origin := _board.position
 	var s      := value_a * 0.06
 
@@ -252,6 +275,13 @@ func _on_stuck() -> void:
 
 func _on_win() -> void:
 	_swipe_detector.enabled = false
+	AudioManager.play_sfx("win")
+
+	if Globals.DEBUG_MODE:
+		if _has_message:
+			dismiss_message.emit()
+		_load_level(clamp(current_level + 1, 1, LevelLoader.count_levels()))
+		return
 
 	if _has_message:
 		dismiss_message.emit()
@@ -343,9 +373,18 @@ func _play_exit_chain() -> void:
 
 
 func reset_level() -> void:
+	AudioManager.play_sfx("reset")
 	_swipe_detector.enabled = false
 	_moved = false
 	level_loaded.emit(current_level)  # triggers UI to hide reset icon via set_level
+
+	if Globals.DEBUG_MODE:
+		for block in _blocks:
+			block.grid_origin = block.data.origin
+			block.position = _board.grid_to_local(block.grid_origin)
+		_swipe_detector.enabled = true
+		return
+
 	var slide := create_tween().set_parallel(true)
 	for block in _blocks:
 		block.grid_origin = block.data.origin
@@ -462,6 +501,21 @@ const _INTRO_ARROW_DUR     := 0.10   # arrow fade-in duration after block lands
 const _INTRO_HOLD          := 0.20   # pause after last arrow before input opens
 
 func _play_intro_animation() -> void:
+	if Globals.DEBUG_MODE:
+		# Skip intro — set everything to final state immediately
+		for sq in _board.board_squares:
+			_board.set_cell_scale(sq, 1.0)
+		for fb in _fixed_blocks:
+			fb.block_scale = 1.0
+		for tp in _teleports:
+			tp.block_scale = 1.0
+		for block in _blocks:
+			block.block_scale = 1.0
+			block.arrow_alpha = 1.0
+		_swipe_detector.enabled = true
+		intro_finished.emit()
+		return
+
 	_swipe_detector.enabled = false
 
 	# Chain scale across board squares — diagonal wave top-left → bottom-right
@@ -550,6 +604,7 @@ func _play_intro_animation() -> void:
 
 # Flash the two nodes of a portal pair when a block passes through.
 func _pulse_portal_pair(entry: Vector2i, exit_cell: Vector2i) -> void:
+	AudioManager.play_sfx("teleport")
 	const PULSE := Color(2.0, 2.0, 2.0, 1.0)
 	for tp in _teleports:
 		if tp.portal_cell == entry or tp.portal_cell == exit_cell:

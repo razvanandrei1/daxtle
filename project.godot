@@ -15,10 +15,10 @@ run/main_scene="res://scenes/ui/Main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
-[gui]
+[autoload]
 
-theme/custom_font="res://assets/fonts/Nunito-Bold.tres"
-theme/custom_font_color=Color(0.17, 0.45, 0.40, 1)
+Globals="*res://scripts/Globals.gd"
+AudioManager="*res://scripts/audio/AudioManager.gd"
 
 [display]
 
@@ -27,6 +27,11 @@ window/size/viewport_height=1920
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
+
+[gui]
+
+theme/custom_font="res://assets/fonts/Nunito-Bold.tres"
+theme/custom_font_color=Color(0.17, 0.45, 0.4, 1)
 
 [input_devices]
 

@@ -109,6 +109,11 @@ func animate_message() -> void:
 	if not _msg_panel.visible or _msg_label.text.is_empty():
 		return
 
+	if Globals.DEBUG_MODE:
+		_msg_panel.scale    = Vector2.ONE
+		_msg_panel.modulate = Color.WHITE
+		return
+
 	_msg_panel.scale    = Vector2(0.8, 0.8)
 	_msg_panel.modulate = Color.TRANSPARENT
 
@@ -135,6 +140,9 @@ func dismiss_message() -> void:
 func show_reset() -> void:
 	if not _reset.visible:
 		_reset.visible = true
+		if Globals.DEBUG_MODE:
+			_reset.scale = Vector2.ONE
+			return
 		_reset.scale = Vector2.ZERO
 		var tween := create_tween()
 		tween.tween_property(_reset, "scale", Vector2.ONE, 0.2) \

@@ -1,3 +1,10 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Build outputs (keep only .build_number and ExportOptions.plist)
+/build/*
+!/build/.build_number
+!/build/ios/
+/build/ios/*
+!/build/ios/ExportOptions.plist
