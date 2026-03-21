@@ -1,3 +1,10 @@
+# =============================================================================
+# SaveData.gd — Persistent storage (user://save.json)
+# =============================================================================
+# Stores player progress (last level) and preferences (music, sfx, haptics).
+# All methods are static — no instance needed. Uses a load-merge-save pattern
+# to preserve existing fields when writing a single value.
+# =============================================================================
 class_name SaveData
 
 const SAVE_PATH := "user://save.json"

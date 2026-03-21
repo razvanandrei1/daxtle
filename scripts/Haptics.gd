@@ -1,3 +1,10 @@
+# =============================================================================
+# Haptics.gd — Autoload singleton for haptic feedback (iOS & Android)
+# =============================================================================
+# Provides three haptic patterns: tap (UI/slides), win (celebratory triple-tap),
+# and fail (sharp double-hit). Only active on mobile platforms.
+# Preference persisted via SaveData; toggle available in Settings screen.
+# =============================================================================
 extends Node
 
 const TAP_MS := 15   # light tap for UI and slides

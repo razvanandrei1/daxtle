@@ -1,3 +1,13 @@
+# =============================================================================
+# LevelLoader.gd — Reads level JSON files and parses them into game data
+# =============================================================================
+# Level format (JSON):
+#   "A": [[x,y], [x,y,block_id], ...]  — board squares; 3rd element = target for block_id
+#   "B": [{id, dir, origin}, ...]       — movable blocks (dir: "left"/"right"/"up"/"down"/"none")
+#   "C": [{id, origin, squares}, ...]   — fixed obstacle blocks (optional)
+#   "T": [{id, pos:[ax,ay,bx,by]}, ...] — teleport portal pairs (optional)
+#   "message": "..."                     — tutorial text (optional)
+# =============================================================================
 class_name LevelLoader
 
 const LEVELS_PATH = "res://levels/"
@@ -81,8 +91,9 @@ static func get_board_squares(level_data: Dictionary) -> Array[Vector2i]:
 	return squares
 
 
-# Returns a mapping of block id (int) -> Array[Vector2i] of target cells
-# from A entries with a 3rd element: [x, y, block_id]
+# Extracts target cells from the board data. An A entry with 3 elements
+# [x, y, block_id] marks that cell as a target for the given block.
+# Returns: { block_id: [Vector2i, ...], ... }
 static func get_targets(level_data: Dictionary) -> Dictionary:
 	var targets := {}
 	if not level_data.has("A"):

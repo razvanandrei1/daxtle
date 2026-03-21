@@ -1,6 +1,13 @@
+# =============================================================================
+# Main.gd — Root scene controller
+# =============================================================================
+# Orchestrates navigation between MainMenu, Game, LevelSelect, and Settings.
+# Manages fade transitions, connects all child signals, and handles the
+# completion popup when all levels are beaten.
+# =============================================================================
 extends Node
 
-const FADE_DURATION := 0.18
+const FADE_DURATION := 0.18  # seconds for scene transition fade
 
 @onready var _main_menu:    MainMenu    = $MainMenu
 @onready var _game:         Node2D      = $Game
@@ -79,6 +86,8 @@ func _ready() -> void:
 	_settings.process_mode     = Node.PROCESS_MODE_DISABLED
 
 
+# Fade transition: fades screen to opaque, runs callback (scene switch), fades back in.
+# Blocks input during the transition. Skipped entirely in DEBUG_MODE.
 func _fade_to(callback: Callable) -> void:
 	if Globals.DEBUG_MODE:
 		callback.call()
@@ -154,6 +163,7 @@ func _on_menu_pressed() -> void:
 	)
 
 
+# Called when the player beats the final level — returns to menu and shows congratulations popup.
 func _on_all_levels_completed() -> void:
 	_game.stop()
 	_game.visible              = false

@@ -1,3 +1,10 @@
+# =============================================================================
+# AudioManager.gd — Autoload singleton for all audio playback
+# =============================================================================
+# Manages background music and SFX. Uses a pool of AudioStreamPlayers to allow
+# overlapping sounds. Preferences (music/sfx enabled) are persisted via SaveData.
+# Audio files are placeholder paths — drop real files into assets/audio/ to activate.
+# =============================================================================
 extends Node
 
 const MUSIC_PATH   := "res://assets/audio/music_bg.ogg"

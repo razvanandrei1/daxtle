@@ -1,3 +1,10 @@
+# =============================================================================
+# Movement.gd — Pure movement resolution logic (no visuals)
+# =============================================================================
+# Given a swipe direction, determines which blocks move, which are blocked,
+# and which teleport. Handles push chains (block A pushes block B),
+# push chains through portals, and post-teleport continuation steps.
+# =============================================================================
 class_name Movement
 
 # resolve() returns a Dictionary:

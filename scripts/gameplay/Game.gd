@@ -1,28 +1,36 @@
+# =============================================================================
+# Game.gd — Core gameplay controller
+# =============================================================================
+# Manages the game board, blocks, teleports, and all gameplay animations.
+# Handles swipe input, movement resolution, win/stuck detection, and
+# level transitions (intro, exit, reset).
+# =============================================================================
 extends Node2D
 
 const BoardScene      := preload("res://scenes/entities/Board.tscn")
 const BlockScene      := preload("res://scenes/entities/Block.tscn")
 const FixedBlockScene := preload("res://scenes/entities/FixedBlock.tscn")
 const TeleportScene   := preload("res://scenes/entities/Teleport.tscn")
-const MOVE_DURATION := 0.13 # seconds per slide animation
+const MOVE_DURATION := 0.13  # seconds per slide animation
 
-const WIN_BRIGHT := Color(1.5, 1.5, 1.5, 1.0)  # brightened modulate for glow pulse
+const WIN_BRIGHT := Color(1.5, 1.5, 1.5, 1.0)
 const WIN_NORMAL := Color(1.0, 1.0, 1.0, 1.0)
 const WIN_FADE   := Color(1.0, 1.0, 1.0, 0.0)
 
-signal level_loaded(n: int)
-signal first_move
-signal message_changed(text: String, board_bottom: float)
-signal intro_finished
-signal dismiss_message
-signal hide_reset
-signal all_levels_completed
+# --- Signals communicated to Main.gd via connections ---
+signal level_loaded(n: int)          # emitted after a level is fully loaded
+signal first_move                    # emitted on the player's first swipe (shows reset icon)
+signal message_changed(text: String, board_bottom: float)  # level tutorial message
+signal intro_finished                # intro animation done (triggers message display)
+signal dismiss_message               # hide tutorial message (on win)
+signal hide_reset                    # fade out reset icon (on win)
+signal all_levels_completed          # last level beaten — triggers completion popup
 var _has_message: bool = false
 
 var current_level: int = 20
 var _moved: bool = false
-var _active: bool = false  # false while stopped or transitioning out
-var value_a: float = 0.0
+var _active: bool = false   # false while stopped or transitioning out
+var value_a: float = 0.0    # cell size in pixels, computed by Board.setup()
 
 var _board: Board
 var _blocks: Array[Block] = []
@@ -87,9 +95,13 @@ func stop() -> void:
 	_intro_tweens.clear()
 
 
+# --- Swipe handling ---
+# Called when the player swipes in a direction. Resolves movement via Movement.resolve(),
+# then animates movers (normal slide or teleport sequence) and shakes invalid blocks.
 func _on_swipe(direction: String) -> void:
 	if not _active:
 		return
+	# Collect blocks that match the swipe direction
 	var candidates: Array[Block] = []
 	for block in _blocks:
 		if block.data.dir == direction:
@@ -105,6 +117,7 @@ func _on_swipe(direction: String) -> void:
 		"down":  dv = Vector2i( 0,  1)
 		_:       dv = Vector2i( 0, -1)
 
+	# Resolve which blocks can move, which are blocked, and which teleport
 	var result            := Movement.resolve(candidates, _blocks, _board_set, direction, _fixed_set, _teleport_map)
 	var movers:            Array[Block] = result["movers"]
 	var invalid:           Array[Block] = result["invalid"]
@@ -202,6 +215,7 @@ func _on_swipe(direction: String) -> void:
 		_shake_blocks(invalid, direction, movers.is_empty())
 
 
+# Plays a nudge-and-spring-back animation on blocks that can't move (hit a wall/obstacle).
 func _shake_blocks(blocks: Array[Block], direction: String, re_enable_after: bool) -> void:
 	AudioManager.play_sfx("invalid")
 	var dv := Vector2i.ZERO
@@ -231,6 +245,7 @@ func _shake_blocks(blocks: Array[Block], direction: String, re_enable_after: boo
 	)
 
 
+# Returns true if every block is sitting on one of its target cells.
 func _check_win() -> bool:
 	for block in _blocks:
 		if not block.data.target_origins.has(block.grid_origin):
@@ -253,6 +268,7 @@ func _is_stuck() -> bool:
 	return true
 
 
+# Called when no block can move in any direction — shakes the board then auto-resets.
 func _on_stuck() -> void:
 	_swipe_detector.enabled = false
 	Haptics.fail()
@@ -278,6 +294,7 @@ func _on_stuck() -> void:
 	)
 
 
+# --- Win sequence: flash B blocks → exit chain animation → load next level (or complete) ---
 func _on_win() -> void:
 	_swipe_detector.enabled = false
 	AudioManager.play_sfx("win")
@@ -310,8 +327,9 @@ func _on_win() -> void:
 	)
 
 
+# Exit animation: all elements scale down in a diagonal wave (bottom-right → top-left),
+# then loads the next level or emits all_levels_completed.
 func _play_exit_chain() -> void:
-	# Reverse chain: bottom-right → top-left
 	var sorted_squares := _board.board_squares.duplicate()
 	sorted_squares.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
 		return (a.x + a.y) > (b.x + b.y)
@@ -415,6 +433,9 @@ func go_prev_level() -> void:
 	_load_level(clamp(current_level - 1, 1, LevelLoader.count_levels()))
 
 
+# --- Level loading ---
+# Clears the current level, parses JSON data via LevelLoader, instantiates
+# all entities (board, blocks, fixed blocks, teleports), and plays the intro animation.
 func _load_level(level_number: int) -> void:
 	for tw in _intro_tweens:
 		if tw:
