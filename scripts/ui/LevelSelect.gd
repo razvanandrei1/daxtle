@@ -127,7 +127,9 @@ func _draw() -> void:
 						draw_rect.position.y + (draw_rect.size.y + ascent) * 0.5),
 						num, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, GameTheme.ACTIVE["text"])
 
-	# Page dots — positioned above the bottom
+	# Page dots — positioned above the bottom (hide if single page)
+	if _total_pages <= 1:
+		return
 	var dot_y   := vp.y - 80.0
 	var dot_r   := 8.0
 	var dot_gap := 28.0
@@ -181,6 +183,8 @@ func _begin_touch(pos: Vector2) -> void:
 
 
 func _update_drag(pos: Vector2) -> void:
+	if _total_pages <= 1:
+		return
 	var dx := pos.x - _touch_start.x
 	if absf(dx) > TAP_THRESHOLD:
 		_is_dragging = true

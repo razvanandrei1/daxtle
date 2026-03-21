@@ -8,8 +8,10 @@ const FADE_DURATION := 0.18
 @onready var _level_select: LevelSelect = $LevelSelect
 @onready var _settings:     Settings    = $Settings
 
-var _fade_layer: CanvasLayer
-var _fade_rect:  ColorRect
+var _fade_layer:  CanvasLayer
+var _fade_rect:   ColorRect
+var _popup_layer: CanvasLayer
+var _popup_panel: Control
 
 
 func _ready() -> void:
@@ -39,6 +41,15 @@ func _ready() -> void:
 	_game.intro_finished.connect(func() -> void: _ui.animate_message())
 	_game.dismiss_message.connect(func() -> void: _ui.dismiss_message())
 	_game.hide_reset.connect(func() -> void: _ui.hide_reset())
+	_game.all_levels_completed.connect(_on_all_levels_completed)
+
+	# Completion popup overlay
+	_popup_layer = CanvasLayer.new()
+	_popup_layer.layer = 90
+	add_child(_popup_layer)
+	_popup_panel = _create_popup()
+	_popup_layer.add_child(_popup_panel)
+	_popup_panel.visible = false
 
 	AudioManager.play_music()
 
@@ -140,6 +151,136 @@ func _on_menu_pressed() -> void:
 		_main_menu.visible         = true
 		_main_menu.process_mode    = Node.PROCESS_MODE_INHERIT
 		_main_menu.replay_intro()
+	)
+
+
+func _on_all_levels_completed() -> void:
+	_game.stop()
+	_game.visible              = false
+	_game.process_mode         = Node.PROCESS_MODE_DISABLED
+	_ui.visible                = false
+	_main_menu.visible         = true
+	_main_menu.process_mode    = Node.PROCESS_MODE_INHERIT
+	_main_menu.replay_intro()
+	_show_popup()
+
+
+func _create_popup() -> Control:
+	var font := GameTheme.FONT_BOLD
+	var text_col := GameTheme.ACTIVE["text"]
+	var bg_col := GameTheme.ACTIVE["background"]
+	var surface_col := GameTheme.ACTIVE["surface"]
+
+	# Container
+	var container := Control.new()
+	container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	container.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	# Dimmed background
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.4)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	container.add_child(dim)
+
+	# Panel
+	var panel := PanelContainer.new()
+	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	panel.custom_minimum_size = Vector2(700, 500)
+	panel.anchor_left = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -350
+	panel.offset_right = 350
+	panel.offset_top = -250
+	panel.offset_bottom = 250
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg_col
+	style.border_color = text_col
+	style.border_color.a = 0.3
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(24)
+	style.content_margin_left = 48
+	style.content_margin_right = 48
+	style.content_margin_top = 48
+	style.content_margin_bottom = 48
+	panel.add_theme_stylebox_override("panel", style)
+	container.add_child(panel)
+
+	# VBox for content
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 28)
+	panel.add_child(vbox)
+
+	# Title
+	var title := Label.new()
+	title.text = "Congratulations!"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", font)
+	title.add_theme_font_size_override("font_size", 52)
+	title.add_theme_color_override("font_color", text_col)
+	vbox.add_child(title)
+
+	# Message
+	var msg := Label.new()
+	msg.text = "You have completed all the levels in this MVP game project.\nI hope you enjoyed it and I'm looking forward to your feedback."
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	msg.add_theme_font_override("font", font)
+	msg.add_theme_font_size_override("font_size", 36)
+	var msg_col := text_col
+	msg_col.a = 0.7
+	msg.add_theme_color_override("font_color", msg_col)
+	vbox.add_child(msg)
+
+	# OK button
+	var btn := Button.new()
+	btn.text = "OK"
+	btn.add_theme_font_override("font", font)
+	btn.add_theme_font_size_override("font_size", 40)
+	btn.add_theme_color_override("font_color", bg_col)
+	btn.custom_minimum_size = Vector2(200, 64)
+	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var btn_normal := StyleBoxFlat.new()
+	btn_normal.bg_color = text_col
+	btn_normal.set_corner_radius_all(16)
+	btn_normal.content_margin_left = 40
+	btn_normal.content_margin_right = 40
+	btn_normal.content_margin_top = 12
+	btn_normal.content_margin_bottom = 12
+	btn.add_theme_stylebox_override("normal", btn_normal)
+	btn.add_theme_stylebox_override("hover", btn_normal)
+	btn.add_theme_stylebox_override("pressed", btn_normal)
+	btn.add_theme_stylebox_override("focus", btn_normal)
+	btn.pressed.connect(_dismiss_popup)
+	vbox.add_child(btn)
+
+	return container
+
+
+func _show_popup() -> void:
+	_popup_panel.visible = true
+	_popup_panel.modulate = Color.TRANSPARENT
+	_popup_panel.scale = Vector2(0.9, 0.9)
+	_popup_panel.pivot_offset = _popup_panel.size * 0.5
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(_popup_panel, "modulate", Color.WHITE, 0.3) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_popup_panel, "scale", Vector2.ONE, 0.3) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _dismiss_popup() -> void:
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(_popup_panel, "modulate", Color.TRANSPARENT, 0.2) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(_popup_panel, "scale", Vector2(0.9, 0.9), 0.2) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.finished.connect(func() -> void:
+		_popup_panel.visible = false
 	)
 
 

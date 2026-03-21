@@ -16,6 +16,7 @@ signal message_changed(text: String, board_bottom: float)
 signal intro_finished
 signal dismiss_message
 signal hide_reset
+signal all_levels_completed
 var _has_message: bool = false
 
 var current_level: int = 20
@@ -158,18 +159,18 @@ func _on_swipe(direction: String) -> void:
 				var final_pos := _board.grid_to_local(block.grid_origin)
 				var has_cont  := (final_pos != exit_pos)
 
-				_pulse_portal_pair(entry, exit_cell)
-
-				# Sequential per-block tween: slide → shrink → jump → pop → slide
-				const SHRINK := 0.07
-				const POP    := 0.10
+				# Sequential: slide → shrink → jump → pop → slide
+				const SHRINK := 0.14
+				const POP    := 0.18
 				var tp := create_tween()
 				tp.tween_property(block, "position", entry_pos, MOVE_DURATION) \
 					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-				tp.tween_property(block, "scale", Vector2.ZERO, SHRINK) \
+				tp.tween_method(func(v: float) -> void: block.block_scale = v,
+					1.0, 0.0, SHRINK) \
 					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 				tp.tween_callback(func(): block.position = exit_pos)
-				tp.tween_property(block, "scale", Vector2.ONE, POP) \
+				tp.tween_method(func(v: float) -> void: block.block_scale = v,
+					0.0, 1.0, POP) \
 					.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 				if has_cont:
 					tp.tween_property(block, "position", final_pos, MOVE_DURATION) \
@@ -286,7 +287,10 @@ func _on_win() -> void:
 	if Globals.DEBUG_MODE:
 		if _has_message:
 			dismiss_message.emit()
-		_load_level(clamp(current_level + 1, 1, LevelLoader.count_levels()))
+		if current_level >= LevelLoader.count_levels():
+			all_levels_completed.emit()
+		else:
+			_load_level(current_level + 1)
 		return
 
 	if _has_message:
@@ -374,7 +378,10 @@ func _play_exit_chain() -> void:
 	var total := _INTRO_CHAIN_TOTAL + _INTRO_CHAIN_SCALE + 0.15
 	get_tree().create_timer(total).timeout.connect(func() -> void:
 		if _active:
-			_load_level(clamp(current_level + 1, 1, LevelLoader.count_levels()))
+			if current_level >= LevelLoader.count_levels():
+				all_levels_completed.emit()
+			else:
+				_load_level(current_level + 1)
 	)
 
 
@@ -611,11 +618,10 @@ func _play_intro_animation() -> void:
 # Flash the two nodes of a portal pair when a block passes through.
 func _pulse_portal_pair(entry: Vector2i, exit_cell: Vector2i) -> void:
 	AudioManager.play_sfx("teleport")
-	const PULSE := Color(2.0, 2.0, 2.0, 1.0)
 	for tp in _teleports:
 		if tp.portal_cell == entry or tp.portal_cell == exit_cell:
 			var t := create_tween()
-			t.tween_property(tp, "modulate", PULSE, 0.08) \
-				.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
-			t.tween_property(tp, "modulate", Color.WHITE, 0.28) \
-				.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
+			t.tween_property(tp, "modulate:a", 0.0, 0.10) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			t.tween_property(tp, "modulate:a", 1.0, 0.14) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
