@@ -104,6 +104,7 @@ const PULSE_DUR1 := 0.09   # scale-up duration
 const PULSE_DUR2 := 0.12   # scale-down duration
 
 static func play_tap_pulse(node: Node2D, on_done: Callable) -> void:
+	Haptics.tap()
 	var orig_scale := node.scale
 	var tween := node.create_tween()
 	tween.tween_property(node, "scale", orig_scale * PULSE_UP, PULSE_DUR1) \

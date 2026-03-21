@@ -235,6 +235,7 @@ func _handle_tap(pos: Vector2) -> void:
 
 
 func _play_pulse(level_n: int) -> void:
+	Haptics.tap()
 	_pulse_level = level_n
 	_pulse_scale = 1.0
 	var tween := create_tween()

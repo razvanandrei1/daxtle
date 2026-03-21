@@ -48,10 +48,10 @@ func _ready() -> void:
 	panel_style.border_color = border_col
 	panel_style.set_border_width_all(3)
 	panel_style.set_corner_radius_all(16)
-	panel_style.content_margin_left = 28
-	panel_style.content_margin_right = 28
-	panel_style.content_margin_top = 12
-	panel_style.content_margin_bottom = 12
+	panel_style.content_margin_left = 36
+	panel_style.content_margin_right = 36
+	panel_style.content_margin_top = 20
+	panel_style.content_margin_bottom = 20
 	_msg_panel.add_theme_stylebox_override("panel", panel_style)
 	_msg_panel.visible = false
 
@@ -79,8 +79,8 @@ func set_message(text: String, board_bottom: float) -> void:
 	# 80% of screen width, centered horizontally
 	var panel_w := vp.x * 0.80
 	var panel_x := (vp.x - panel_w) * 0.5
-	var pad_x   := 28.0
-	var pad_y   := 12.0
+	var pad_x   := 36.0
+	var pad_y   := 20.0
 
 	# Compute text height manually
 	var font := GameTheme.FONT_BOLD
@@ -135,6 +135,19 @@ func dismiss_message() -> void:
 	tween.finished.connect(func() -> void:
 		_msg_panel.visible = false
 	)
+
+
+func hide_reset() -> void:
+	if _reset.visible:
+		if Globals.DEBUG_MODE:
+			_reset.visible = false
+			return
+		var tween := create_tween()
+		tween.tween_property(_reset, "scale", Vector2.ZERO, 0.15) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tween.finished.connect(func() -> void:
+			_reset.visible = false
+		)
 
 
 func show_reset() -> void:

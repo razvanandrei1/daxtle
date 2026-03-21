@@ -15,6 +15,7 @@ signal first_move
 signal message_changed(text: String, board_bottom: float)
 signal intro_finished
 signal dismiss_message
+signal hide_reset
 var _has_message: bool = false
 
 var current_level: int = 20
@@ -121,6 +122,7 @@ func _on_swipe(direction: String) -> void:
 	if Globals.DEBUG_MODE:
 		if not movers.is_empty():
 			AudioManager.play_sfx("slide")
+			Haptics.tap()
 		for block in movers:
 			if teleport_exits.has(block):
 				block.grid_origin = teleport_exits[block]
@@ -137,6 +139,7 @@ func _on_swipe(direction: String) -> void:
 
 	if not movers.is_empty():
 		AudioManager.play_sfx("slide")
+		Haptics.tap()
 		# Separate normal movers from teleporters so they can use different animations
 		var par := create_tween().set_parallel(true)
 		var has_teleport := false
@@ -251,6 +254,7 @@ func _is_stuck() -> bool:
 
 func _on_stuck() -> void:
 	_swipe_detector.enabled = false
+	Haptics.fail()
 
 	if Globals.DEBUG_MODE:
 		reset_level()
@@ -276,6 +280,8 @@ func _on_stuck() -> void:
 func _on_win() -> void:
 	_swipe_detector.enabled = false
 	AudioManager.play_sfx("win")
+	Haptics.win()
+	hide_reset.emit()
 
 	if Globals.DEBUG_MODE:
 		if _has_message:

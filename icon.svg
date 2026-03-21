@@ -2,19 +2,19 @@
   <!-- Background -->
   <rect width="1024" height="1024" fill="#F5F0E3"/>
 
-  <!-- Board squares (A component) — 3 cells, gap = 20px -->
-  <rect x="82"  y="376" width="274" height="274" rx="22" fill="#D9D1C2"/>
-  <rect x="376" y="376" width="274" height="274" rx="22" fill="#D9D1C2"/>
-  <rect x="670" y="376" width="274" height="274" rx="22" fill="#D9D1C2"/>
+  <!-- Board squares (A component) — 3 cells, gap = 24px -->
+  <rect x="77"  y="375" width="274" height="274" rx="22" fill="#D9D1C2"/>
+  <rect x="375" y="375" width="274" height="274" rx="22" fill="#D9D1C2"/>
+  <rect x="673" y="375" width="274" height="274" rx="22" fill="#D9D1C2"/>
 
   <!-- Target at cell 2 — teal overlay at 35% opacity -->
-  <rect x="670" y="376" width="274" height="274" rx="22" fill="#3DA391" opacity="0.35"/>
+  <rect x="673" y="375" width="274" height="274" rx="22" fill="#3DA391" opacity="0.35"/>
 
   <!-- B1 block (teal) at cell 0 -->
-  <rect x="82" y="376" width="274" height="274" rx="22" fill="#3DA391"/>
+  <rect x="77" y="375" width="274" height="274" rx="22" fill="#3DA391"/>
 
   <!-- Right-pointing rounded triangle inside B1 -->
-  <path d="M 268,514 L 170,454 L 170,574 Z"
+  <path d="M 263,513 L 165,453 L 165,573 Z"
         fill="#2B7366" stroke="#2B7366" stroke-width="14"
         stroke-linejoin="round" stroke-linecap="round"/>
 </svg>

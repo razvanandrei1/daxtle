@@ -38,6 +38,7 @@ func _ready() -> void:
 	_game.message_changed.connect(func(text: String, bb: float) -> void: _ui.set_message(text, bb))
 	_game.intro_finished.connect(func() -> void: _ui.animate_message())
 	_game.dismiss_message.connect(func() -> void: _ui.dismiss_message())
+	_game.hide_reset.connect(func() -> void: _ui.hide_reset())
 
 	AudioManager.play_music()
 

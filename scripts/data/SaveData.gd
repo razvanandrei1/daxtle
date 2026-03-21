@@ -47,6 +47,14 @@ static func set_sfx_enabled(on: bool) -> void:
 	_set_field("sfx_enabled", on)
 
 
+static func get_haptics_enabled() -> bool:
+	return _get_bool("haptics_enabled", true)
+
+
+static func set_haptics_enabled(on: bool) -> void:
+	_set_field("haptics_enabled", on)
+
+
 static func _get_bool(key: String, default: bool) -> bool:
 	if not FileAccess.file_exists(SAVE_PATH):
 		return default

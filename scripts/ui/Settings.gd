@@ -6,10 +6,13 @@ signal back_pressed
 var _font: Font = GameTheme.FONT_BOLD
 var _safe_top: float
 
-var _music_rect: Rect2
-var _sfx_rect:   Rect2
-var _music_scale: float = 1.0
-var _sfx_scale:   float = 1.0
+var _music_rect:   Rect2
+var _sfx_rect:     Rect2
+var _haptics_rect: Rect2
+var _music_scale:   float = 1.0
+var _sfx_scale:     float = 1.0
+var _haptics_scale: float = 1.0
+var _animating:     bool  = false
 
 @onready var _menu: MenuIcon = $MenuIcon
 
@@ -48,6 +51,12 @@ func _draw() -> void:
 		row_x, start_y, row_w, row_h, radius, _music_scale)
 	_sfx_rect = _draw_toggle_row("Sound", AudioManager.is_sfx_enabled(),
 		row_x, start_y + row_h + row_gap, row_w, row_h, radius, _sfx_scale)
+
+	if OS.get_name() == "iOS" or OS.get_name() == "Android":
+		_haptics_rect = _draw_toggle_row("Haptics", Haptics.is_enabled(),
+			row_x, start_y + (row_h + row_gap) * 2, row_w, row_h, radius, _haptics_scale)
+	else:
+		_haptics_rect = Rect2()
 
 
 func _draw_toggle_row(label: String, enabled: bool, x: float, y: float,
@@ -88,7 +97,8 @@ func _draw_toggle_row(label: String, enabled: bool, x: float, y: float,
 	if enabled:
 		draw_circle(dot_pos, dot_r, on_col)
 	else:
-		draw_arc(dot_pos, dot_r, 0.0, TAU, 32, off_col, 3.0)
+		draw_circle(dot_pos, dot_r, off_col)
+		draw_circle(dot_pos, dot_r - 3.0, GameTheme.ACTIVE["background"])
 
 	return rect
 
@@ -113,27 +123,39 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif _sfx_rect.has_point(pos):
 		get_viewport().set_input_as_handled()
 		_pulse_toggle("sfx")
+	elif _haptics_rect.size != Vector2.ZERO and _haptics_rect.has_point(pos):
+		get_viewport().set_input_as_handled()
+		_pulse_toggle("haptics")
 
 
 func _pulse_toggle(which: String) -> void:
+	if _animating:
+		return
+	_animating = true
+	Haptics.tap()
 	var tween := create_tween()
 	tween.tween_method(func(v: float) -> void:
 		match which:
-			"music": _music_scale = v
-			"sfx":   _sfx_scale = v
+			"music":   _music_scale = v
+			"sfx":     _sfx_scale = v
+			"haptics": _haptics_scale = v
 		queue_redraw()
 	, 1.0, 1.06, 0.09).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_method(func(v: float) -> void:
 		match which:
-			"music": _music_scale = v
-			"sfx":   _sfx_scale = v
+			"music":   _music_scale = v
+			"sfx":     _sfx_scale = v
+			"haptics": _haptics_scale = v
 		queue_redraw()
 	, 1.06, 1.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.finished.connect(func() -> void:
 		_music_scale = 1.0
 		_sfx_scale = 1.0
+		_haptics_scale = 1.0
+		_animating = false
 		match which:
-			"music": AudioManager.set_music_enabled(not AudioManager.is_music_enabled())
-			"sfx":   AudioManager.set_sfx_enabled(not AudioManager.is_sfx_enabled())
+			"music":   AudioManager.set_music_enabled(not AudioManager.is_music_enabled())
+			"sfx":     AudioManager.set_sfx_enabled(not AudioManager.is_sfx_enabled())
+			"haptics": Haptics.set_enabled(not Haptics.is_enabled())
 		queue_redraw()
 	)

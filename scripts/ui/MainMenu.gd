@@ -236,6 +236,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _pulse_button(which: String) -> void:
+	Haptics.tap()
 	var tween := create_tween()
 	tween.tween_method(func(v: float) -> void:
 		match which:
