@@ -21,6 +21,11 @@ Globals="*res://scripts/Globals.gd"
 AudioManager="*res://scripts/audio/AudioManager.gd"
 Haptics="*res://scripts/Haptics.gd"
 
+[boot_splash]
+
+bg_color=Color(0.96, 0.94, 0.89, 1)
+image="res://assets/splash.png"
+
 [display]
 
 window/size/viewport_width=1080
