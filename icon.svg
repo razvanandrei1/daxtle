@@ -2,32 +2,32 @@
   <!-- Background — Warm Sand -->
   <rect width="1024" height="1024" fill="#F5F0E3"/>
 
-  <!-- 2x2 board, cells 294px, gap 42px, centered -->
-  <!-- Total: 294+42+294 = 630px. Offset: (1024-630)/2 = 197 -->
+  <!-- 2x2 board, cells 296px, gap 50px, centered, very rounded -->
+  <!-- Total: 296+50+296 = 642px. Offset: (1024-642)/2 = 191 -->
 
   <!-- Row 0, Col 0: Green block with right arrow -->
-  <rect x="197" y="197" width="294" height="294" rx="23" fill="#D9D1C2"/>
-  <rect x="197" y="197" width="294" height="294" rx="23" fill="#3DA391"/>
-  <path d="M 390,344 L 314,296 L 314,392 Z"
-        fill="#2B7366" stroke="#2B7366" stroke-width="42"
+  <rect x="191" y="191" width="296" height="296" rx="55" fill="#D9D1C2"/>
+  <rect x="191" y="191" width="296" height="296" rx="55" fill="#3DA391"/>
+  <path d="M 388,339 L 312,290 L 312,388 Z"
+        fill="#2B7366" stroke="#2B7366" stroke-width="46"
         stroke-linejoin="round" stroke-linecap="round"/>
 
-  <!-- Row 0, Col 1: Green target (empty) -->
-  <rect x="533" y="197" width="294" height="294" rx="23" fill="#D9D1C2"/>
-  <rect x="533" y="197" width="294" height="294" rx="23" fill="#3DA391" opacity="0.30"/>
-  <rect x="533" y="197" width="294" height="294" rx="23"
-        fill="none" stroke="#3DA391" stroke-width="15"/>
+  <!-- Row 0, Col 1: Green target (empty) — thick border -->
+  <rect x="537" y="191" width="296" height="296" rx="55" fill="#D9D1C2"/>
+  <rect x="537" y="191" width="296" height="296" rx="55" fill="#3DA391" opacity="0.25"/>
+  <rect x="537" y="191" width="296" height="296" rx="55"
+        fill="none" stroke="#3DA391" stroke-width="25"/>
 
-  <!-- Row 1, Col 0: Red target (empty) -->
-  <rect x="197" y="533" width="294" height="294" rx="23" fill="#D9D1C2"/>
-  <rect x="197" y="533" width="294" height="294" rx="23" fill="#D4615A" opacity="0.30"/>
-  <rect x="197" y="533" width="294" height="294" rx="23"
-        fill="none" stroke="#D4615A" stroke-width="15"/>
+  <!-- Row 1, Col 0: Red target (empty) — thick border -->
+  <rect x="191" y="537" width="296" height="296" rx="55" fill="#D9D1C2"/>
+  <rect x="191" y="537" width="296" height="296" rx="55" fill="#D4615A" opacity="0.25"/>
+  <rect x="191" y="537" width="296" height="296" rx="55"
+        fill="none" stroke="#D4615A" stroke-width="25"/>
 
   <!-- Row 1, Col 1: Red block with left arrow -->
-  <rect x="533" y="533" width="294" height="294" rx="23" fill="#D9D1C2"/>
-  <rect x="533" y="533" width="294" height="294" rx="23" fill="#D4615A"/>
-  <path d="M 634,680 L 710,632 L 710,728 Z"
-        fill="#A33B35" stroke="#A33B35" stroke-width="42"
+  <rect x="537" y="537" width="296" height="296" rx="55" fill="#D9D1C2"/>
+  <rect x="537" y="537" width="296" height="296" rx="55" fill="#D4615A"/>
+  <path d="M 636,685 L 712,636 L 712,734 Z"
+        fill="#A33B35" stroke="#A33B35" stroke-width="46"
         stroke-linejoin="round" stroke-linecap="round"/>
 </svg>
