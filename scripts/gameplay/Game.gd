@@ -89,7 +89,8 @@ func _draw() -> void:
 
 	# Best streak text at bottom
 	var font := GameTheme.FONT_BOLD
-	var text := "Best: %d" % SaveData.get_best_streak()
+	var best := maxi(SaveData.get_best_streak(), _challenge_streak)
+	var text := "Best: %d" % best
 	var fs := 42
 	var col := GameTheme.ACTIVE["text"]
 	col.a = 0.5
@@ -841,6 +842,8 @@ func _play_exit_chain() -> void:
 		if _active:
 			if mode == Mode.CHALLENGE:
 				_challenge_streak += 1
+				if _challenge_streak > SaveData.get_best_streak():
+					SaveData.set_best_streak(_challenge_streak)
 				_load_challenge_next()
 			elif current_level >= LevelLoader.count_levels():
 				all_levels_completed.emit()
