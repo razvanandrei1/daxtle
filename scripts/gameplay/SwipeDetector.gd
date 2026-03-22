@@ -8,6 +8,7 @@ signal double_tapped
 # T20 — minimum drag distance in pixels before a swipe is registered
 const MIN_DISTANCE := 40.0
 const DOUBLE_TAP_TIME := 0.3  # max seconds between two taps
+const AXIS_DEADZONE := 0.5    # joystick axis threshold
 
 # T21 — set to false while animations are playing to ignore input
 var enabled := true
@@ -16,6 +17,7 @@ var _start := Vector2.ZERO
 var _tracking := false
 var _last_tap_time := -1.0
 var _last_tap_pos := Vector2.ZERO
+var _axis_held := false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -48,6 +50,21 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_RIGHT: swiped.emit("right")
 			KEY_UP:    swiped.emit("up")
 			KEY_DOWN:  swiped.emit("down")
+
+	if event is InputEventJoypadMotion:
+		var axis: int = event.axis
+		var value: float = event.axis_value
+		if abs(value) > AXIS_DEADZONE:
+			if not _axis_held:
+				_axis_held = true
+				match axis:
+					JOY_AXIS_LEFT_X:
+						swiped.emit("right" if value > 0 else "left")
+					JOY_AXIS_LEFT_Y:
+						swiped.emit("down" if value > 0 else "up")
+		else:
+			if axis == JOY_AXIS_LEFT_X or axis == JOY_AXIS_LEFT_Y:
+				_axis_held = false
 
 
 func _evaluate(end_pos: Vector2) -> void:
