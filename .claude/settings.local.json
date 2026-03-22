@@ -65,7 +65,10 @@
       "Bash(scons platform=ios arch=arm64 target=template_debug)",
       "Bash(scons platform=macos arch=arm64 target=template_debug)",
       "Bash(scons platform=macos arch=arm64 target=template_debug --clean)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(nm -u bin/libdaxtle_haptics.ios.template_release.arm64)",
+      "Bash(libtool -static -o libdaxtle_haptics.ios.template_debug.arm64.a /Users/razvanandrei/daxtle/gdextension/haptics/bin/libdaxtle_haptics.ios.template_debug.arm64 /Users/razvanandrei/daxtle/gdextension/haptics/godot-cpp/bin/libgodot-cpp.ios.template_debug.arm64.a)",
+      "Bash(libtool -static -o libdaxtle_haptics.ios.template_release.arm64.a /Users/razvanandrei/daxtle/gdextension/haptics/bin/libdaxtle_haptics.ios.template_release.arm64 /Users/razvanandrei/daxtle/gdextension/haptics/godot-cpp/bin/libgodot-cpp.ios.template_release.arm64.a)"
     ]
   }
 }
