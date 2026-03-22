@@ -14,6 +14,7 @@ const FADE_DURATION := 0.18  # seconds for scene transition fade
 @onready var _ui:           CanvasLayer = $UI
 @onready var _level_select: LevelSelect = $LevelSelect
 @onready var _settings:     Settings    = $Settings
+@onready var _about:        About       = $About
 
 var _fade_layer:  CanvasLayer
 var _fade_rect:   ColorRect
@@ -37,11 +38,13 @@ func _ready() -> void:
 	_main_menu.play_pressed.connect(_on_play_pressed)
 	_main_menu.select_level_pressed.connect(_on_select_level_pressed)
 	_main_menu.settings_pressed.connect(_on_settings_pressed)
+	_main_menu.about_pressed.connect(_on_about_pressed)
 	_ui.menu_pressed.connect(_on_menu_pressed)
 	_ui.reset_pressed.connect(func() -> void: _game.reset_level())
 	_level_select.level_selected.connect(_on_level_selected)
 	_level_select.menu_pressed.connect(_on_menu_pressed)
 	_settings.back_pressed.connect(_on_settings_back)
+	_about.back_pressed.connect(_on_about_back)
 	_game.level_loaded.connect(_on_level_loaded)
 	_game.first_move.connect(func() -> void: _ui.show_reset())
 	_game.message_changed.connect(func(text: String, bb: float) -> void: _ui.set_message(text, bb))
@@ -68,6 +71,8 @@ func _ready() -> void:
 		_level_select.process_mode = Node.PROCESS_MODE_DISABLED
 		_settings.visible          = false
 		_settings.process_mode     = Node.PROCESS_MODE_DISABLED
+		_about.visible             = false
+		_about.process_mode        = Node.PROCESS_MODE_DISABLED
 		_game.visible              = true
 		_game.process_mode         = Node.PROCESS_MODE_INHERIT
 		_ui.visible                = true
@@ -84,6 +89,8 @@ func _ready() -> void:
 	_level_select.process_mode = Node.PROCESS_MODE_DISABLED
 	_settings.visible          = false
 	_settings.process_mode     = Node.PROCESS_MODE_DISABLED
+	_about.visible             = false
+	_about.process_mode        = Node.PROCESS_MODE_DISABLED
 
 
 # Fade transition: fades screen to opaque, runs callback (scene switch), fades back in.
@@ -144,6 +151,25 @@ func _on_settings_back() -> void:
 	_fade_to(func() -> void:
 		_settings.visible          = false
 		_settings.process_mode     = Node.PROCESS_MODE_DISABLED
+		_main_menu.visible         = true
+		_main_menu.process_mode    = Node.PROCESS_MODE_INHERIT
+		_main_menu.replay_intro()
+	)
+
+
+func _on_about_pressed() -> void:
+	_fade_to(func() -> void:
+		_main_menu.visible         = false
+		_main_menu.process_mode    = Node.PROCESS_MODE_DISABLED
+		_about.visible             = true
+		_about.process_mode        = Node.PROCESS_MODE_INHERIT
+	)
+
+
+func _on_about_back() -> void:
+	_fade_to(func() -> void:
+		_about.visible             = false
+		_about.process_mode        = Node.PROCESS_MODE_DISABLED
 		_main_menu.visible         = true
 		_main_menu.process_mode    = Node.PROCESS_MODE_INHERIT
 		_main_menu.replay_intro()
