@@ -11,7 +11,7 @@ const FONT_BOLD: Font = preload("res://assets/fonts/Fredoka-Bold.tres")
 #   blocks      : Array[Color]  — B1…B4 block colours (max 4)
 
 const WARM_SAND := {
-	"background": Color(0.96, 0.94, 0.89),
+	"background": Color(0xf5f0e3ff),
 	"surface":    Color(0.85, 0.82, 0.76),
 	"text":       Color(0.17, 0.45, 0.40),  # primary text colour — B1 teal darkened 30% (matches triangle)
 	"fixed":      Color(0.35, 0.32, 0.28),  # C — dark charcoal-brown

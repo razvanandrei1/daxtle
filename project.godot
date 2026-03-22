@@ -13,6 +13,7 @@ config_version=5
 config/name="Daxtle"
 run/main_scene="res://scenes/ui/Main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
+boot_splash/bg_color=Color(0.9607843, 0.9411765, 0.8901961, 1)
 config/icon="res://icon.svg"
 
 [autoload]

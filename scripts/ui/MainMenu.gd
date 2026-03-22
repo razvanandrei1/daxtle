@@ -227,7 +227,7 @@ func _draw_icon_button(cx: float, cy: float, size: float, btn_scale: float, icon
 	# Icon colour
 	var icon_col: Color
 	if icon == "play":
-		icon_col = Color.WHITE
+		icon_col = GameTheme.ACTIVE["background"]
 	else:
 		icon_col = green_col
 	icon_col.a = alpha
