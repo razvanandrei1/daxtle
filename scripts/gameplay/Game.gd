@@ -5,6 +5,7 @@
 # Handles swipe input, movement resolution, win/stuck detection, and
 # level transitions (intro, exit, reset).
 # =============================================================================
+class_name Game
 extends Node2D
 
 const BoardScene      := preload("res://scenes/entities/Board.tscn")

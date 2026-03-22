@@ -31,12 +31,15 @@ func _draw() -> void:
 	var start_y := vp.y * 0.30
 
 	var best := SaveData.get_best_streak()
+	var timer_start := int(Game.CHALLENGE_TIME_START)
+	var timer_decay := Game.CHALLENGE_TIME_DECAY
 	var lines := [
 		"Solve as many puzzles",
 		"as you can in a row.",
 		"",
-		"The timer shrinks",
-		"with every level.",
+		"You start with %ds." % timer_start,
+		"Each level solved removes",
+		"%.1fs from the timer." % timer_decay,
 		"",
 		"No resets. No undo.",
 		"One mistake and it's over.",
