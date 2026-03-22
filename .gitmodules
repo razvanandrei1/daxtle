@@ -1,0 +1,3 @@
+[submodule "gdextension/haptics/godot-cpp"]
+	path = gdextension/haptics/godot-cpp
+	url = https://github.com/godotengine/godot-cpp.git

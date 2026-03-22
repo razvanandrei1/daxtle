@@ -1,0 +1,10 @@
+[configuration]
+entry_symbol = "haptics_init"
+compatibility_minimum = "4.5"
+reloadable = false
+
+[libraries]
+ios.debug = "res://bin/libdaxtle_haptics.ios.template_debug.arm64.a"
+ios.release = "res://bin/libdaxtle_haptics.ios.template_release.arm64.a"
+
+[icons]

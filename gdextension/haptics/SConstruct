@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+import os
+
+env = SConscript("godot-cpp/SConstruct")
+
+env.Append(CPPPATH=["src/"])
+
+# On iOS, link UIKit for haptic feedback generators
+if env["platform"] == "ios":
+    env.Append(FRAMEWORKS=["UIKit"])
+
+# Gather source files
+sources = Glob("src/*.cpp")
+
+# For .mm files (Objective-C++), compile them as Object files using clang
+if env["platform"] == "ios":
+    mm_files = Glob("src/*.mm")
+    for mm in mm_files:
+        obj = env.Object(
+            target=str(mm).replace(".mm", ".o"),
+            source=mm,
+            CXX=env["CXX"],
+            CXXFLAGS=env["CCFLAGS"] + env["CXXFLAGS"] + ["-x", "objective-c++"],
+        )
+        sources.append(obj)
+
+# Build the static library for iOS
+if env["platform"] == "ios":
+    library = env.StaticLibrary(
+        "bin/libdaxtle_haptics.{}.{}.{}".format(
+            env["platform"], env["target"], env["arch"]
+        ),
+        source=sources,
+    )
+elif env["platform"] == "macos":
+    library = env.SharedLibrary(
+        "bin/libdaxtle_haptics.{}.{}.framework/libdaxtle_haptics.{}.{}".format(
+            env["platform"], env["target"], env["platform"], env["target"]
+        ),
+        source=sources,
+    )
+else:
+    library = env.SharedLibrary(
+        "bin/libdaxtle_haptics{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        source=sources,
+    )
+
+Default(library)

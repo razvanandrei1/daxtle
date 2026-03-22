@@ -48,7 +48,21 @@
       "Bash(python3 -c \":*)",
       "Bash(ffmpeg -y -i \"/Users/razvanandrei/daxtle/assets/audio/Soft Corners of Thought \\(1\\).wav\" -af \"highpass=f=80,lowpass=f=5500,afftdn=nf=-18\" /tmp/clean4.wav)",
       "Bash(ffmpeg -y -i \"/Users/razvanandrei/daxtle/assets/audio/Soft Corners of Thought \\(1\\).wav\" -af \"highpass=f=80,lowpass=f=5500\" /tmp/clean4.wav)",
-      "Bash(brew install:*)"
+      "Bash(brew install:*)",
+      "WebFetch(domain:apps.apple.com)",
+      "WebFetch(domain:toucharcade.com)",
+      "WebFetch(domain:www.appgefahren.de)",
+      "WebFetch(domain:search.brave.com)",
+      "Bash(xcrun --sdk iphoneos --show-sdk-path)",
+      "WebSearch",
+      "WebFetch(domain:docs.godotengine.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:godot-rust.github.io)",
+      "WebFetch(domain:deepwiki.com)",
+      "Bash(git submodule:*)",
+      "Bash(git checkout:*)",
+      "Bash(scons platform=ios arch=arm64 target=template_release)",
+      "Bash(scons platform=ios arch=arm64 target=template_debug)"
     ]
   }
 }
