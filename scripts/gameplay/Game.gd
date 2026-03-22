@@ -79,16 +79,13 @@ func _draw() -> void:
 		return
 	var vp := get_viewport().get_visible_rect().size
 
-	# Timer — header-height background rectangle shrinking from right to left
-	if _challenge_timer_alpha > 0.0:
-		var safe_top := GameTheme.get_safe_area_top()
-		var header_cy := safe_top + Globals.TOP_OFFSET + Globals.LABEL_HEIGHT * 0.5
-		var bar_h := header_cy * 2.0
+	# Timer — rounded frame around the board that shrinks from a corner
+	if _challenge_timer_alpha > 0.0 and _board:
 		var ratio := clampf(_challenge_time_left / _challenge_time_max, 0.0, 1.0)
-		var timer_col := GameTheme.ACTIVE["surface"]
-		timer_col.a = _challenge_timer_alpha
-		var timer_w := vp.x * ratio
-		draw_rect(Rect2(Vector2.ZERO, Vector2(timer_w, bar_h)), timer_col)
+		if ratio > 0.0:
+			var timer_col := GameTheme.ACTIVE["text"]
+			timer_col.a = _challenge_timer_alpha
+			_draw_timer_frame(ratio, timer_col)
 
 	# Best streak text at bottom
 	var font := GameTheme.FONT_BOLD
@@ -100,6 +97,93 @@ func _draw() -> void:
 	var safe_bot := GameTheme.get_safe_area_bottom()
 	var y := vp.y - maxf(safe_bot, 40.0) - 20.0
 	draw_string(font, Vector2((vp.x - tw) * 0.5, y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+
+
+func _draw_timer_frame(ratio: float, col: Color) -> void:
+	# Build a rounded rect path around the board
+	var padding := value_a * 0.14
+	var mn := _board.board_squares[0]
+	var mx := mn
+	for sq in _board.board_squares:
+		mn = Vector2i(mini(mn.x, sq.x), mini(mn.y, sq.y))
+		mx = Vector2i(maxi(mx.x, sq.x), maxi(mx.y, sq.y))
+	var cols_count := mx.x - mn.x + 1
+	var rows_count := mx.y - mn.y + 1
+
+	var rect_pos := _board.position - Vector2(padding, padding)
+	var rect_size := Vector2(cols_count, rows_count) * value_a + Vector2(padding * 2, padding * 2)
+	var r := value_a * GameTheme.CORNER_FRACTION * 2.0
+	r = minf(r, minf(rect_size.x, rect_size.y) * 0.5)
+
+	# Generate points along the rounded rect (clockwise from top-center)
+	var pts := PackedVector2Array()
+	var x0 := rect_pos.x
+	var y0 := rect_pos.y
+	var x1 := rect_pos.x + rect_size.x
+	var y1 := rect_pos.y + rect_size.y
+	var cx := (x0 + x1) * 0.5
+	var arc_steps := 8
+
+	# Start at top-center, go right
+	pts.append(Vector2(cx, y0))
+	pts.append(Vector2(x1 - r, y0))
+	# Top-right corner
+	for i in arc_steps + 1:
+		var a := -PI * 0.5 + float(i) / float(arc_steps) * PI * 0.5
+		pts.append(Vector2(x1 - r + cos(a) * r, y0 + r + sin(a) * r))
+	# Right edge
+	pts.append(Vector2(x1, y1 - r))
+	# Bottom-right corner
+	for i in arc_steps + 1:
+		var a := float(i) / float(arc_steps) * PI * 0.5
+		pts.append(Vector2(x1 - r + cos(a) * r, y1 - r + sin(a) * r))
+	# Bottom edge (right to left)
+	pts.append(Vector2(x0 + r, y1))
+	# Bottom-left corner
+	for i in arc_steps + 1:
+		var a := PI * 0.5 + float(i) / float(arc_steps) * PI * 0.5
+		pts.append(Vector2(x0 + r + cos(a) * r, y1 - r + sin(a) * r))
+	# Left edge
+	pts.append(Vector2(x0, y0 + r))
+	# Top-left corner
+	for i in arc_steps + 1:
+		var a := PI + float(i) / float(arc_steps) * PI * 0.5
+		pts.append(Vector2(x0 + r + cos(a) * r, y0 + r + sin(a) * r))
+	# Top edge back to center
+	pts.append(Vector2(cx, y0))
+
+	# Calculate cumulative distances
+	var total_len := 0.0
+	var lengths := PackedFloat32Array()
+	lengths.append(0.0)
+	for i in range(1, pts.size()):
+		total_len += pts[i].distance_to(pts[i - 1])
+		lengths.append(total_len)
+
+	# Draw only the portion corresponding to ratio
+	var draw_len := total_len * ratio
+	var draw_pts := PackedVector2Array()
+	for i in pts.size():
+		if lengths[i] <= draw_len:
+			draw_pts.append(pts[i])
+		else:
+			# Interpolate the final point
+			if i > 0:
+				var seg_len := lengths[i] - lengths[i - 1]
+				if seg_len > 0:
+					var t := (draw_len - lengths[i - 1]) / seg_len
+					draw_pts.append(pts[i - 1].lerp(pts[i], t))
+			break
+
+	if draw_pts.size() >= 2:
+		var width := value_a * 0.055
+		# Flash red when below 5 seconds
+		var draw_col := col
+		if _challenge_time_left < 5.0 and _challenge_timer_active:
+			draw_col = GameTheme.ACTIVE["blocks"][1]  # coral/red
+			var flash := (sin(Time.get_ticks_msec() * 0.006) + 1.0) * 0.5
+			draw_col.a = lerpf(0.3, col.a, flash)
+		draw_polyline(draw_pts, draw_col, width, true)
 
 
 func _ready() -> void:
@@ -183,6 +267,10 @@ func _start_challenge_timer() -> void:
 func start_challenge() -> void:
 	mode = Mode.CHALLENGE
 	_challenge_streak = 0
+	_challenge_timer_active = false
+	_challenge_timer_alpha = 0.0
+	_challenge_time_left = 0.0
+	queue_redraw()
 	var count := LevelLoader.count_challenge_levels()
 	_challenge_pool.clear()
 	for i in count:
@@ -320,6 +408,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func stop() -> void:
 	_active = false
 	_challenge_timer_active = false
+	_challenge_timer_alpha = 0.0
+	_challenge_time_left = 0.0
+	queue_redraw()
 	_swipe_detector.enabled = false
 	for tw in _intro_tweens:
 		if tw:
@@ -515,6 +606,12 @@ func _is_winnable() -> bool:
 func _on_stuck() -> void:
 	_swipe_detector.enabled = false
 	_challenge_timer_active = false
+	if mode == Mode.CHALLENGE:
+		var fade := create_tween()
+		fade.tween_method(func(v: float) -> void:
+			_challenge_timer_alpha = v
+			queue_redraw()
+		, _challenge_timer_alpha, 0.0, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	Haptics.fail()
 
 	if Globals.DEBUG_MODE:
