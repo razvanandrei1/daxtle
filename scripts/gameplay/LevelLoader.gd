@@ -11,6 +11,7 @@
 class_name LevelLoader
 
 const LEVELS_PATH = "res://levels/"
+const CHALLENGE_PATH = "res://levels/challenge/"
 
 
 static func count_levels() -> int:
@@ -46,6 +47,36 @@ static func load_level(level_number: int) -> Dictionary:
 		])
 		return {}
 
+	return json.get_data()
+
+
+static func count_challenge_levels() -> int:
+	var dir := DirAccess.open(CHALLENGE_PATH)
+	if dir == null:
+		return 0
+	var count := 0
+	dir.list_dir_begin()
+	var fname := dir.get_next()
+	while fname != "":
+		if not dir.current_is_dir() and fname.ends_with(".json"):
+			count += 1
+		fname = dir.get_next()
+	dir.list_dir_end()
+	return count
+
+
+static func load_challenge_level(level_number: int) -> Dictionary:
+	var filename = CHALLENGE_PATH + "challenge_%03d.json" % level_number
+	var file = FileAccess.open(filename, FileAccess.READ)
+	if file == null:
+		push_error("LevelLoader: could not open '%s'" % filename)
+		return {}
+	var json_text = file.get_as_text()
+	file.close()
+	var json = JSON.new()
+	if json.parse(json_text) != OK:
+		push_error("LevelLoader: JSON parse error in '%s'" % filename)
+		return {}
 	return json.get_data()
 
 

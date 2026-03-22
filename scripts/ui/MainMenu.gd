@@ -2,6 +2,7 @@ class_name MainMenu
 extends Node2D
 
 signal play_pressed
+signal challenge_pressed
 signal select_level_pressed
 signal settings_pressed
 signal about_pressed
@@ -12,10 +13,12 @@ var _text_col:  Color
 var _sub_col:   Color
 
 var _play_rect:         Rect2
+var _challenge_rect:      Rect2
 var _select_rect:       Rect2
 var _settings_rect:     Rect2
 var _about_rect:        Rect2
 var _play_scale:         float = 1.0
+var _challenge_scale:      float = 1.0
 var _select_scale:       float = 1.0
 var _settings_scale:     float = 1.0
 var _about_scale:        float = 1.0
@@ -30,19 +33,21 @@ const _UI_FADE_DUR  := 0.30
 var _letter_scales: Array[float] = []
 var _slide_progress: Array[float] = []  # per-letter: 0 = center of screen, 1 = final top position
 var _ui_alpha:       float = 0.0   # 0 = hidden, 1 = visible
-var _btn_intro_scales: Array[float] = [0.0, 0.0, 0.0, 0.0]  # play, select, settings, about
+var _btn_intro_scales: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]  # play, select, settings, about
 const _BTN_CHAIN_STAGGER := 0.12
 const _BTN_CHAIN_DUR     := 0.35
 
 var _settings_tex: Texture2D
 var _levels_tex:   Texture2D
 var _about_tex:    Texture2D
+var _challenge_tex:  Texture2D
 var _safe_top: float
 
 func _ready() -> void:
 	_settings_tex = preload("res://assets/img/icon_settings.svg")
 	_levels_tex   = preload("res://assets/img/icon_levels.svg")
 	_about_tex    = preload("res://assets/img/icon_about.svg")
+	_challenge_tex  = preload("res://assets/img/icon_challenge.svg")
 	_text_col = GameTheme.ACTIVE["text"]
 	_sub_col  = GameTheme.ACTIVE["text"]
 	_sub_col.a = 0.5
@@ -54,7 +59,7 @@ func _ready() -> void:
 		_letter_scales.fill(1.0)
 		_slide_progress.fill(1.0)
 		_ui_alpha = 1.0
-		_btn_intro_scales = [1.0, 1.0, 1.0, 1.0]
+		_btn_intro_scales = [1.0, 1.0, 1.0, 1.0, 1.0]
 	else:
 		_letter_scales.fill(0.0)
 		_play_title_intro()
@@ -93,8 +98,8 @@ func _play_title_intro() -> void:
 	# Phase 3: chain-scale buttons after slide (play first, then secondary L→R)
 	var btn_delay := slide_delay + (n - 1) * slide_stagger + _SLIDE_DUR * 0.6
 	_ui_alpha = 1.0
-	_btn_intro_scales = [0.0, 0.0, 0.0, 0.0]
-	for i in 4:
+	_btn_intro_scales = [0.0, 0.0, 0.0, 0.0, 0.0]
+	for i in 5:
 		var delay := btn_delay + i * _BTN_CHAIN_STAGGER
 		var idx := i
 		var bt := create_tween()
@@ -114,7 +119,7 @@ func replay_intro() -> void:
 	_letter_scales.fill(1.0)
 	_slide_progress.fill(1.0)
 	_ui_alpha = 1.0
-	_btn_intro_scales = [1.0, 1.0, 1.0, 1.0]
+	_btn_intro_scales = [1.0, 1.0, 1.0, 1.0, 1.0]
 	queue_redraw()
 
 
@@ -129,32 +134,40 @@ func _draw() -> void:
 
 	# Icon button sizing
 	var btn_size := vp.x * 0.18          # square side length
-	var btn_gap  := btn_size * 0.35      # gap between squares
-	var btn_cy   := vp.y * 0.54         # vertical centre for play button
+	var btn_gap  := btn_size * 0.35      # gap between primary buttons
+	var btn_cy   := vp.y * 0.54         # vertical centre for primary buttons
 	var sec_cy   := vp.y * 0.78         # vertical centre for secondary buttons
 
-	# Play button (green bg, white triangle)
-	_play_rect = _draw_icon_button(vp.x * 0.5, btn_cy, btn_size,
+	# Primary buttons row: Challenge (left) + Play (right), both green
+	var primary_gap := btn_size * 0.45
+	var primary_cx  := vp.x * 0.5
+	_play_rect = _draw_icon_button(
+		primary_cx - btn_size * 0.5 - primary_gap * 0.5, btn_cy, btn_size,
 		_play_scale * _btn_intro_scales[0], "play")
+	_challenge_rect = _draw_icon_button(
+		primary_cx + btn_size * 0.5 + primary_gap * 0.5, btn_cy, btn_size,
+		_challenge_scale * _btn_intro_scales[1], "challenge")
 
-	# Secondary buttons row
+	# Secondary buttons row (3 buttons)
 	var sec_size := btn_size * 0.72
 	var sec_gap  := sec_size * 0.5
+	var sec_total := sec_size * 3 + sec_gap * 2
+	var sec_x0   := (vp.x - sec_total) * 0.5 + sec_size * 0.5
 
-	# Level Select button (grey bg, green grid icon)
+	# Level Select button
 	_select_rect = _draw_icon_button(
-		vp.x * 0.5 - sec_size - sec_gap, sec_cy, sec_size,
-		_select_scale * _btn_intro_scales[1], "levels")
+		sec_x0, sec_cy, sec_size,
+		_select_scale * _btn_intro_scales[2], "levels")
 
-	# Settings button (grey bg, green gear icon)
+	# Settings button
 	_settings_rect = _draw_icon_button(
-		vp.x * 0.5, sec_cy, sec_size,
-		_settings_scale * _btn_intro_scales[2], "settings")
+		sec_x0 + sec_size + sec_gap, sec_cy, sec_size,
+		_settings_scale * _btn_intro_scales[3], "settings")
 
-	# About button (grey bg, green info icon)
+	# About button
 	_about_rect = _draw_icon_button(
-		vp.x * 0.5 + sec_size + sec_gap, sec_cy, sec_size,
-		_about_scale * _btn_intro_scales[3], "about")
+		sec_x0 + (sec_size + sec_gap) * 2, sec_cy, sec_size,
+		_about_scale * _btn_intro_scales[4], "about")
 
 
 func _draw_title_blocks(vp: Vector2) -> void:
@@ -166,7 +179,7 @@ func _draw_title_blocks(vp: Vector2) -> void:
 	var total_w  := sq_size * count + gap * (count - 1)
 	var start_x  := (vp.x - total_w) * 0.5
 
-	var final_y  := maxf(vp.y * 0.28, _safe_top + 80.0)
+	var final_y  := maxf(vp.y * 0.24, _safe_top + 60.0)
 
 	for i in count:
 		var s: float = _letter_scales[i] if i < _letter_scales.size() else 1.0
@@ -213,23 +226,16 @@ func _draw_icon_button(cx: float, cy: float, size: float, btn_scale: float, icon
 	var grey_col  := GameTheme.ACTIVE["surface"]
 
 	# Background
+	var is_primary := icon == "play" or icon == "challenge"
 	var style := StyleBoxFlat.new()
-	var bg: Color
-	if icon == "play":
-		bg = green_col
-	else:
-		bg = grey_col
+	var bg: Color = green_col if is_primary else grey_col
 	bg.a = alpha
 	style.bg_color = bg
 	style.set_corner_radius_all(int(radius))
 	style.draw(get_canvas_item(), rect)
 
 	# Icon colour
-	var icon_col: Color
-	if icon == "play":
-		icon_col = GameTheme.ACTIVE["background"]
-	else:
-		icon_col = green_col
+	var icon_col: Color = GameTheme.ACTIVE["background"] if is_primary else green_col
 	icon_col.a = alpha
 
 	# Draw the icon
@@ -242,6 +248,8 @@ func _draw_icon_button(cx: float, cy: float, size: float, btn_scale: float, icon
 			_draw_gear_icon(cx, cy, s, icon_col)
 		"about":
 			_draw_about_icon(cx, cy, s, icon_col)
+		"challenge":
+			_draw_challenge_icon(cx, cy, s, icon_col)
 
 	return rect
 
@@ -318,6 +326,15 @@ func _draw_about_icon(cx: float, cy: float, size: float, _col: Color) -> void:
 	draw_texture_rect(_about_tex, rect, false, Color(1, 1, 1, _ui_alpha))
 
 
+## Challenge icon — SVG texture.
+func _draw_challenge_icon(cx: float, cy: float, size: float, _col: Color) -> void:
+	if not _challenge_tex:
+		return
+	var icon_size := size * 0.55
+	var rect := Rect2(Vector2(cx - icon_size * 0.5, cy - icon_size * 0.5), Vector2(icon_size, icon_size))
+	draw_texture_rect(_challenge_tex, rect, false, Color(1, 1, 1, _ui_alpha))
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _btn_intro_scales[0] < 0.9 or not is_visible_in_tree():
 		return
@@ -341,6 +358,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif _settings_rect.has_point(pos):
 		get_viewport().set_input_as_handled()
 		_pulse_button("settings")
+	elif _challenge_rect.has_point(pos):
+		get_viewport().set_input_as_handled()
+		_pulse_button("challenge")
 	elif _about_rect.has_point(pos):
 		get_viewport().set_input_as_handled()
 		_pulse_button("about")
@@ -353,6 +373,7 @@ func _pulse_button(which: String) -> void:
 	tween.tween_method(func(v: float) -> void:
 		match which:
 			"play":     _play_scale = v
+			"challenge":  _challenge_scale = v
 			"select":   _select_scale = v
 			"settings": _settings_scale = v
 			"about":    _about_scale = v
@@ -361,6 +382,7 @@ func _pulse_button(which: String) -> void:
 	tween.tween_method(func(v: float) -> void:
 		match which:
 			"play":     _play_scale = v
+			"challenge":  _challenge_scale = v
 			"select":   _select_scale = v
 			"settings": _settings_scale = v
 			"about":    _about_scale = v
@@ -368,12 +390,14 @@ func _pulse_button(which: String) -> void:
 	, 1.12, 1.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.finished.connect(func() -> void:
 		_play_scale = 1.0
+		_challenge_scale = 1.0
 		_select_scale = 1.0
 		_settings_scale = 1.0
 		_about_scale = 1.0
 		queue_redraw()
 		match which:
 			"play":     play_pressed.emit()
+			"challenge":  challenge_pressed.emit()
 			"select":   select_level_pressed.emit()
 			"settings": settings_pressed.emit()
 			"about":    about_pressed.emit()

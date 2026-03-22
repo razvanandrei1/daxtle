@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 58 58" width="58" height="58">
+  <!-- Lightning bolt — challenge/survival icon, white for green background -->
+  <path d="M33 4 L15 30 h10 L19 54 L43 24 h-10 Z"
+        fill="#F5F0E3" stroke="#F5F0E3" stroke-width="2"
+        stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

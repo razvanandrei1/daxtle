@@ -18,6 +18,22 @@ const WIN_BRIGHT := Color(1.5, 1.5, 1.5, 1.0)
 const WIN_NORMAL := Color(1.0, 1.0, 1.0, 1.0)
 const WIN_FADE   := Color(1.0, 1.0, 1.0, 0.0)
 
+# --- Game mode ---
+enum Mode { CAMPAIGN, CHALLENGE }
+var mode: Mode = Mode.CAMPAIGN
+var _challenge_streak: int = 0
+var _challenge_pool: Array[int] = []
+var _challenge_pool_index: int = 0
+
+# --- Challenge timer ---
+const CHALLENGE_TIME_START := 30.0   # seconds for first puzzle
+const CHALLENGE_TIME_DECAY := 1.5    # seconds removed per streak point
+const CHALLENGE_TIME_MIN   := 10.0   # minimum time allowed
+var _challenge_time_left: float = 0.0
+var _challenge_time_max:  float = 0.0
+var _challenge_timer_active: bool = false
+var _challenge_timer_alpha: float = 0.5
+
 # --- Signals communicated to Main.gd via connections ---
 signal level_loaded(n: int)          # emitted after a level is fully loaded
 signal menu_pressed                  # emitted when menu icon is tapped
@@ -25,6 +41,7 @@ signal message_changed(text: String, board_bottom: float)  # level tutorial mess
 signal intro_finished                # intro animation done (triggers message display)
 signal dismiss_message               # hide tutorial message (on win)
 signal all_levels_completed          # last level beaten — triggers completion popup
+signal challenge_game_over(streak: int, best_streak: int)
 var _has_message: bool = false
 
 var current_level: int = 20
@@ -46,6 +63,45 @@ var _intro_tweens: Array[Tween] = []
 @onready var _reset:  ResetIcon   = $ResetIcon
 
 
+func _process(delta: float) -> void:
+	if mode != Mode.CHALLENGE or not _challenge_timer_active:
+		return
+	_challenge_time_left -= delta
+	queue_redraw()
+	if _challenge_time_left <= 0.0:
+		_challenge_time_left = 0.0
+		_challenge_timer_active = false
+		_on_stuck()
+
+
+func _draw() -> void:
+	if mode != Mode.CHALLENGE:
+		return
+	var vp := get_viewport().get_visible_rect().size
+
+	# Timer — header-height background rectangle shrinking from right to left
+	if _challenge_timer_alpha > 0.0:
+		var safe_top := GameTheme.get_safe_area_top()
+		var header_cy := safe_top + Globals.TOP_OFFSET + Globals.LABEL_HEIGHT * 0.5
+		var bar_h := header_cy * 2.0
+		var ratio := clampf(_challenge_time_left / _challenge_time_max, 0.0, 1.0)
+		var timer_col := GameTheme.ACTIVE["surface"]
+		timer_col.a = _challenge_timer_alpha
+		var timer_w := vp.x * ratio
+		draw_rect(Rect2(Vector2.ZERO, Vector2(timer_w, bar_h)), timer_col)
+
+	# Best streak text at bottom
+	var font := GameTheme.FONT_BOLD
+	var text := "Best: %d" % SaveData.get_best_streak()
+	var fs := 42
+	var col := GameTheme.ACTIVE["text"]
+	col.a = 0.5
+	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var safe_bot := GameTheme.get_safe_area_bottom()
+	var y := vp.y - maxf(safe_bot, 40.0) - 20.0
+	draw_string(font, Vector2((vp.x - tw) * 0.5, y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+
+
 func _ready() -> void:
 	# Match slide animation duration to the slide sound effect
 	var sfx_dur := AudioManager.get_sfx_duration("slide")
@@ -55,22 +111,30 @@ func _ready() -> void:
 	_swipe_detector = $SwipeDetector
 	_swipe_detector.swiped.connect(_on_swipe)
 	_swipe_detector.double_tapped.connect(func() -> void:
-		if _active and _moved:
+		if _active and _moved and mode != Mode.CHALLENGE:
 			reset_level()
 	)
 
 	_header.back_pressed.connect(func() -> void: menu_pressed.emit())
-	_reset.pressed.connect(func() -> void: reset_level())
+	_reset.pressed.connect(func() -> void:
+		if mode != Mode.CHALLENGE:
+			reset_level()
+	)
 	_reset.position = Vector2(_header.right_x, _header.bar_cy)
 	_reset.visible = false
 
 
 func set_level(n: int) -> void:
-	_header.set_title("%d" % n)
+	if mode == Mode.CHALLENGE:
+		_header.set_title("%d" % _challenge_streak)
+	else:
+		_header.set_title("%d" % n)
 	_reset.visible = false
 
 
 func show_reset() -> void:
+	if mode == Mode.CHALLENGE:
+		return
 	if not _reset.visible:
 		_reset.visible = true
 		if Globals.DEBUG_MODE:
@@ -97,6 +161,124 @@ func _hide_reset() -> void:
 
 func load_level(n: int) -> void:
 	_load_level(n)
+
+
+func _start_challenge_timer() -> void:
+	if mode != Mode.CHALLENGE:
+		return
+	_challenge_time_max = maxf(
+		CHALLENGE_TIME_START - _challenge_streak * CHALLENGE_TIME_DECAY,
+		CHALLENGE_TIME_MIN
+	)
+	_challenge_time_left = _challenge_time_max
+	_challenge_timer_alpha = 0.0
+	_challenge_timer_active = true
+	var fade_in := create_tween()
+	fade_in.tween_method(func(v: float) -> void:
+		_challenge_timer_alpha = v
+		queue_redraw()
+	, 0.0, 0.5, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+func start_challenge() -> void:
+	mode = Mode.CHALLENGE
+	_challenge_streak = 0
+	var count := LevelLoader.count_challenge_levels()
+	_challenge_pool.clear()
+	for i in count:
+		_challenge_pool.append(i + 1)
+	_challenge_pool.shuffle()
+	_challenge_pool_index = 0
+	_load_challenge_next()
+
+
+func _load_challenge_next() -> void:
+	if _challenge_pool.is_empty():
+		return
+	if _challenge_pool_index >= _challenge_pool.size():
+		_challenge_pool.shuffle()
+		_challenge_pool_index = 0
+	var level_n := _challenge_pool[_challenge_pool_index]
+	_challenge_pool_index += 1
+	var level_data := LevelLoader.load_challenge_level(level_n)
+	if level_data.is_empty():
+		return
+	_load_level_data(level_data)
+
+
+func _load_level_data(level_data: Dictionary) -> void:
+	# Shared level loading logic — used by both campaign and challenge
+	for tw in _intro_tweens:
+		if tw:
+			tw.kill()
+	_intro_tweens.clear()
+
+	if _board:
+		_board.queue_free()
+	_blocks.clear()
+	_fixed_blocks.clear()
+	_teleports.clear()
+	_board_set.clear()
+	_fixed_set.clear()
+	_teleport_map.clear()
+
+	var squares := LevelLoader.get_board_squares(level_data)
+	_board = BoardScene.instantiate() as Board
+	add_child(_board)
+	value_a = _board.setup(squares)
+
+	for sq in squares:
+		_board_set[sq] = true
+
+	var fixed_data := LevelLoader.get_fixed_blocks(level_data)
+	for fd in fixed_data:
+		var fb := FixedBlockScene.instantiate() as FixedBlock
+		_board.add_child(fb)
+		fb.setup(fd, value_a, _board)
+		_fixed_blocks.append(fb)
+		for cell in fd.cells():
+			_fixed_set[cell] = true
+
+	var teleport_data := LevelLoader.get_teleports(level_data)
+	for i in teleport_data.size():
+		var td: TeleportData = teleport_data[i]
+		var pair_col := GameTheme.get_teleport_color(i)
+		_teleport_map[td.portal_a] = td.portal_b
+		if not td.one_way:
+			_teleport_map[td.portal_b] = td.portal_a
+		for cell in [td.portal_a, td.portal_b]:
+			var tp := TeleportScene.instantiate() as Teleport
+			_board.add_child(tp)
+			tp.setup(cell, value_a, _board, pair_col)
+			_teleports.append(tp)
+
+	var blocks_data := LevelLoader.get_blocks(level_data)
+	var targets     := LevelLoader.get_targets(level_data)
+	for bd in blocks_data:
+		var block_num := int(bd.id.substr(1)) if bd.id is String else int(bd.id)
+		if targets.has(block_num):
+			bd.target_origins.assign(targets[block_num])
+	_board.set_targets(blocks_data)
+	for block_data in blocks_data:
+		var block := BlockScene.instantiate() as Block
+		_board.add_child(block)
+		block.setup(block_data, value_a, _board)
+		_blocks.append(block)
+
+	_moved = false
+	_active = true
+	level_loaded.emit(current_level)
+	var mn_y := _board.board_squares[0].y
+	var mx_y := mn_y
+	for sq in _board.board_squares:
+		mn_y = mini(mn_y, sq.y)
+		mx_y = maxi(mx_y, sq.y)
+	var board_bottom := _board.position.y + (mx_y - mn_y + 1) * value_a
+	var msg := LevelLoader.get_message(level_data)
+	_has_message = not msg.is_empty()
+	message_changed.emit(msg, board_bottom)
+	queue_redraw()
+	_play_intro_animation()
 
 
 # Debug: skip intro animation and jump to a level instantly
@@ -137,6 +319,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func stop() -> void:
 	_active = false
+	_challenge_timer_active = false
 	_swipe_detector.enabled = false
 	for tw in _intro_tweens:
 		if tw:
@@ -197,6 +380,8 @@ func _on_swipe(direction: String) -> void:
 			_on_win()
 		elif _is_stuck():
 			_on_stuck()
+		elif mode == Mode.CHALLENGE and not _is_winnable():
+			_on_stuck()
 		else:
 			_swipe_detector.enabled = true
 		return
@@ -248,10 +433,12 @@ func _on_swipe(direction: String) -> void:
 					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 		var on_done := func() -> void:
-	
+
 			if _check_win():
 				_on_win()
 			elif _is_stuck():
+				_on_stuck()
+			elif mode == Mode.CHALLENGE and not _is_winnable():
 				_on_stuck()
 			else:
 				_swipe_detector.enabled = true
@@ -319,9 +506,15 @@ func _is_stuck() -> bool:
 	return true
 
 
-# Called when no block can move in any direction — shakes the board then auto-resets.
+# Returns true if the current board state can still be solved (BFS check).
+func _is_winnable() -> bool:
+	return PuzzleSolver.is_solvable(_blocks, _board_set, _fixed_set, _teleport_map)
+
+
+# Called when no block can move or position is no longer winnable.
 func _on_stuck() -> void:
 	_swipe_detector.enabled = false
+	_challenge_timer_active = false
 	Haptics.fail()
 
 	if Globals.DEBUG_MODE:
@@ -341,20 +534,36 @@ func _on_stuck() -> void:
 	tween.finished.connect(func() -> void:
 		await get_tree().create_timer(0.25).timeout
 		if _active:
-			reset_level()
+			if mode == Mode.CHALLENGE:
+				_active = false
+				var best := SaveData.get_best_streak()
+				if _challenge_streak > best:
+					SaveData.set_best_streak(_challenge_streak)
+					best = _challenge_streak
+				challenge_game_over.emit(_challenge_streak, best)
+			else:
+				reset_level()
 	)
 
 
 # --- Win sequence: flash B blocks → exit chain animation → load next level (or complete) ---
 func _on_win() -> void:
 	_swipe_detector.enabled = false
+	_challenge_timer_active = false
+	if mode == Mode.CHALLENGE:
+		var fade := create_tween()
+		fade.tween_method(func(v: float) -> void:
+			_challenge_timer_alpha = v
+			queue_redraw()
+		, _challenge_timer_alpha, 0.0, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	AudioManager.play_sfx("win")
 	_hide_reset()
 
-	# Advance progress if this is the furthest level completed
-	var next := current_level + 1
-	if next > SaveData.get_progress_level():
-		SaveData.set_progress_level(next)
+	# Advance progress if this is the furthest level completed (campaign only)
+	if mode == Mode.CAMPAIGN:
+		var next := current_level + 1
+		if next > SaveData.get_progress_level():
+			SaveData.set_progress_level(next)
 
 	if Globals.DEBUG_MODE:
 		if _has_message:
@@ -469,7 +678,10 @@ func _play_exit_chain() -> void:
 	var total := _INTRO_CHAIN_TOTAL + _INTRO_CHAIN_SCALE + 0.15
 	get_tree().create_timer(total).timeout.connect(func() -> void:
 		if _active:
-			if current_level >= LevelLoader.count_levels():
+			if mode == Mode.CHALLENGE:
+				_challenge_streak += 1
+				_load_challenge_next()
+			elif current_level >= LevelLoader.count_levels():
 				all_levels_completed.emit()
 			else:
 				_load_level(current_level + 1)
@@ -514,87 +726,12 @@ func go_prev_level() -> void:
 # Clears the current level, parses JSON data via LevelLoader, instantiates
 # all entities (board, blocks, fixed blocks, teleports), and plays the intro animation.
 func _load_level(level_number: int) -> void:
-	for tw in _intro_tweens:
-		if tw:
-			tw.kill()
-	_intro_tweens.clear()
-
-	if _board:
-		_board.queue_free()
-	_blocks.clear()
-	_fixed_blocks.clear()
-	_teleports.clear()
-	_board_set.clear()
-	_fixed_set.clear()
-	_teleport_map.clear()
-
 	var level_data := LevelLoader.load_level(level_number)
 	if level_data.is_empty():
 		push_error("Game: failed to load level %d" % level_number)
 		return
-
 	current_level = level_number
-
-	# Board
-	var squares := LevelLoader.get_board_squares(level_data)
-	_board = BoardScene.instantiate() as Board
-	add_child(_board)
-	value_a = _board.setup(squares)
-
-	for sq in squares:
-		_board_set[sq] = true
-
-	# Fixed blocks (C) — instantiated before B blocks so they render beneath them
-	var fixed_data := LevelLoader.get_fixed_blocks(level_data)
-	for fd in fixed_data:
-		var fb := FixedBlockScene.instantiate() as FixedBlock
-		_board.add_child(fb)
-		fb.setup(fd, value_a, _board)
-		_fixed_blocks.append(fb)
-		for cell in fd.cells():
-			_fixed_set[cell] = true
-
-	# Teleport portals (T) — added before blocks so they render beneath them
-	var teleport_data := LevelLoader.get_teleports(level_data)
-	for i in teleport_data.size():
-		var td: TeleportData = teleport_data[i]
-		var pair_col := GameTheme.get_teleport_color(i)
-		_teleport_map[td.portal_a] = td.portal_b
-		if not td.one_way:
-			_teleport_map[td.portal_b] = td.portal_a
-		for cell in [td.portal_a, td.portal_b]:
-			var tp := TeleportScene.instantiate() as Teleport
-			_board.add_child(tp)
-			tp.setup(cell, value_a, _board, pair_col)
-			_teleports.append(tp)
-
-	# Blocks — added as children of the board so they share its coordinate space
-	var blocks_data := LevelLoader.get_blocks(level_data)
-	var targets     := LevelLoader.get_targets(level_data)
-	for bd in blocks_data:
-		var block_num := int(bd.id.substr(1))
-		if targets.has(block_num):
-			bd.target_origins.assign(targets[block_num])
-	_board.set_targets(blocks_data)
-	for block_data in blocks_data:
-		var block := BlockScene.instantiate() as Block
-		_board.add_child(block)
-		block.setup(block_data, value_a, _board)
-		_blocks.append(block)
-
-	_moved = false
-	_active = true
-	level_loaded.emit(current_level)
-	var mn_y := _board.board_squares[0].y
-	var mx_y := mn_y
-	for sq in _board.board_squares:
-		mn_y = mini(mn_y, sq.y)
-		mx_y = maxi(mx_y, sq.y)
-	var board_bottom := _board.position.y + (mx_y - mn_y + 1) * value_a
-	var msg := LevelLoader.get_message(level_data)
-	_has_message = not msg.is_empty()
-	message_changed.emit(msg, board_bottom)
-	_play_intro_animation()
+	_load_level_data(level_data)
 
 
 # --- Level intro animation ---
@@ -622,6 +759,7 @@ func _play_intro_animation() -> void:
 			block.block_scale = 1.0
 			block.arrow_alpha = 1.0
 		_swipe_detector.enabled = true
+		_start_challenge_timer()
 		intro_finished.emit()
 		return
 
@@ -706,6 +844,7 @@ func _play_intro_animation() -> void:
 		if not _active:
 			return
 		_swipe_detector.enabled = true
+		_start_challenge_timer()
 		intro_finished.emit()
 	)
 

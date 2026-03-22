@@ -73,6 +73,7 @@ func set_message(text: String, board_bottom: float) -> void:
 	_msg_panel.anchor_right  = 0.0
 	_msg_panel.anchor_bottom = 0.0
 	_msg_panel.visible  = true
+
 	_msg_panel.modulate = Color.TRANSPARENT
 
 	# Wait one frame for anchor reset to take effect before sizing

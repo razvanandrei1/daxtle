@@ -70,6 +70,14 @@ static func set_haptics_enabled(on: bool) -> void:
 	_set_field("haptics_enabled", on)
 
 
+static func get_best_streak() -> int:
+	return _get_int("best_streak", 0)
+
+
+static func set_best_streak(n: int) -> void:
+	_set_field("best_streak", n)
+
+
 static func _get_int(key: String, default: int) -> int:
 	if not FileAccess.file_exists(SAVE_PATH):
 		return default
