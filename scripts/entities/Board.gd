@@ -108,6 +108,7 @@ func _draw_target_borders() -> void:
 		style.border_color = border_col
 		style.set_border_width_all(int(border))
 		style.set_corner_radius_all(int(radius * s))
+		style.anti_aliasing = false
 		style.draw(_target_overlay.get_canvas_item(), rect)
 
 
