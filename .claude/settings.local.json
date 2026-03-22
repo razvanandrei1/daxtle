@@ -62,7 +62,10 @@
       "Bash(git submodule:*)",
       "Bash(git checkout:*)",
       "Bash(scons platform=ios arch=arm64 target=template_release)",
-      "Bash(scons platform=ios arch=arm64 target=template_debug)"
+      "Bash(scons platform=ios arch=arm64 target=template_debug)",
+      "Bash(scons platform=macos arch=arm64 target=template_debug)",
+      "Bash(scons platform=macos arch=arm64 target=template_debug --clean)",
+      "Bash(cp:*)"
     ]
   }
 }

@@ -4,7 +4,7 @@ compatibility_minimum = "4.5"
 reloadable = false
 
 [libraries]
+macos.debug = "res://bin/libdaxtle_haptics.macos.template_debug.framework"
+macos.release = "res://bin/libdaxtle_haptics.macos.template_debug.framework"
 ios.debug = "res://bin/libdaxtle_haptics.ios.template_debug.arm64.a"
 ios.release = "res://bin/libdaxtle_haptics.ios.template_release.arm64.a"
-
-[icons]
