@@ -20,6 +20,12 @@ var arrow_alpha: float = 1.0:
 		arrow_alpha = v
 		queue_redraw()
 
+# Tweened to shrink arrow independently of block_scale (e.g. win effect)
+var arrow_scale: float = 1.0:
+	set(v):
+		arrow_scale = v
+		queue_redraw()
+
 
 func setup(block_data: BlockData, va: float, board: Board) -> void:
 	data        = block_data
@@ -56,10 +62,12 @@ const ARROW_WIDTH  := 0.22  # half-width at base as a fraction of value_a
 const ARC_STEPS    := 6     # points per rounded corner arc
 
 func _draw_arrow() -> void:
-	if arrow_alpha <= 0.0:
+	if arrow_alpha <= 0.0 or arrow_scale <= 0.0:
 		return
 	var arrow_color := color.darkened(0.30)
 	arrow_color.a   = arrow_alpha
+
+	var s := block_scale * arrow_scale
 
 	var axis: Vector2
 	match data.dir:
@@ -70,13 +78,13 @@ func _draw_arrow() -> void:
 		_:
 			# Cargo block — draw a small dot instead of an arrow
 			var c := Vector2(value_a, value_a) * 0.5
-			draw_circle(c, value_a * 0.09 * block_scale, arrow_color)
+			draw_circle(c, value_a * 0.09 * s, arrow_color)
 			return
 	var perp := Vector2(-axis.y, axis.x)
 
-	var half_len   := value_a * ARROW_LENGTH * 0.5 * block_scale
-	var half_width := value_a * ARROW_WIDTH * block_scale
-	var radius     := value_a * GameTheme.CORNER_FRACTION * block_scale
+	var half_len   := value_a * ARROW_LENGTH * 0.5 * s
+	var half_width := value_a * ARROW_WIDTH * s
+	var radius     := value_a * GameTheme.CORNER_FRACTION * s
 
 	var c   := Vector2(value_a, value_a) * 0.5
 	var tip := c + axis * half_len

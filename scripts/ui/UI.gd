@@ -26,6 +26,8 @@ func _ready() -> void:
 	panel_style.content_margin_top = 28
 	panel_style.content_margin_bottom = 28
 	_msg_panel.add_theme_stylebox_override("panel", panel_style)
+	_msg_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_msg_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_msg_panel.visible = false
 
 

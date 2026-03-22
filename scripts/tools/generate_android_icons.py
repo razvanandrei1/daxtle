@@ -90,9 +90,9 @@ def generate_foreground():
 
 
 def generate_background():
-    img = Image.new("RGBA", (432, 432), BG_COLOR + (255,))
+    img = Image.new("RGBA", (432, 432), (255, 255, 255, 255))
     img.save(os.path.join(OUT_DIR, "icon_adaptive_bg.png"))
-    print(f"  icon_adaptive_bg.png   — 432x432, solid background")
+    print(f"  icon_adaptive_bg.png   — 432x432, white background")
 
 
 def generate_monochrome():

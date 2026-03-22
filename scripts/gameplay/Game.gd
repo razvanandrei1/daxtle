@@ -369,24 +369,36 @@ func _on_win() -> void:
 		dismiss_message.emit()
 
 	Haptics.win()
-	# Hide targets before the flash so blocks flash cleanly on plain board
+	# Hide targets, A cells under B blocks, and teleports before the flash
 	_board.clear_targets()
-
-	# --- Smooth double fade flash on B blocks ---
-	# Flash: 150ms out → 50ms wait → 200ms in = 400ms, 30ms gap between flashes
-	var flash := create_tween().set_parallel(true)
 	for block in _blocks:
-		flash.tween_property(block, "modulate:a", 0.0, 0.15) \
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-		flash.tween_property(block, "modulate:a", 1.0, 0.20).set_delay(0.20) \
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		flash.tween_property(block, "modulate:a", 0.0, 0.15).set_delay(0.43) \
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-		flash.tween_property(block, "modulate:a", 1.0, 0.20).set_delay(0.63) \
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		_board.set_cell_scale(block.grid_origin, 0.0)
+	for tp in _teleports:
+		tp.visible = false
 
-	flash.finished.connect(func() -> void:
-		_play_exit_chain()
+	# --- Shrink arrows on B blocks, then flash ---
+	var arrow_shrink := create_tween().set_parallel(true)
+	for block in _blocks:
+		arrow_shrink.tween_method(func(v: float) -> void: block.arrow_scale = v,
+			1.0, 0.0, 0.25) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+
+	arrow_shrink.finished.connect(func() -> void:
+		# Smooth double fade flash on B blocks
+		var flash := create_tween().set_parallel(true)
+		for block in _blocks:
+			flash.tween_property(block, "modulate:a", 0.0, 0.15) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+			flash.tween_property(block, "modulate:a", 1.0, 0.20).set_delay(0.20) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			flash.tween_property(block, "modulate:a", 0.0, 0.15).set_delay(0.43) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+			flash.tween_property(block, "modulate:a", 1.0, 0.20).set_delay(0.63) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+		flash.finished.connect(func() -> void:
+			_play_exit_chain()
+		)
 	)
 
 

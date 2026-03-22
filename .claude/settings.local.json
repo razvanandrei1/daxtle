@@ -68,7 +68,18 @@
       "Bash(cp:*)",
       "Bash(nm -u bin/libdaxtle_haptics.ios.template_release.arm64)",
       "Bash(libtool -static -o libdaxtle_haptics.ios.template_debug.arm64.a /Users/razvanandrei/daxtle/gdextension/haptics/bin/libdaxtle_haptics.ios.template_debug.arm64 /Users/razvanandrei/daxtle/gdextension/haptics/godot-cpp/bin/libgodot-cpp.ios.template_debug.arm64.a)",
-      "Bash(libtool -static -o libdaxtle_haptics.ios.template_release.arm64.a /Users/razvanandrei/daxtle/gdextension/haptics/bin/libdaxtle_haptics.ios.template_release.arm64 /Users/razvanandrei/daxtle/gdextension/haptics/godot-cpp/bin/libgodot-cpp.ios.template_release.arm64.a)"
+      "Bash(libtool -static -o libdaxtle_haptics.ios.template_release.arm64.a /Users/razvanandrei/daxtle/gdextension/haptics/bin/libdaxtle_haptics.ios.template_release.arm64 /Users/razvanandrei/daxtle/gdextension/haptics/godot-cpp/bin/libgodot-cpp.ios.template_release.arm64.a)",
+      "Bash(find /Users/razvanandrei/daxtle -name level* -not -path */build/* -not -path */android/* -not -path */godot-cpp/*)",
+      "Bash(sips:*)",
+      "Bash(brew list:*)",
+      "Bash(for size:*)",
+      "Bash(do cairosvg:*)",
+      "Bash(cp Icon-120.png Icon-120-1.png)",
+      "Bash(/Users/razvanandrei/daxtle/scripts/tools/regenerate_ios_icons.sh 2>&1)",
+      "Bash(ICON_DIR=\"/Users/razvanandrei/daxtle/build/ios/daxtle/Images.xcassets/AppIcon.appiconset\")",
+      "Bash(cairosvg /Users/razvanandrei/daxtle/icon.svg -o \"$ICON_DIR/Icon-1024.png\" --output-width 1024 --output-height 1024)",
+      "Bash(do sips:*)",
+      "Bash(SRC=icon_1024.png)"
     ]
   }
 }
