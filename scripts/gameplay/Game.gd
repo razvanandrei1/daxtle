@@ -23,13 +23,12 @@ const WIN_FADE   := Color(1.0, 1.0, 1.0, 0.0)
 enum Mode { CAMPAIGN, CHALLENGE }
 var mode: Mode = Mode.CAMPAIGN
 var _challenge_streak: int = 0
-var _challenge_pool: Array[int] = []
-var _challenge_pool_index: int = 0
 
 # --- Challenge timer ---
 const CHALLENGE_TIME_START := 30.0   # seconds for first puzzle
 const CHALLENGE_TIME_DECAY := 1.5    # seconds removed per streak point
 const CHALLENGE_TIME_MIN   := 10.0   # minimum time allowed
+const CHALLENGE_POOL_RATIO := 0.4    # fraction of easy/medium pool used as streak threshold
 var _challenge_time_left: float = 0.0
 var _challenge_time_max:  float = 0.0
 var _challenge_timer_active: bool = false
@@ -272,24 +271,88 @@ func start_challenge() -> void:
 	_challenge_timer_alpha = 0.0
 	_challenge_time_left = 0.0
 	queue_redraw()
-	var count := LevelLoader.count_challenge_levels()
-	_challenge_pool.clear()
-	for i in count:
-		_challenge_pool.append(i + 1)
-	_challenge_pool.shuffle()
-	_challenge_pool_index = 0
+	_build_challenge_pools()
 	_load_challenge_next()
 
 
+# Difficulty pools: easy (1), medium (2), hard (3)
+var _pool_easy:   Array[int] = []
+var _pool_medium: Array[int] = []
+var _pool_hard:   Array[int] = []
+
+func _build_challenge_pools() -> void:
+	_pool_easy.clear()
+	_pool_medium.clear()
+	_pool_hard.clear()
+	for i in LevelLoader.count_challenge_easy():
+		_pool_easy.append(i + 1)
+	for i in LevelLoader.count_challenge_medium():
+		_pool_medium.append(i + 1)
+	for i in LevelLoader.count_challenge_hard():
+		_pool_hard.append(i + 1)
+	_pool_easy.shuffle()
+	_pool_medium.shuffle()
+	_pool_hard.shuffle()
+
+
+func _pick_from_pool(pool: Array[int]) -> int:
+	if pool.is_empty():
+		return -1
+	var n: int = pool.pop_back()
+	return n
+
+
+func _pick_challenge() -> Dictionary:
+	## Returns {"n": level_number, "tier": 1/2/3} or empty if nothing available.
+	## Thresholds: easy for streak < half of easy pool, then medium for half of medium pool, then hard.
+	var easy_threshold  := int(LevelLoader.count_challenge_easy() * CHALLENGE_POOL_RATIO)
+	var medium_threshold := easy_threshold + int(LevelLoader.count_challenge_medium() * CHALLENGE_POOL_RATIO)
+	var tier := 2
+	var n := -1
+
+	if _challenge_streak < easy_threshold:
+		tier = 1; n = _pick_from_pool(_pool_easy)
+		if n == -1:
+			tier = 2; n = _pick_from_pool(_pool_medium)
+	elif _challenge_streak < medium_threshold:
+		tier = 2; n = _pick_from_pool(_pool_medium)
+		if n == -1:
+			tier = 3; n = _pick_from_pool(_pool_hard)
+	else:
+		tier = 3; n = _pick_from_pool(_pool_hard)
+		if n == -1:
+			tier = 2; n = _pick_from_pool(_pool_medium)
+
+	# Fallback: any non-empty pool
+	if n == -1:
+		var pools: Array[Array] = [_pool_easy, _pool_medium, _pool_hard]
+		for t in [1, 2, 3]:
+			if not pools[t - 1].is_empty():
+				tier = t; n = _pick_from_pool(pools[t - 1])
+				break
+
+	# Hard pool exhausted — reshuffle hard only (easy/medium don't repeat)
+	if n == -1:
+		_pool_hard.clear()
+		for i in LevelLoader.count_challenge_hard():
+			_pool_hard.append(i + 1)
+		_pool_hard.shuffle()
+		tier = 3; n = _pick_from_pool(_pool_hard)
+
+	if n == -1:
+		return {}
+	return {"n": n, "tier": tier}
+
+
 func _load_challenge_next() -> void:
-	if _challenge_pool.is_empty():
+	var pick := _pick_challenge()
+	if pick.is_empty():
 		return
-	if _challenge_pool_index >= _challenge_pool.size():
-		_challenge_pool.shuffle()
-		_challenge_pool_index = 0
-	var level_n := _challenge_pool[_challenge_pool_index]
-	_challenge_pool_index += 1
-	var level_data := LevelLoader.load_challenge_level(level_n)
+	var level_data: Dictionary
+	match pick["tier"]:
+		1: level_data = LevelLoader.load_challenge_easy(pick["n"])
+		2: level_data = LevelLoader.load_challenge_medium(pick["n"])
+		3: level_data = LevelLoader.load_challenge_hard(pick["n"])
 	if level_data.is_empty():
 		return
 	_load_level_data(level_data)
