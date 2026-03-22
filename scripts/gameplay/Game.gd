@@ -20,11 +20,10 @@ const WIN_FADE   := Color(1.0, 1.0, 1.0, 0.0)
 
 # --- Signals communicated to Main.gd via connections ---
 signal level_loaded(n: int)          # emitted after a level is fully loaded
-signal first_move                    # emitted on the player's first swipe (shows reset icon)
+signal menu_pressed                  # emitted when menu icon is tapped
 signal message_changed(text: String, board_bottom: float)  # level tutorial message
 signal intro_finished                # intro animation done (triggers message display)
 signal dismiss_message               # hide tutorial message (on win)
-signal hide_reset                    # fade out reset icon (on win)
 signal all_levels_completed          # last level beaten — triggers completion popup
 var _has_message: bool = false
 
@@ -43,6 +42,9 @@ var _teleports:    Array[Teleport] = []
 var _swipe_detector: SwipeDetector
 var _intro_tweens: Array[Tween] = []
 
+@onready var _header: SceneHeader = $SceneHeader
+@onready var _reset:  ResetIcon   = $ResetIcon
+
 
 func _ready() -> void:
 	# Match slide animation duration to the slide sound effect
@@ -56,6 +58,41 @@ func _ready() -> void:
 		if _active and _moved:
 			reset_level()
 	)
+
+	_header.back_pressed.connect(func() -> void: menu_pressed.emit())
+	_reset.pressed.connect(func() -> void: reset_level())
+	_reset.position = Vector2(_header.right_x, _header.bar_cy)
+	_reset.visible = false
+
+
+func set_level(n: int) -> void:
+	_header.set_title("%d" % n)
+	_reset.visible = false
+
+
+func show_reset() -> void:
+	if not _reset.visible:
+		_reset.visible = true
+		if Globals.DEBUG_MODE:
+			_reset.scale = Vector2.ONE
+			return
+		_reset.scale = Vector2.ZERO
+		var tween := create_tween()
+		tween.tween_property(_reset, "scale", Vector2.ONE, 0.2) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _hide_reset() -> void:
+	if _reset.visible:
+		if Globals.DEBUG_MODE:
+			_reset.visible = false
+			return
+		var tween := create_tween()
+		tween.tween_property(_reset, "scale", Vector2.ZERO, 0.15) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tween.finished.connect(func() -> void:
+			_reset.visible = false
+		)
 
 
 func load_level(n: int) -> void:
@@ -141,7 +178,7 @@ func _on_swipe(direction: String) -> void:
 
 	if not _moved:
 		_moved = true
-		first_move.emit()
+		show_reset()
 
 	_swipe_detector.enabled = false
 
@@ -312,7 +349,7 @@ func _on_stuck() -> void:
 func _on_win() -> void:
 	_swipe_detector.enabled = false
 	AudioManager.play_sfx("win")
-	hide_reset.emit()
+	_hide_reset()
 
 	# Advance progress if this is the furthest level completed
 	var next := current_level + 1

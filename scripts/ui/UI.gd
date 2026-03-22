@@ -1,39 +1,11 @@
 extends CanvasLayer
 
-signal reset_pressed
-signal menu_pressed
-
-@onready var _menu:      MenuIcon       = $MenuIcon
-@onready var _reset:     ResetIcon      = $ResetIcon
-@onready var _level:     Label          = $LevelLabel
 @onready var _msg_panel: PanelContainer = $MessagePanel
 @onready var _msg_label: Label          = $MessagePanel/MessageLabel
 
 
 func _ready() -> void:
 	var text_col := GameTheme.ACTIVE["text"]
-	var safe_top := GameTheme.get_safe_area_top()
-	var vp       := get_viewport().get_visible_rect().size
-	var margin_x := vp.x * Board.MARGIN
-	var top_y    := safe_top + Globals.TOP_OFFSET
-
-	_menu.pressed.connect(func(): menu_pressed.emit())
-	_reset.pressed.connect(func(): reset_pressed.emit())
-
-	# Level label vertical center
-	var label_h  := Globals.LABEL_HEIGHT
-	var label_cy := top_y + label_h * 0.5
-
-	_menu.position  = Vector2(margin_x, label_cy)
-	_reset.position = Vector2(vp.x - margin_x, label_cy)
-	_level.offset_top    = top_y - 8
-	_level.offset_bottom = top_y + label_h
-	_level.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-
-	# Level label styling
-	_level.add_theme_color_override("font_color", text_col)
-	_level.add_theme_font_override("font", GameTheme.FONT_BOLD)
-	_level.add_theme_font_size_override("font_size", 93)
 
 	# Message styling
 	var msg_col := text_col
@@ -56,7 +28,6 @@ func _ready() -> void:
 	_msg_panel.add_theme_stylebox_override("panel", panel_style)
 	_msg_panel.visible = false
 
-	_reset.visible = false
 
 
 func update_panel_border(value_a: float) -> void:
@@ -65,11 +36,6 @@ func update_panel_border(value_a: float) -> void:
 		var border_w := int(value_a * 0.041)
 		style.set_border_width_all(border_w)
 		style.set_corner_radius_all(int(value_a * GameTheme.CORNER_FRACTION))
-
-
-func set_level(n: int) -> void:
-	_level.text = "%d" % n
-	_reset.visible = false
 
 
 func set_message(text: String, board_bottom: float) -> void:
@@ -144,28 +110,3 @@ func dismiss_message() -> void:
 	tween.finished.connect(func() -> void:
 		_msg_panel.visible = false
 	)
-
-
-func hide_reset() -> void:
-	if _reset.visible:
-		if Globals.DEBUG_MODE:
-			_reset.visible = false
-			return
-		var tween := create_tween()
-		tween.tween_property(_reset, "scale", Vector2.ZERO, 0.15) \
-			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-		tween.finished.connect(func() -> void:
-			_reset.visible = false
-		)
-
-
-func show_reset() -> void:
-	if not _reset.visible:
-		_reset.visible = true
-		if Globals.DEBUG_MODE:
-			_reset.scale = Vector2.ONE
-			return
-		_reset.scale = Vector2.ZERO
-		var tween := create_tween()
-		tween.tween_property(_reset, "scale", Vector2.ONE, 0.2) \
-			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

@@ -10,12 +10,12 @@ const LEVELS_PER_PAGE   := COLS * ROWS   # 20 — full grid per page
 const FRAME_PADDING     := 32.0
 const CELL_GAP          := 28.0
 const PAGE_GAP          := 40.0
-const FRAME_MARGIN      := 48.0
 const TOP_OFFSET        := 200.0
 const BOT_RESERVE       := 120.0  # space for page dots + bottom padding
 const SNAP_THRESHOLD    := 0.25   # drag fraction of frame width to snap next
 const TAP_THRESHOLD     := 12.0   # max drag px to count as a tap
 
+var _margin:        float
 var _cell_size:     float
 var _frame_size:    Vector2
 var _frame_stride:  float
@@ -40,7 +40,7 @@ var _pulse_scale:   float = 1.0    # animated scale of the pulsed cell
 var _progress:      int = 1        # highest unlocked level
 
 
-@onready var _menu: MenuIcon = $MenuIcon
+@onready var _header: SceneHeader = $SceneHeader
 
 func _ready() -> void:
 	_total_levels = LevelLoader.count_levels()
@@ -52,18 +52,15 @@ func _ready() -> void:
 			_progress = SaveData.get_progress_level()
 			queue_redraw()
 	)
-	var vp       := get_viewport().get_visible_rect().size
-	var margin_x := vp.x * Board.MARGIN
-	var title_cy := _safe_top + Globals.TOP_OFFSET + Globals.LABEL_HEIGHT * 0.5
-	_menu.pressed.connect(func() -> void: menu_pressed.emit())
-	_menu.position = Vector2(margin_x, title_cy)
+	_header.back_pressed.connect(func() -> void: menu_pressed.emit())
 	_compute_layout()
 
 
 func _compute_layout() -> void:
 	var vp := get_viewport().get_visible_rect().size
 
-	var frame_w  := vp.x - FRAME_MARGIN * 2.0
+	_margin      = vp.x * Board.MARGIN
+	var frame_w  := vp.x - _margin * 2.0
 	var inner_w  := frame_w - FRAME_PADDING * 2.0
 	var cell_w   := (inner_w - CELL_GAP * (COLS - 1)) / COLS
 
@@ -87,19 +84,10 @@ func _compute_layout() -> void:
 func _draw() -> void:
 	var vp     := get_viewport().get_visible_rect().size
 	var radius := _cell_size * GameTheme.CORNER_FRACTION
-	# Title — centered, matching game scene level number style
-	var title_fs := 62
-	var title_text := "Level select"
-	var title_w  := _font.get_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_fs).x
-	var title_asc := _font.get_ascent(title_fs)
-	var title_y  := _safe_top + Globals.TOP_OFFSET + Globals.LABEL_HEIGHT * 0.5 + title_asc * 0.5
-	draw_string(_font, Vector2((vp.x - title_w) * 0.5, title_y),
-		title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_fs,
-		GameTheme.ACTIVE["text"])
 
 	# Frames (no background)
 	for page in _total_pages:
-		var fx := FRAME_MARGIN + page * _frame_stride + _scroll_x
+		var fx := _margin + page * _frame_stride + _scroll_x
 		if fx + _frame_size.x < -50.0 or fx > vp.x + 50.0:
 			continue
 
@@ -247,7 +235,7 @@ func _snap_to_page() -> void:
 
 
 func _handle_tap(pos: Vector2) -> void:
-	var fx := FRAME_MARGIN + _current_page * _frame_stride + _scroll_x
+	var fx := _margin + _current_page * _frame_stride + _scroll_x
 
 	for row in ROWS:
 		for col in COLS:

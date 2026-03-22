@@ -39,18 +39,15 @@ func _ready() -> void:
 	_main_menu.select_level_pressed.connect(_on_select_level_pressed)
 	_main_menu.settings_pressed.connect(_on_settings_pressed)
 	_main_menu.about_pressed.connect(_on_about_pressed)
-	_ui.menu_pressed.connect(_on_menu_pressed)
-	_ui.reset_pressed.connect(func() -> void: _game.reset_level())
+	_game.menu_pressed.connect(_on_menu_pressed)
 	_level_select.level_selected.connect(_on_level_selected)
 	_level_select.menu_pressed.connect(_on_menu_pressed)
 	_settings.back_pressed.connect(_on_settings_back)
 	_about.back_pressed.connect(_on_about_back)
 	_game.level_loaded.connect(_on_level_loaded)
-	_game.first_move.connect(func() -> void: _ui.show_reset())
 	_game.message_changed.connect(func(text: String, bb: float) -> void: _ui.set_message(text, bb))
 	_game.intro_finished.connect(func() -> void: _ui.animate_message())
 	_game.dismiss_message.connect(func() -> void: _ui.dismiss_message())
-	_game.hide_reset.connect(func() -> void: _ui.hide_reset())
 	_game.all_levels_completed.connect(_on_all_levels_completed)
 
 	# Completion popup overlay
@@ -77,7 +74,7 @@ func _ready() -> void:
 		_game.process_mode         = Node.PROCESS_MODE_INHERIT
 		_ui.visible                = true
 		var last := SaveData.get_last_level()
-		_ui.set_level(last)
+		_game.set_level(last)
 		_game.load_level(last)
 		return
 
@@ -133,7 +130,7 @@ func _on_level_selected(n: int) -> void:
 
 
 func _on_level_loaded(n: int) -> void:
-	_ui.set_level(n)
+	_game.set_level(n)
 	_ui.update_panel_border(_game.value_a)
 	SaveData.set_last_level(n)
 
@@ -329,5 +326,5 @@ func _show_game(level_n: int) -> void:
 	_game.visible              = true
 	_game.process_mode         = Node.PROCESS_MODE_INHERIT
 	_ui.visible                = true
-	_ui.set_level(level_n)
+	_game.set_level(level_n)
 	_game.load_level(level_n)
