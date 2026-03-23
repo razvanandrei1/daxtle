@@ -5,7 +5,7 @@ I want to create a level editor that will only be active on LEVEL_EDITOR_MODE = 
 
 When placing B component on A board the user must also press a arrow key for the direction while adding the component. No arrow key -> the element will be cargo (direction "none")
 
-Also a save button will be present and the current level json will be printed into console (or directly saved at it's location in assets).
+Also a save button will be present and the current level json will be printed into console (or directly saved at it's location in assets folder).
 Also clicking on an empty A square while pressing X, that square will dissapear, and when pressing again the square will appear back.
 Also a reposition button will reposition the entire structure like will appear in the game.
 
