@@ -40,6 +40,7 @@ var _removed_squares: Dictionary = {}  # Vector2i -> true (squares toggled off)
 var _targets: Dictionary = {}          # Vector2i -> int (block_id)
 var _blocks: Array = []                # [{id:int, dir:String, origin:Vector2i}, ...]
 var _teleports: Array = []             # [{id:int, portal_a:Vector2i, portal_b:Vector2i}, ...]
+var _message: String = ""              # tutorial message preserved across saves
 
 # Visual nodes
 var _board: Board
@@ -84,6 +85,7 @@ func load_empty(n: int, grid_size: int) -> void:
 	_targets.clear()
 	_blocks.clear()
 	_teleports.clear()
+	_message = ""
 	for y in grid_size:
 		for x in grid_size:
 			_squares[Vector2i(x, y)] = true
@@ -98,6 +100,7 @@ func _parse_level_data(data: Dictionary) -> void:
 	_targets.clear()
 	_blocks.clear()
 	_teleports.clear()
+	_message = data.get("message", "")
 
 	if data.has("A"):
 		for entry in data["A"]:
@@ -215,21 +218,52 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 			KEY_W:
-				_expand_grid("up")
-				get_viewport().set_input_as_handled()
-				return
+				if event.ctrl_pressed:
+					_expand_grid("up")
+					get_viewport().set_input_as_handled()
+					return
+				elif event.shift_pressed:
+					_shrink_grid("up")
+					get_viewport().set_input_as_handled()
+					return
 			KEY_S:
-				_expand_grid("down")
-				get_viewport().set_input_as_handled()
-				return
+				if event.ctrl_pressed:
+					_expand_grid("down")
+					get_viewport().set_input_as_handled()
+					return
+				elif event.shift_pressed:
+					_shrink_grid("down")
+					get_viewport().set_input_as_handled()
+					return
 			KEY_A:
-				_expand_grid("left")
-				get_viewport().set_input_as_handled()
-				return
+				if event.ctrl_pressed:
+					_expand_grid("left")
+					get_viewport().set_input_as_handled()
+					return
+				elif event.shift_pressed:
+					_shrink_grid("left")
+					get_viewport().set_input_as_handled()
+					return
 			KEY_D:
-				_expand_grid("right")
+				if event.ctrl_pressed:
+					_expand_grid("right")
+					get_viewport().set_input_as_handled()
+					return
+				elif event.shift_pressed:
+					_shrink_grid("right")
+					get_viewport().set_input_as_handled()
+					return
+			KEY_X:
+				_select_tool(Tool.NONE)
+				for tid in _tool_buttons:
+					_tool_buttons[tid].button_pressed = false
 				get_viewport().set_input_as_handled()
 				return
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
 
 	var is_click := false
 
@@ -340,6 +374,59 @@ func _expand_grid(direction: String) -> void:
 			var x := mx.x + 1
 			for y in range(mn.y, mx.y + 1):
 				_squares[Vector2i(x, y)] = true
+
+	_rebuild_visuals()
+
+
+func _shrink_grid(direction: String) -> void:
+	var active: Array[Vector2i] = []
+	for sq in _squares:
+		if not _removed_squares.has(sq):
+			active.append(sq)
+	if active.is_empty():
+		return
+
+	var mn := Board._grid_min(active)
+	var mx := Board._grid_max(active)
+
+	# Don't shrink below 1 row/column
+	if direction in ["up", "down"] and mn.y == mx.y:
+		return
+	if direction in ["left", "right"] and mn.x == mx.x:
+		return
+
+	var remove_y := -999
+	var remove_x := -999
+	match direction:
+		"up":    remove_y = mn.y
+		"down":  remove_y = mx.y
+		"left":  remove_x = mn.x
+		"right": remove_x = mx.x
+
+	# Remove squares, targets, blocks, and teleports on that row/column
+	var to_erase: Array[Vector2i] = []
+	for sq in _squares:
+		if remove_y != -999 and sq.y == remove_y:
+			to_erase.append(sq)
+		elif remove_x != -999 and sq.x == remove_x:
+			to_erase.append(sq)
+	for sq in to_erase:
+		_squares.erase(sq)
+		_removed_squares.erase(sq)
+		_targets.erase(sq)
+
+	for i in range(_blocks.size() - 1, -1, -1):
+		var o: Vector2i = _blocks[i]["origin"]
+		if (remove_y != -999 and o.y == remove_y) or (remove_x != -999 and o.x == remove_x):
+			_blocks.remove_at(i)
+
+	for i in range(_teleports.size() - 1, -1, -1):
+		var td: Dictionary = _teleports[i]
+		var a: Vector2i = td["portal_a"]
+		var b: Vector2i = td["portal_b"]
+		if (remove_y != -999 and (a.y == remove_y or b.y == remove_y)) \
+			or (remove_x != -999 and (a.x == remove_x or b.x == remove_x)):
+			_teleports.remove_at(i)
 
 	_rebuild_visuals()
 
@@ -487,6 +574,9 @@ func _to_level_dict() -> Dictionary:
 			})
 		data["T"] = t_arr
 
+	if not _message.is_empty():
+		data["message"] = _message
+
 	return data
 
 
@@ -535,7 +625,11 @@ func _reposition() -> void:
 func _save_level() -> void:
 	_reposition()
 	var data := _to_level_dict()
-	var json_str := JSON.stringify(data)
+	# Build JSON with each top-level key on its own line
+	var parts: Array[String] = []
+	for key in data:
+		parts.append('"%s":%s' % [key, JSON.stringify(data[key])])
+	var json_str := "{\n" + ",\n".join(parts) + "\n}"
 
 	# Save to file
 	var path := "res://levels/level_%03d.json" % current_level
@@ -709,6 +803,18 @@ func _build_panel() -> void:
 	_status_label.add_theme_font_size_override("font_size", 28)
 	_status_label.add_theme_color_override("font_color", text_col)
 	vbox.add_child(_status_label)
+
+	# Instructions label
+	var help := Label.new()
+	help.text = "WASD: block dir | Ctrl+WASD: add row/col | Shift+WASD: remove row/col | X: deselect | , . : prev/next level"
+	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	help.add_theme_font_override("font", font)
+	help.add_theme_font_size_override("font_size", 20)
+	var help_col := text_col
+	help_col.a = 0.45
+	help.add_theme_color_override("font_color", help_col)
+	vbox.add_child(help)
 
 
 func _create_tool_button(tool_id: Tool, parent: Node) -> Button:

@@ -36,6 +36,14 @@ func _ready() -> void:
 	_swipe_detector.double_tapped.connect(func() -> void: _reload())
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		back_pressed.emit()
+		get_viewport().set_input_as_handled()
+
+
 func load_from_editor() -> void:
 	_header.set_title("Test %d" % Globals.editor_level_number)
 	var level_data := Globals.editor_level_data
@@ -127,6 +135,13 @@ func _on_swipe(direction: String) -> void:
 	var invalid: Array[Block] = result["invalid"]
 	var teleport_exits: Dictionary = result["teleport_exits"]
 	var teleport_entries: Dictionary = result["teleport_entries"]
+
+	# Don't shake blocks that are already on their target and can't move further
+	var filtered_invalid: Array[Block] = []
+	for block in invalid:
+		if not block.data.target_origins.has(block.grid_origin):
+			filtered_invalid.append(block)
+	invalid = filtered_invalid
 
 	if movers.is_empty() and invalid.is_empty():
 		return

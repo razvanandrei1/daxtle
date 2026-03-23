@@ -512,6 +512,13 @@ func _on_swipe(direction: String) -> void:
 	var teleport_exits:    Dictionary   = result["teleport_exits"]
 	var teleport_entries:  Dictionary   = result["teleport_entries"]
 
+	# Don't shake blocks that are already on their target and can't move further
+	var filtered_invalid: Array[Block] = []
+	for block in invalid:
+		if not block.data.target_origins.has(block.grid_origin):
+			filtered_invalid.append(block)
+	invalid = filtered_invalid
+
 	if movers.is_empty() and invalid.is_empty():
 		return
 

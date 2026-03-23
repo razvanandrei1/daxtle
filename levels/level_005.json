@@ -1,14 +1,5 @@
 {
-  "A": [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1, 1], [0, 2, 1], [1, 2], [2, 2]],
-  "B": [
-	{
-	  "id": 1, "dir": "right",
-	  "origin": [0, 1]
-	},
-	{
-	  "id": 1, "dir": "down",
-	  "origin": [0, 0]
-	}
-  ],
-  "message": "Do not get stuck by moving the wrong block at the wrong time!\nDouble-tap to quickly reload the position."
+"A":[[1,3],[2,3,1],[3,3],[4,3],[1,2],[2,2],[3,2],[4,2,1],[1,1],[2,1],[3,1],[4,1],[1,0],[2,0],[3,0],[4,0],[0,0],[0,1,1],[0,2],[0,3]],
+"B":[{"dir":"down","id":1,"origin":[2,0]},{"dir":"left","id":1,"origin":[2,1]},{"dir":"right","id":1,"origin":[2,2]}],
+"message":"Do not get stuck by moving the wrong block at the wrong time!\nDouble-tap to quickly reload the position."
 }
