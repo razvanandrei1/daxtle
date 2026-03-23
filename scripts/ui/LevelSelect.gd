@@ -3,6 +3,7 @@ extends Node2D
 
 signal level_selected(n: int)
 signal menu_pressed
+signal new_level_requested(grid_size: int)
 
 const COLS              := 4
 const ROWS              := 5
@@ -42,6 +43,9 @@ var _progress:      int = 1        # highest unlocked level
 
 @onready var _header: SceneHeader = $SceneHeader
 
+var _new_level_layer: CanvasLayer  # overlay for "New Level" button
+var _size_popup_layer: CanvasLayer  # overlay for grid size picker
+
 func _ready() -> void:
 	_total_levels = LevelLoader.count_levels()
 	_total_pages  = maxi(ceili(float(_total_levels) / LEVELS_PER_PAGE), 1)
@@ -50,10 +54,18 @@ func _ready() -> void:
 	visibility_changed.connect(func() -> void:
 		if visible:
 			_progress = SaveData.get_progress_level()
+			_total_levels = LevelLoader.count_levels()
+			_total_pages  = maxi(ceili(float(_total_levels) / LEVELS_PER_PAGE), 1)
 			queue_redraw()
 	)
 	_header.back_pressed.connect(func() -> void: menu_pressed.emit())
 	_compute_layout()
+	if Globals.LEVEL_EDITOR_MODE:
+		_build_new_level_button()
+		visibility_changed.connect(func() -> void:
+			if _new_level_layer:
+				_new_level_layer.visible = visible
+		)
 
 
 func _compute_layout() -> void:
@@ -104,7 +116,7 @@ func _draw() -> void:
 					var dim := GameTheme.ACTIVE["surface"]
 					dim.a   = 0.35
 					_draw_rounded_rect(rect, dim, radius)
-				elif level_n > _progress:
+				elif not Globals.LEVEL_EDITOR_MODE and level_n > _progress:
 					# Locked — dimmed surface with faded number
 					var locked_col := GameTheme.ACTIVE["surface"]
 					locked_col.a = 0.35
@@ -241,7 +253,9 @@ func _handle_tap(pos: Vector2) -> void:
 		for col in COLS:
 			var idx     := row * COLS + col
 			var level_n := _current_page * LEVELS_PER_PAGE + idx + 1
-			if level_n > _total_levels or level_n > _progress:
+			if level_n > _total_levels:
+				continue
+			if not Globals.LEVEL_EDITOR_MODE and level_n > _progress:
 				continue
 			var cx := fx + _grid_origin.x + col * (_cell_size + CELL_GAP)
 			var cy := _frame_y + _grid_origin.y + row * (_cell_size + CELL_GAP)
@@ -278,3 +292,166 @@ func _draw_rounded_rect(rect: Rect2, col: Color, radius: float) -> void:
 	style.bg_color = col
 	style.set_corner_radius_all(int(radius))
 	style.draw(get_canvas_item(), rect)
+
+
+# ── New Level button (editor mode only) ─────────────────────────────────────
+
+func _build_new_level_button() -> void:
+	_new_level_layer = CanvasLayer.new()
+	_new_level_layer.layer = 5
+	add_child(_new_level_layer)
+
+	var vp := get_viewport().get_visible_rect().size
+	var font := GameTheme.FONT_BOLD
+	var text_col := GameTheme.ACTIVE["text"]
+	var safe_bot := GameTheme.get_safe_area_bottom()
+
+	var btn := Button.new()
+	btn.text = "+ New Level"
+	btn.add_theme_font_override("font", font)
+	btn.add_theme_font_size_override("font_size", 36)
+	btn.add_theme_color_override("font_color", text_col)
+	btn.custom_minimum_size = Vector2(300, 64)
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color.TRANSPARENT
+	style.border_color = text_col
+	style.border_color.a = 0.4
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(16)
+	style.content_margin_left = 24
+	style.content_margin_right = 24
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+	btn.add_theme_stylebox_override("normal", style)
+	btn.add_theme_stylebox_override("hover", style)
+	btn.add_theme_stylebox_override("pressed", style)
+	btn.add_theme_stylebox_override("focus", style)
+
+	btn.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	btn.offset_top = -maxf(safe_bot, 40.0) - 80.0
+	btn.offset_bottom = btn.offset_top + 64.0
+	btn.offset_left = -150.0
+	btn.offset_right = 150.0
+
+	btn.pressed.connect(_show_size_picker)
+	_new_level_layer.add_child(btn)
+
+
+func _show_size_picker() -> void:
+	if _size_popup_layer:
+		_size_popup_layer.queue_free()
+
+	_size_popup_layer = CanvasLayer.new()
+	_size_popup_layer.layer = 20
+	add_child(_size_popup_layer)
+
+	var font := GameTheme.FONT_BOLD
+	var text_col := GameTheme.ACTIVE["text"]
+	var bg_col := GameTheme.ACTIVE["background"]
+
+	# Dimmed background
+	var container := Control.new()
+	container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	container.mouse_filter = Control.MOUSE_FILTER_STOP
+	_size_popup_layer.add_child(container)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.4)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	container.add_child(dim)
+
+	# Panel
+	var panel := PanelContainer.new()
+	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	panel.custom_minimum_size = Vector2(500, 450)
+	panel.anchor_left = 0.5; panel.anchor_right = 0.5
+	panel.anchor_top = 0.5; panel.anchor_bottom = 0.5
+	panel.offset_left = -250; panel.offset_right = 250
+	panel.offset_top = -225; panel.offset_bottom = 225
+
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = bg_col
+	panel_style.border_color = text_col
+	panel_style.border_color.a = 0.3
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(24)
+	panel_style.content_margin_left = 32
+	panel_style.content_margin_right = 32
+	panel_style.content_margin_top = 32
+	panel_style.content_margin_bottom = 32
+	panel.add_theme_stylebox_override("panel", panel_style)
+	container.add_child(panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 16)
+	panel.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "Board Size"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", font)
+	title.add_theme_font_size_override("font_size", 44)
+	title.add_theme_color_override("font_color", text_col)
+	vbox.add_child(title)
+
+	# Size buttons in a grid
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 16)
+	grid.add_theme_constant_override("v_separation", 16)
+	vbox.add_child(grid)
+
+	for size in [3, 4, 5, 6, 7, 8]:
+		var btn := Button.new()
+		btn.text = "%dx%d" % [size, size]
+		btn.custom_minimum_size = Vector2(120, 56)
+		btn.add_theme_font_override("font", font)
+		btn.add_theme_font_size_override("font_size", 36)
+
+		var btn_style := StyleBoxFlat.new()
+		btn_style.bg_color = text_col
+		btn_style.set_corner_radius_all(12)
+		btn_style.content_margin_left = 16
+		btn_style.content_margin_right = 16
+		btn.add_theme_stylebox_override("normal", btn_style)
+		btn.add_theme_stylebox_override("hover", btn_style)
+		btn.add_theme_stylebox_override("pressed", btn_style)
+		btn.add_theme_stylebox_override("focus", btn_style)
+		btn.add_theme_color_override("font_color", bg_col)
+
+		var captured_size: int = size
+		btn.pressed.connect(func() -> void:
+			_size_popup_layer.queue_free()
+			_size_popup_layer = null
+			new_level_requested.emit(captured_size)
+		)
+		grid.add_child(btn)
+
+	# Cancel button
+	var cancel := Button.new()
+	cancel.text = "Cancel"
+	cancel.add_theme_font_override("font", font)
+	cancel.add_theme_font_size_override("font_size", 36)
+	cancel.add_theme_color_override("font_color", text_col)
+	cancel.custom_minimum_size = Vector2(200, 48)
+	cancel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+
+	var cancel_style := StyleBoxFlat.new()
+	cancel_style.bg_color = Color.TRANSPARENT
+	cancel_style.border_color = text_col
+	cancel_style.border_color.a = 0.3
+	cancel_style.set_border_width_all(2)
+	cancel_style.set_corner_radius_all(12)
+	cancel.add_theme_stylebox_override("normal", cancel_style)
+	cancel.add_theme_stylebox_override("hover", cancel_style)
+	cancel.add_theme_stylebox_override("pressed", cancel_style)
+	cancel.add_theme_stylebox_override("focus", cancel_style)
+
+	cancel.pressed.connect(func() -> void:
+		_size_popup_layer.queue_free()
+		_size_popup_layer = null
+	)
+	vbox.add_child(cancel)

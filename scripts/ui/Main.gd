@@ -16,6 +16,8 @@ const FADE_DURATION := 0.18  # seconds for scene transition fade
 @onready var _settings:     Settings    = $Settings
 @onready var _about:        About       = $About
 @onready var _challenge_intro: ChallengeIntro = $ChallengeIntro
+@onready var _level_editor: LevelEditor = $LevelEditor
+@onready var _level_editor_play: LevelEditorPlay = $LevelEditorPlay
 
 var _fade_layer:  CanvasLayer
 var _fade_rect:   ColorRect
@@ -49,6 +51,10 @@ func _ready() -> void:
 	_about.back_pressed.connect(_on_about_back)
 	_challenge_intro.start_pressed.connect(_on_challenge_start)
 	_challenge_intro.back_pressed.connect(_on_challenge_intro_back)
+	_level_editor.menu_pressed.connect(_on_editor_menu_pressed)
+	_level_editor.play_pressed.connect(_on_editor_play_pressed)
+	_level_editor_play.back_pressed.connect(_on_editor_play_back)
+	_level_select.new_level_requested.connect(_on_new_level_requested)
 	_game.level_loaded.connect(_on_level_loaded)
 	_game.message_changed.connect(func(text: String, bb: float) -> void: _ui.set_message(text, bb))
 	_game.intro_finished.connect(func() -> void: _ui.animate_message())
@@ -77,6 +83,10 @@ func _ready() -> void:
 		_about.process_mode        = Node.PROCESS_MODE_DISABLED
 		_challenge_intro.visible   = false
 		_challenge_intro.process_mode = Node.PROCESS_MODE_DISABLED
+		_level_editor.visible      = false
+		_level_editor.process_mode = Node.PROCESS_MODE_DISABLED
+		_level_editor_play.visible = false
+		_level_editor_play.process_mode = Node.PROCESS_MODE_DISABLED
 		_game.visible              = true
 		_game.process_mode         = Node.PROCESS_MODE_INHERIT
 		_ui.visible                = true
@@ -97,6 +107,10 @@ func _ready() -> void:
 	_about.process_mode        = Node.PROCESS_MODE_DISABLED
 	_challenge_intro.visible   = false
 	_challenge_intro.process_mode = Node.PROCESS_MODE_DISABLED
+	_level_editor.visible      = false
+	_level_editor.process_mode = Node.PROCESS_MODE_DISABLED
+	_level_editor_play.visible = false
+	_level_editor_play.process_mode = Node.PROCESS_MODE_DISABLED
 
 
 # Fade transition: fades screen to opaque, runs callback (scene switch), fades back in.
@@ -135,7 +149,10 @@ func _on_select_level_pressed() -> void:
 
 
 func _on_level_selected(n: int) -> void:
-	_fade_to(func() -> void: _show_game(n))
+	if Globals.LEVEL_EDITOR_MODE:
+		_fade_to(func() -> void: _show_level_editor(n))
+	else:
+		_fade_to(func() -> void: _show_game(n))
 
 
 func _on_level_loaded(n: int) -> void:
@@ -502,3 +519,71 @@ func _show_game(level_n: int) -> void:
 	_ui.visible                = true
 	_game.set_level(level_n)
 	_game.load_level(level_n)
+
+
+# ── Level Editor navigation ──────────────────────────────────────────────────
+
+func _show_level_editor(level_n: int) -> void:
+	_main_menu.visible         = false
+	_main_menu.process_mode    = Node.PROCESS_MODE_DISABLED
+	_level_select.visible      = false
+	_level_select.process_mode = Node.PROCESS_MODE_DISABLED
+	_level_editor.visible      = true
+	_level_editor.process_mode = Node.PROCESS_MODE_INHERIT
+	_level_editor.load_level(level_n)
+
+
+func _show_level_editor_empty(level_n: int, grid_size: int) -> void:
+	_main_menu.visible         = false
+	_main_menu.process_mode    = Node.PROCESS_MODE_DISABLED
+	_level_select.visible      = false
+	_level_select.process_mode = Node.PROCESS_MODE_DISABLED
+	_level_editor.visible      = true
+	_level_editor.process_mode = Node.PROCESS_MODE_INHERIT
+	_level_editor.load_empty(level_n, grid_size)
+
+
+func _on_editor_menu_pressed() -> void:
+	_fade_to(func() -> void:
+		_level_editor.visible      = false
+		_level_editor.process_mode = Node.PROCESS_MODE_DISABLED
+		_main_menu.visible         = true
+		_main_menu.process_mode    = Node.PROCESS_MODE_INHERIT
+		_main_menu.replay_intro()
+	)
+
+
+func _on_editor_play_pressed() -> void:
+	_fade_to(func() -> void:
+		_level_editor.visible          = false
+		_level_editor.process_mode     = Node.PROCESS_MODE_DISABLED
+		_level_editor_play.visible     = true
+		_level_editor_play.process_mode = Node.PROCESS_MODE_INHERIT
+		_level_editor_play.load_from_editor()
+	)
+
+
+func _on_editor_play_back() -> void:
+	_fade_to(func() -> void:
+		_level_editor_play.visible     = false
+		_level_editor_play.process_mode = Node.PROCESS_MODE_DISABLED
+		_level_editor.visible          = true
+		_level_editor.process_mode     = Node.PROCESS_MODE_INHERIT
+	)
+
+
+func _on_new_level_requested(grid_size: int) -> void:
+	var new_level_n := LevelLoader.count_levels() + 1
+	# Create an empty level JSON file
+	var empty_data := {"A": [], "B": []}
+	var a_arr: Array = []
+	for y in grid_size:
+		for x in grid_size:
+			a_arr.append([x, y])
+	empty_data["A"] = a_arr
+	var path := "res://levels/level_%03d.json" % new_level_n
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(empty_data))
+		file.close()
+	_fade_to(func() -> void: _show_level_editor_empty(new_level_n, grid_size))

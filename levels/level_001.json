@@ -1,10 +1,27 @@
 {
-  "A": [[0, 0], [1, 0], [2, 0, 1]],
+  "A": [
+	[
+	  0,
+	  0
+	],
+	[
+	  1,
+	  0
+	],
+	[
+	  2,
+	  0,
+	  1
+	]
+  ],
   "B": [
 	{
-	  "id": 1, "dir": "right",
-	  "origin": [0, 0]
+	  "dir": "none",
+	  "id": 1,
+	  "origin": [
+		0,
+		0
+	  ]
 	}
-  ],
-  "message": "Swipe right anywhere on the screen to move the block and reach the destination."
+  ]
 }
