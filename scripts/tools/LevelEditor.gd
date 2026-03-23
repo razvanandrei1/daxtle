@@ -201,7 +201,7 @@ func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
 
-	# , and . to navigate between levels
+	# Keyboard shortcuts
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_COMMA:
@@ -212,6 +212,22 @@ func _input(event: InputEvent) -> void:
 			KEY_PERIOD:
 				if current_level < LevelLoader.count_levels():
 					load_level(current_level + 1)
+				get_viewport().set_input_as_handled()
+				return
+			KEY_W:
+				_expand_grid("up")
+				get_viewport().set_input_as_handled()
+				return
+			KEY_S:
+				_expand_grid("down")
+				get_viewport().set_input_as_handled()
+				return
+			KEY_A:
+				_expand_grid("left")
+				get_viewport().set_input_as_handled()
+				return
+			KEY_D:
+				_expand_grid("right")
 				get_viewport().set_input_as_handled()
 				return
 
@@ -294,6 +310,38 @@ func _handle_cell_click(cell: Vector2i, event: InputEvent) -> void:
 			_place_target(cell)
 		Tool.TELEPORT_1, Tool.TELEPORT_2, Tool.TELEPORT_3:
 			_handle_teleport_click(cell)
+
+
+func _expand_grid(direction: String) -> void:
+	var active: Array[Vector2i] = []
+	for sq in _squares:
+		if not _removed_squares.has(sq):
+			active.append(sq)
+	if active.is_empty():
+		return
+
+	var mn := Board._grid_min(active)
+	var mx := Board._grid_max(active)
+
+	match direction:
+		"up":
+			var y := mn.y - 1
+			for x in range(mn.x, mx.x + 1):
+				_squares[Vector2i(x, y)] = true
+		"down":
+			var y := mx.y + 1
+			for x in range(mn.x, mx.x + 1):
+				_squares[Vector2i(x, y)] = true
+		"left":
+			var x := mn.x - 1
+			for y in range(mn.y, mx.y + 1):
+				_squares[Vector2i(x, y)] = true
+		"right":
+			var x := mx.x + 1
+			for y in range(mn.y, mx.y + 1):
+				_squares[Vector2i(x, y)] = true
+
+	_rebuild_visuals()
 
 
 ## Returns true if something was removed at this cell.
