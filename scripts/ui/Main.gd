@@ -86,6 +86,14 @@ func _ready() -> void:
 	_level_editor.visible      = false
 	_level_editor.process_mode = Node.PROCESS_MODE_DISABLED
 	_level_editor_play.visible = false
+
+	# In editor mode, skip main menu and go straight to level select
+	if Globals.LEVEL_EDITOR_MODE:
+		_main_menu.visible         = false
+		_main_menu.process_mode    = Node.PROCESS_MODE_DISABLED
+		_level_select.visible      = true
+		_level_select.process_mode = Node.PROCESS_MODE_INHERIT
+		return
 	_level_editor_play.process_mode = Node.PROCESS_MODE_DISABLED
 
 
