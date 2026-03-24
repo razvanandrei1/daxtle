@@ -744,6 +744,11 @@ func _validate() -> void:
 			target_by_id[bid] = []
 		target_by_id[bid].append(cell)
 
+	# Build destroy set
+	var destroy_set: Dictionary = {}
+	for entry in _destroy_blocks:
+		destroy_set[entry["origin"]] = true
+
 	# Build Block nodes for PuzzleSolver
 	var blocks: Array[Block] = []
 	for entry in _blocks:
@@ -761,15 +766,19 @@ func _validate() -> void:
 		block.grid_origin = entry["origin"]
 		blocks.append(block)
 
-	# Check every block has at least one target
+	# Check every block has at least one target (blocks without targets are OK
+	# only if there are enough D blocks to potentially destroy them)
+	var blocks_without_targets := 0
 	for block in blocks:
 		if block.data.target_origins.is_empty():
-			_set_status("Block %s has no target!" % block.data.id)
-			for b in blocks:
-				b.queue_free()
-			return
+			blocks_without_targets += 1
+	if blocks_without_targets > destroy_set.size():
+		_set_status("%d block(s) have no target and not enough D blocks to destroy them!" % blocks_without_targets)
+		for b in blocks:
+			b.queue_free()
+		return
 
-	var solvable := PuzzleSolver.is_solvable(blocks, board_set, fixed_set, teleport_map)
+	var solvable := PuzzleSolver.is_solvable(blocks, board_set, fixed_set, teleport_map, destroy_set)
 
 	for b in blocks:
 		b.queue_free()

@@ -1,6 +1,6 @@
 class_name PuzzleSolver
 ## Checks if the current board state is still winnable via BFS.
-## Only used for challenge mode — small boards make this fast.
+## Supports destroy blocks (D): when a B block lands on a D cell, both are removed.
 
 const MAX_DEPTH := 20  # max moves to search before declaring unsolvable
 
@@ -10,42 +10,62 @@ static func is_solvable(
 	blocks: Array[Block],
 	board_set: Dictionary,
 	fixed_set: Dictionary,
-	teleport_map: Dictionary
+	teleport_map: Dictionary,
+	destroy_set: Dictionary = {}
 ) -> bool:
-	# Encode initial state
-	var initial := _encode_state(blocks)
+	var initial_positions := _get_positions(blocks)
+	var initial_alive: Array[bool] = []
+	initial_alive.resize(blocks.size())
+	initial_alive.fill(true)
+	var initial_destroy := destroy_set.duplicate()
 
 	# Quick check: already won?
-	if _is_win(blocks):
+	if _check_win(initial_positions, initial_alive, blocks):
 		return true
 
-	var visited := { initial: true }
+	var initial_state := _encode(initial_positions, initial_alive, initial_destroy)
+	var visited := { initial_state: true }
 	var queue: Array[Dictionary] = []
-	queue.append({ "positions": _get_positions(blocks), "depth": 0 })
+	queue.append({
+		"positions": initial_positions,
+		"alive": initial_alive,
+		"destroy": initial_destroy,
+		"depth": 0,
+	})
 
 	while not queue.is_empty():
 		var current: Dictionary = queue.pop_front()
 		var positions: Array = current["positions"]
+		var alive: Array[bool] = current["alive"]
+		var destroy: Dictionary = current["destroy"]
 		var depth: int = current["depth"]
 
 		if depth >= MAX_DEPTH:
 			continue
 
 		for dir in ["left", "right", "up", "down"]:
-			var new_positions := _simulate_move(positions, blocks, dir, board_set, fixed_set, teleport_map)
-			if new_positions.is_empty():
+			var result := _simulate_move(positions, alive, blocks, dir, board_set, fixed_set, teleport_map, destroy)
+			if result.is_empty():
 				continue
 
-			var state := _encode_positions(new_positions)
+			var new_positions: Array = result["positions"]
+			var new_alive: Array[bool] = result["alive"]
+			var new_destroy: Dictionary = result["destroy"]
+
+			var state := _encode(new_positions, new_alive, new_destroy)
 			if visited.has(state):
 				continue
 			visited[state] = true
 
-			# Check win
-			if _check_win_positions(new_positions, blocks):
+			if _check_win(new_positions, new_alive, blocks):
 				return true
 
-			queue.append({ "positions": new_positions, "depth": depth + 1 })
+			queue.append({
+				"positions": new_positions,
+				"alive": new_alive,
+				"destroy": new_destroy,
+				"depth": depth + 1,
+			})
 
 	return false
 
@@ -57,43 +77,44 @@ static func _get_positions(blocks: Array[Block]) -> Array:
 	return positions
 
 
-static func _encode_state(blocks: Array[Block]) -> String:
+static func _encode(positions: Array, alive: Array[bool], destroy: Dictionary) -> String:
 	var parts: Array[String] = []
-	for block in blocks:
-		parts.append("%d,%d" % [block.grid_origin.x, block.grid_origin.y])
+	for i in positions.size():
+		if alive[i]:
+			parts.append("%d,%d" % [positions[i].x, positions[i].y])
+		else:
+			parts.append("X")
+	# Include remaining D cells in state
+	var d_cells: Array = destroy.keys()
+	d_cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return a.x < b.x or (a.x == b.x and a.y < b.y)
+	)
+	for cell in d_cells:
+		parts.append("D%d,%d" % [cell.x, cell.y])
 	return "|".join(parts)
 
 
-static func _encode_positions(positions: Array) -> String:
-	var parts: Array[String] = []
-	for pos in positions:
-		parts.append("%d,%d" % [pos.x, pos.y])
-	return "|".join(parts)
-
-
-static func _is_win(blocks: Array[Block]) -> bool:
-	for block in blocks:
-		if not block.data.target_origins.has(block.grid_origin):
-			return false
-	return true
-
-
-static func _check_win_positions(positions: Array, blocks: Array[Block]) -> bool:
+static func _check_win(positions: Array, alive: Array[bool], blocks: Array[Block]) -> bool:
 	for i in blocks.size():
+		if not alive[i]:
+			continue
 		if not blocks[i].data.target_origins.has(positions[i]):
 			return false
 	return true
 
 
-## Simulate a single swipe in a direction. Returns new positions array, or empty if nothing moves.
+## Simulate a single swipe. Returns a Dictionary with "positions", "alive", "destroy"
+## or an empty Dictionary if nothing moves.
 static func _simulate_move(
 	positions: Array,
+	alive: Array[bool],
 	blocks: Array[Block],
 	direction: String,
 	board_set: Dictionary,
 	fixed_set: Dictionary,
-	teleport_map: Dictionary
-) -> Array:
+	teleport_map: Dictionary,
+	destroy: Dictionary,
+) -> Dictionary:
 	var dv := Vector2i.ZERO
 	match direction:
 		"right": dv = Vector2i(1, 0)
@@ -101,25 +122,25 @@ static func _simulate_move(
 		"down":  dv = Vector2i(0, 1)
 		"up":    dv = Vector2i(0, -1)
 
-	# Build occupied set from current positions
+	# Build occupied set from alive blocks
 	var occupied := {}
 	for i in positions.size():
-		occupied[positions[i]] = i
+		if alive[i]:
+			occupied[positions[i]] = i
 
-	# Find movers (blocks matching direction)
+	# Find movers (alive blocks matching direction)
 	var movers: Array[int] = []
 	for i in blocks.size():
-		if blocks[i].data.dir == direction:
+		if alive[i] and blocks[i].data.dir == direction:
 			movers.append(i)
 
 	if movers.is_empty():
-		return []
+		return {}
 
-	# Simple movement: each mover tries to move, pushing others
 	var new_positions: Array = positions.duplicate()
 	var any_moved := false
 
-	# Sort movers so we process front-to-back
+	# Sort movers front-to-back
 	movers.sort_custom(func(a: int, b: int) -> bool:
 		var pa: Vector2i = new_positions[a]
 		var pb: Vector2i = new_positions[b]
@@ -127,17 +148,27 @@ static func _simulate_move(
 	)
 
 	for mover_idx in movers:
-		var result := _try_move_block(mover_idx, dv, new_positions, blocks, board_set, fixed_set, teleport_map, occupied)
+		var result := _try_move_block(mover_idx, dv, new_positions, alive, blocks, board_set, fixed_set, teleport_map, occupied)
 		if result:
 			any_moved = true
-			# Rebuild occupied
 			occupied.clear()
 			for i in new_positions.size():
-				occupied[new_positions[i]] = i
+				if alive[i]:
+					occupied[new_positions[i]] = i
 
 	if not any_moved:
-		return []
-	return new_positions
+		return {}
+
+	# Handle destroy collisions
+	var new_alive: Array[bool] = []
+	new_alive.assign(alive)
+	var new_destroy := destroy.duplicate()
+	for i in new_positions.size():
+		if new_alive[i] and new_destroy.has(new_positions[i]):
+			new_alive[i] = false
+			new_destroy.erase(new_positions[i])
+
+	return { "positions": new_positions, "alive": new_alive, "destroy": new_destroy }
 
 
 ## Try to move a single block, handling pushes. Returns true if moved.
@@ -145,27 +176,27 @@ static func _try_move_block(
 	idx: int,
 	dv: Vector2i,
 	positions: Array,
+	alive: Array[bool],
 	blocks: Array[Block],
 	board_set: Dictionary,
 	fixed_set: Dictionary,
 	teleport_map: Dictionary,
 	occupied: Dictionary
 ) -> bool:
+	if not alive[idx]:
+		return false
+
 	var dest: Vector2i = positions[idx] + dv
 
-	# Check board bounds
 	if not board_set.has(dest):
 		return false
 
-	# Check fixed blocks
 	if fixed_set.has(dest):
 		return false
 
-	# Check if another block is there
 	if occupied.has(dest):
 		var other_idx: int = occupied[dest]
-		# Try to push
-		if not _try_move_block(other_idx, dv, positions, blocks, board_set, fixed_set, teleport_map, occupied):
+		if not _try_move_block(other_idx, dv, positions, alive, blocks, board_set, fixed_set, teleport_map, occupied):
 			return false
 
 	# Handle teleport

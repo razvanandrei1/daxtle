@@ -745,7 +745,7 @@ func _is_stuck() -> bool:
 
 # Returns true if the current board state can still be solved (BFS check).
 func _is_winnable() -> bool:
-	return PuzzleSolver.is_solvable(_blocks, _board_set, _fixed_set, _teleport_map)
+	return PuzzleSolver.is_solvable(_blocks, _board_set, _fixed_set, _teleport_map, _destroy_set)
 
 
 # Called when no block can move or position is no longer winnable.

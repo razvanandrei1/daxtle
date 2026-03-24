@@ -9,7 +9,7 @@ const DEBUG_MODE := false
 
 ## When true: level selection opens the LevelEditor instead of the game,
 ## and a "New Level" button appears in Level Selection.
-const LEVEL_EDITOR_MODE := false
+const LEVEL_EDITOR_MODE := true
 
 ## Temporary storage for level data passed between editor and play-test scene.
 var editor_level_data: Dictionary = {}
