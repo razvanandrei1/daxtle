@@ -99,7 +99,7 @@ func _draw_target_borders() -> void:
 		var r      := _square_rect(cell)
 		var center := r.position + r.size * 0.5
 		var size   := sq_size * s
-		var border := value_a * 0.055 * s
+		var border := value_a * 0.0725 * s
 		var border_col: Color = _target_colors[cell]
 		border_col.a = 1.0
 		var rect   := Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size))

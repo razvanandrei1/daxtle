@@ -41,6 +41,7 @@ var _settings_tex: Texture2D
 var _levels_tex:   Texture2D
 var _about_tex:    Texture2D
 var _challenge_tex:  Texture2D
+var _play_tex:       Texture2D
 var _safe_top: float
 
 func _ready() -> void:
@@ -48,6 +49,7 @@ func _ready() -> void:
 	_levels_tex   = preload("res://assets/img/icon_levels.svg")
 	_about_tex    = preload("res://assets/img/icon_about.svg")
 	_challenge_tex  = preload("res://assets/img/icon_challenge.svg")
+	_play_tex       = preload("res://assets/img/icon_play.svg")
 	_text_col = GameTheme.ACTIVE["text"]
 	_sub_col  = GameTheme.ACTIVE["text"]
 	_sub_col.a = 0.5
@@ -254,49 +256,13 @@ func _draw_icon_button(cx: float, cy: float, size: float, btn_scale: float, icon
 	return rect
 
 
-## Play triangle icon (pointing right) with rounded corners.
-const _ARC_STEPS := 6
-
-func _draw_play_icon(cx: float, cy: float, size: float, col: Color) -> void:
-	var r := size * 0.28
-	var off_x := size * 0.04
-	var v0 := Vector2(cx + r + off_x,        cy)          # right tip
-	var v1 := Vector2(cx - r * 0.7 + off_x, cy - r)       # top-left
-	var v2 := Vector2(cx - r * 0.7 + off_x, cy + r)       # bottom-left
-	var corner_r := size * 0.06
-	_draw_rounded_triangle(v0, v1, v2, col, corner_r)
-
-
-func _draw_rounded_triangle(v0: Vector2, v1: Vector2, v2: Vector2, col: Color, radius: float) -> void:
-	var verts: Array[Vector2] = [v0, v1, v2]
-	var pts := PackedVector2Array()
-	for i in 3:
-		var prev: Vector2 = verts[(i + 2) % 3]
-		var curr: Vector2 = verts[i]
-		var next_v: Vector2 = verts[(i + 1) % 3]
-		var d1 := (prev - curr).normalized()
-		var d2 := (next_v - curr).normalized()
-		var dot_val    := clampf(d1.dot(d2), -1.0, 1.0)
-		var half_angle := acos(dot_val) * 0.5
-		if half_angle < 0.01:
-			pts.append(curr)
-			continue
-		var bisector   := (d1 + d2).normalized()
-		var arc_center := curr + bisector * (radius / sin(half_angle))
-		var t1         := curr + d1 * radius
-		var t2         := curr + d2 * radius
-		var a1   := (t1 - arc_center).angle()
-		var a2   := (t2 - arc_center).angle()
-		var diff := a2 - a1
-		while diff >  PI: diff -= TAU
-		while diff < -PI: diff += TAU
-		for j in (_ARC_STEPS + 1):
-			var a := a1 + diff * float(j) / float(_ARC_STEPS)
-			pts.append(arc_center + Vector2(cos(a), sin(a)) * radius)
-	draw_colored_polygon(pts, col)
-	var outline := pts.duplicate()
-	outline.append(pts[0])
-	draw_polyline(outline, col, 1.5, true)
+## Play icon — SVG texture.
+func _draw_play_icon(cx: float, cy: float, size: float, _col: Color) -> void:
+	if not _play_tex:
+		return
+	var icon_size := size * 0.55
+	var rect := Rect2(Vector2(cx - icon_size * 0.5, cy - icon_size * 0.5), Vector2(icon_size, icon_size))
+	draw_texture_rect(_play_tex, rect, false, Color(1, 1, 1, _ui_alpha))
 
 
 ## Level-select icon — SVG texture.

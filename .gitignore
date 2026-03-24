@@ -5,6 +5,9 @@
 # Custom export templates (large binary files)
 /export_templates/
 
+# iOS exports
+/ios_exports/
+
 # Build outputs (keep only .build_number and ExportOptions.plist)
 /build/*
 !/build/.build_number

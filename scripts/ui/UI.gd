@@ -17,7 +17,7 @@ func _ready() -> void:
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color.TRANSPARENT
 	var border_col := GameTheme.ACTIVE["text"]
-	border_col.a = 1.0
+	border_col.a = 0.7
 	panel_style.border_color = border_col
 	panel_style.set_border_width_all(4)  # updated dynamically via update_panel_border()
 	panel_style.set_corner_radius_all(16)

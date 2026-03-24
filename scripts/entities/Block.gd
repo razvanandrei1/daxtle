@@ -84,12 +84,13 @@ func _draw_arrow() -> void:
 
 	var half_len   := value_a * ARROW_LENGTH * 0.5 * s
 	var half_width := value_a * ARROW_WIDTH * s
-	var radius     := value_a * GameTheme.CORNER_FRACTION * s
+	var radius     := value_a * GameTheme.ARROW_CORNER_FRACTION * s
 
-	var c   := Vector2(value_a, value_a) * 0.5
-	var tip := c + axis * half_len
-	var bl  := c - axis * half_len + perp * half_width
-	var br  := c - axis * half_len - perp * half_width
+	var c      := Vector2(value_a, value_a) * 0.5
+	var offset := axis * half_len * 0.12  # nudge toward tip for optical centering
+	var tip := c + offset + axis * half_len
+	var bl  := c + offset - axis * half_len + perp * half_width
+	var br  := c + offset - axis * half_len - perp * half_width
 	_draw_rounded_triangle(tip, bl, br, arrow_color, radius)
 
 

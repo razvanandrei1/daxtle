@@ -80,7 +80,16 @@
       "Bash(cairosvg /Users/razvanandrei/daxtle/icon.svg -o \"$ICON_DIR/Icon-1024.png\" --output-width 1024 --output-height 1024)",
       "Bash(do sips:*)",
       "Bash(SRC=icon_1024.png)",
-      "Bash(./python_scripts/generate_android_icons.sh)"
+      "Bash(./python_scripts/generate_android_icons.sh)",
+      "Bash(magick identify:*)",
+      "Read(//tmp/**)",
+      "Bash(sed '0,/<rect[^\\\\/]*\\\\/>/{ /<rect[^\\\\/]*\\\\/>/d; }' /Users/razvanandrei/daxtle/icon.svg)",
+      "Bash(magick:*)",
+      "Bash(TMP_SVG=\"/tmp/daxtle_fg_test.svg\")",
+      "Bash(TMP_PNG=\"/tmp/daxtle_fg_test.png\")",
+      "Bash(sed '/<rect/d' /Users/razvanandrei/daxtle/icon.svg)",
+      "Bash(\"$TMP_SVG\")",
+      "Bash(cairosvg \"$TMP_SVG\" -o \"$TMP_PNG\" -W 172 -H 172)"
     ]
   }
 }

@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- Green background (full screen) -->
-  <rect width="1024" height="1024" fill="#3DA391"/>
+  <!-- Warm sand background -->
+  <!-- Teal background -->
+  <rect width="1024" height="1024" fill="#3ea894"/>
 
-  <!-- Right-pointing triangle — more rounded via larger stroke-width -->
-  <path d="M 626,512 L 399,364 L 399,660 Z"
-        fill="#2B7366" stroke="#2B7366" stroke-width="132"
+  <!-- Right-pointing triangle — warm sand, more rounded via larger stroke-width -->
+  <path d="M 645,512 L 418,364 L 418,660 Z"
+        fill="#297063" stroke="#297063" stroke-width="132"
         stroke-linejoin="round" stroke-linecap="round"/>
 </svg>

@@ -13,10 +13,10 @@ const FONT_BOLD: Font = preload("res://assets/fonts/Fredoka-Bold.tres")
 const WARM_SAND := {
 	"background": Color(0xf5f0e3ff),
 	"surface":    Color(0.85, 0.82, 0.76),
-	"text":       Color(0.17, 0.45, 0.40),  # primary text colour — B1 teal darkened 30% (matches triangle)
+	"text":       Color(0x2b7366ff),  # primary text colour — B1 teal darkened 30% (matches triangle)
 	"fixed":      Color(0.35, 0.32, 0.28),  # C — dark charcoal-brown
 	"blocks": [
-		Color(0.24, 0.64, 0.57),  # B1 — teal
+		Color(0x3da391ff),  # B1 — teal
 		Color(0.83, 0.38, 0.33),  # B2 — coral
 		Color(0.29, 0.51, 0.79),  # B3 — blue
 		Color(0.88, 0.65, 0.20),  # B4 — amber
@@ -74,7 +74,8 @@ const ACTIVE := WARM_SAND
 
 # ── Layout constants ────────────────────────────────────────────────────────
 const GAP_FRACTION    := 0.064   # gap between cells as a fraction of cell size
-const CORNER_FRACTION := 0.08    # corner radius as a fraction of cell size
+const CORNER_FRACTION       := 0.126   # corner radius for squares
+const ARROW_CORNER_FRACTION := 0.08   # corner radius for arrow triangles (unchanged)
 
 # ── Teleport portal colour ───────────────────────────────────────────────────
 # Returns the colour for teleport pair at the given index (0-based), cycling if needed.
