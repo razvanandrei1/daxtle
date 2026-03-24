@@ -164,10 +164,6 @@ build_ios() {
 </document>
 STORYBOARD_XML
 
-    # Regenerate icons from SVG for crisp quality at all sizes
-    info "Regenerating iOS icons..."
-    "$PROJECT_DIR/scripts/tools/regenerate_ios_icons.sh"
-
     # Switch from automatic to manual signing for ad-hoc distribution
     sed -i '' 's/CODE_SIGN_STYLE = "Automatic"/CODE_SIGN_STYLE = "Manual"/' \
         "$BUILD_DIR/ios/daxtle.xcodeproj/project.pbxproj"
