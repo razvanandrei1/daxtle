@@ -79,7 +79,8 @@
       "Bash(ICON_DIR=\"/Users/razvanandrei/daxtle/build/ios/daxtle/Images.xcassets/AppIcon.appiconset\")",
       "Bash(cairosvg /Users/razvanandrei/daxtle/icon.svg -o \"$ICON_DIR/Icon-1024.png\" --output-width 1024 --output-height 1024)",
       "Bash(do sips:*)",
-      "Bash(SRC=icon_1024.png)"
+      "Bash(SRC=icon_1024.png)",
+      "Bash(./python_scripts/generate_android_icons.sh)"
     ]
   }
 }

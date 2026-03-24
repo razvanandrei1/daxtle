@@ -1,5 +1,5 @@
 # Daxtle — Game Design Document
-**Version 5.0 — Current Implementation**
+**Version 6.0 — Current Implementation**
 
 ---
 
@@ -12,37 +12,47 @@
    - 4.1 [Element A — The Board](#41-element-a--the-board)
    - 4.2 [Element B — The Blocks](#42-element-b--the-blocks)
    - 4.3 [Element C — Fixed Blocks](#43-element-c--fixed-blocks)
-   - 4.4 [Element T — Teleport Pairs](#44-element-t--teleport-pairs)
+   - 4.4 [Element D — Destroy Blocks](#44-element-d--destroy-blocks)
+   - 4.5 [Element T — Teleport Pairs](#45-element-t--teleport-pairs)
 5. [Game Rules & Logic](#5-game-rules--logic)
    - 5.1 [Movement](#51-movement)
    - 5.2 [Pushing](#52-pushing)
-   - 5.3 [Invalid Moves](#53-invalid-moves)
-   - 5.4 [Stuck Detection](#54-stuck-detection)
-   - 5.5 [Win Condition](#55-win-condition)
-   - 5.6 [Reset](#56-reset)
-6. [Level Structure](#6-level-structure)
-   - 6.1 [Level Progression](#61-level-progression)
-   - 6.2 [Level Design Constraints](#62-level-design-constraints)
-   - 6.3 [JSON Format](#63-json-format)
-7. [Screens & Navigation](#7-screens--navigation)
-   - 7.1 [Main Menu](#71-main-menu)
-   - 7.2 [Level Select](#72-level-select)
-   - 7.3 [Game Scene](#73-game-scene)
-   - 7.4 [Settings](#74-settings)
-   - 7.5 [About](#75-about)
-   - 7.6 [SceneHeader Component](#76-sceneheader-component)
-8. [Visual Design](#8-visual-design)
-   - 8.1 [Aesthetic](#81-aesthetic)
-   - 8.2 [Typography](#82-typography)
-   - 8.3 [Color & Theme System](#83-color--theme-system)
-   - 8.4 [Animations](#84-animations)
-   - 8.5 [Layout & Safe Area](#85-layout--safe-area)
-   - 8.6 [App Icon](#86-app-icon)
-9. [Audio Design](#9-audio-design)
-10. [Haptic Feedback](#10-haptic-feedback)
-11. [Save System](#11-save-system)
-12. [Build & Deployment](#12-build--deployment)
-13. [Current Status & Roadmap](#13-current-status--roadmap)
+   - 5.3 [Destroy Collisions](#53-destroy-collisions)
+   - 5.4 [Invalid Moves](#54-invalid-moves)
+   - 5.5 [Stuck Detection](#55-stuck-detection)
+   - 5.6 [Win Condition](#56-win-condition)
+   - 5.7 [Reset](#57-reset)
+6. [Game Modes](#6-game-modes)
+   - 6.1 [Campaign Mode](#61-campaign-mode)
+   - 6.2 [Challenge Mode](#62-challenge-mode)
+7. [Level Structure](#7-level-structure)
+   - 7.1 [Level Progression](#71-level-progression)
+   - 7.2 [Level Design Constraints](#72-level-design-constraints)
+   - 7.3 [JSON Format](#73-json-format)
+8. [Level Editor](#8-level-editor)
+   - 8.1 [Tools](#81-tools)
+   - 8.2 [Keyboard Shortcuts](#82-keyboard-shortcuts)
+   - 8.3 [Actions](#83-actions)
+   - 8.4 [Play Testing](#84-play-testing)
+9. [Screens & Navigation](#9-screens--navigation)
+   - 9.1 [Main Menu](#91-main-menu)
+   - 9.2 [Level Select](#92-level-select)
+   - 9.3 [Game Scene](#93-game-scene)
+   - 9.4 [Settings](#94-settings)
+   - 9.5 [About](#95-about)
+   - 9.6 [SceneHeader Component](#96-sceneheader-component)
+10. [Visual Design](#10-visual-design)
+    - 10.1 [Aesthetic](#101-aesthetic)
+    - 10.2 [Typography](#102-typography)
+    - 10.3 [Color & Theme System](#103-color--theme-system)
+    - 10.4 [Animations](#104-animations)
+    - 10.5 [Layout & Safe Area](#105-layout--safe-area)
+    - 10.6 [App Icon](#106-app-icon)
+11. [Audio Design](#11-audio-design)
+12. [Haptic Feedback](#12-haptic-feedback)
+13. [Save System](#13-save-system)
+14. [Build & Deployment](#14-build--deployment)
+15. [Current Status & Roadmap](#15-current-status--roadmap)
 
 ---
 
@@ -52,9 +62,9 @@
 
 Every block has a fixed, predefined direction — it can only ever move one way. A single swipe moves all blocks sharing that direction simultaneously, and a moving block will push any block it collides with — meaning every move can have cascading consequences across the entire board.
 
-The game features five element types: board squares (A), directional blocks (B), cargo blocks (B with no direction), fixed obstacles (C), and teleport portals (T). These are introduced progressively across hand-crafted levels.
+The game features six element types: board squares (A), directional blocks (B), cargo blocks (B with no direction), fixed obstacles (C), destroy blocks (D), and teleport portals (T). These are introduced progressively across hand-crafted levels.
 
-The game is calm and deliberate. There are no timers, no lives, no move counters, and no fail states. The satisfaction comes entirely from the "aha" moment when the correct sequence clicks into place.
+The game offers two modes: a calm, deliberate **Campaign** with hand-crafted levels (no timers, no lives, no fail states), and a timed **Challenge** mode that draws from difficulty-rated puzzle pools with an increasing streak mechanic.
 
 ---
 
@@ -66,7 +76,7 @@ The game is calm and deliberate. There are no timers, no lives, no move counters
 | Target platforms | iOS (iPhone & iPad) and Android |
 | Orientation | Portrait only |
 | Viewport | 1080×1920 |
-| Game mode | Level-based |
+| Game modes | Campaign (level-based) and Challenge (timed endless) |
 | Font | Fredoka Bold (variable weight) |
 | Business model | Defined in a separate document |
 
@@ -94,7 +104,7 @@ A minimum drag distance of 40px filters accidental taps. Input is fully disabled
 
 ### Keyboard
 
-Arrow keys (LEFT, RIGHT, UP, DOWN) trigger the corresponding swipe direction.
+Arrow keys (LEFT, RIGHT, UP, DOWN) trigger the corresponding swipe direction. R key resets the level during play testing.
 
 ### Gamepad
 
@@ -168,7 +178,7 @@ Element C is a static, immovable block occupying one or more board squares. It a
 "C": [
   {
     "id": 1,
-    "squares": [[0, 0]],
+    "squares": [{"pos_x": 0, "pos_y": 0}],
     "origin": [2, 2]
   }
 ]
@@ -176,7 +186,42 @@ Element C is a static, immovable block occupying one or more board squares. It a
 
 ---
 
-### 4.4 Element T — Teleport Pairs
+### 4.4 Element D — Destroy Blocks
+
+Element D is a consumable block that destroys both itself and any B block that lands on it. It acts as a trap or a strategic sacrifice point.
+
+**Behavior:**
+- Does NOT block movement — B blocks pass through freely and land on D blocks
+- When a B block lands on a D block after a move, both are destroyed and removed from play
+- The destroyed B block no longer needs to reach a target (removed from win condition)
+- D blocks do not count toward the win condition
+- Scales in during the board wave animation (part of the environment)
+- On reset, all destroyed D and B blocks are restored (full level reload)
+
+**Visual appearance.** Rendered as a rounded square in the theme's `fixed` color lightened 15%, with an X mark overlay (two diagonal lines, 60% opacity, line width 3.5% of cell size). Visually distinct from C blocks by the lighter color and X mark.
+
+**Destroy animation sequence:**
+1. D block is removed instantly from the scene
+2. B block fades out then fades back in (0.1s each direction)
+3. B block enlarges to 115% scale (0.08s, quad ease-out)
+4. B block shrinks to 0% scale (0.18s, quad ease-in)
+5. B block is removed from play
+
+**Data format:**
+
+```json
+"D": [
+  {"origin": [2, 3]}
+]
+```
+
+| Field | Description |
+|---|---|
+| `origin` | Grid position `[x, y]` of the destroy block |
+
+---
+
+### 4.5 Element T — Teleport Pairs
 
 Teleport pairs are two linked portal cells on the board. When a block enters one portal, it exits at the partner cell.
 
@@ -186,7 +231,7 @@ Teleport pairs are two linked portal cells on the board. When a block enters one
 - Pushed blocks can teleport (push chain enters portal → exits at partner)
 - A block already sitting on a portal does NOT teleport — only entering triggers it
 
-**Visual appearance.** Each portal is drawn as a colored ring with a center dot, using a per-pair color from the theme's teleport palette (purple, cyan, orange, green). Multiple pairs on the same board use different colors.
+**Visual appearance.** Each portal is drawn as a colored ring with a center dot, using a per-pair color from the theme's teleport palette (magenta, electric blue, gold, teal). Multiple pairs on the same board use different colors.
 
 **Data format:**
 
@@ -230,7 +275,21 @@ When a moving block would enter a square occupied by another B block, it pushes 
 
 ---
 
-### 5.3 Invalid Moves
+### 5.3 Destroy Collisions
+
+After every move completes (including teleport animations), the game checks whether any B block occupies the same cell as a D block. If so:
+
+1. The D block is instantly removed from the scene
+2. The B block plays a flash + enlarge + shrink animation (see 4.4)
+3. The B block is removed from the `_blocks` array
+4. The D block's cell is removed from the `_destroy_set`
+5. Win/stuck checks proceed with the reduced block set
+
+Multiple B+D collisions in a single move are handled simultaneously.
+
+---
+
+### 5.4 Invalid Moves
 
 A move is invalid if any block in the chain would land outside the board, on a hole, or on a C block. When invalid:
 
@@ -241,7 +300,7 @@ A move is invalid if any block in the chain would land outside the board, on a h
 
 ---
 
-### 5.4 Stuck Detection
+### 5.5 Stuck Detection
 
 After every valid move, the game checks whether any block can move in any of the four directions. If no moves are possible and the level is not won:
 
@@ -251,12 +310,12 @@ After every valid move, the game checks whether any block can move in any of the
 
 ---
 
-### 5.5 Win Condition
+### 5.6 Win Condition
 
-The level is won when all B blocks simultaneously occupy one of their ID's target positions. When won:
+The level is won when all remaining B blocks (those not destroyed by D blocks) simultaneously occupy one of their ID's target positions. When won:
 
 1. Input is disabled, win sound plays, haptic success feedback triggers
-2. Targets, A cells under blocks, and teleports are hidden
+2. Targets, A cells under blocks, teleports, and remaining D blocks are hidden
 3. All B block arrows scale down to zero (0.25s, back ease-in)
 4. B blocks flash twice (fade out/in pattern over ~0.88s)
 5. Exit chain: reverse diagonal wave (bottom-right → top-left) scales down all elements
@@ -264,37 +323,73 @@ The level is won when all B blocks simultaneously occupy one of their ID's targe
 
 ---
 
-### 5.6 Reset
+### 5.7 Reset
 
 A reset icon (circular arrow) appears in the top-right corner after the player's first move (animated scale-up with back ease). Tapping it:
 
 1. Plays reset sound
-2. Smoothly slides all blocks back to their starting positions (cubic ease-in-out, 2.5× normal duration)
-3. Hides the reset icon
+2. If any D blocks were consumed, performs a full level reload (restores destroyed blocks)
+3. Otherwise smoothly slides all blocks back to their starting positions (cubic ease-in-out, 2.5× normal duration)
+4. Hides the reset icon
 
-Double-tap anywhere also triggers reset. The game auto-resets when stuck (see 5.4).
+Double-tap anywhere also triggers reset. The game auto-resets when stuck (see 5.5). Pressing R resets during play testing.
 
 ---
 
-## 6. Level Structure
+## 6. Game Modes
 
-### 6.1 Level Progression
+### 6.1 Campaign Mode
 
-The game currently contains **20 hand-crafted levels**:
+Sequential hand-crafted levels (1 to N). Progress is saved — the player unlocks the next level upon completion. Tutorial messages appear on early levels. The experience is calm and deliberate: no timers, no lives, no move counters, no fail states.
 
-| Range | Key Mechanics |
+### 6.2 Challenge Mode
+
+A timed, endless puzzle stream that tests speed and consistency.
+
+**Timer mechanics:**
+- Starting time: 30 seconds
+- Time removed per solve: 1.5 seconds (decays with streak)
+- Minimum time: 10 seconds
+- Timer UI: rounded progress bar shrinking from top, flashes red below 5 seconds
+
+**Difficulty pool system:**
+- Three pools: easy, medium, hard (loaded from `levels/challenge/` subdirectories)
+- Pool selection based on streak:
+  - Low streak → easy pool (fallback: medium)
+  - Mid streak → medium pool (fallback: hard)
+  - High streak → hard pool (fallback: medium)
+- Easy/medium puzzles are one-time use per run; hard pool reshuffles when exhausted
+
+**Streak tracking:**
+- Current streak displayed during play
+- Best streak saved to disk
+- Game over when timer expires OR board becomes unwinnable (BFS solvability check)
+
+---
+
+## 7. Level Structure
+
+### 7.1 Level Progression
+
+The game currently contains **21 hand-crafted campaign levels** plus challenge pools (15 easy, 28 medium, 17 hard):
+
+| Range | Key Mechanics Introduced |
 |---|---|
-| 1–5 | Tutorial levels introducing single blocks, basic directions |
-| 6–10 | Multiple blocks, sequencing, same-direction coordination |
-| 11–14 | Cargo blocks (pushed by other blocks to reach targets) |
-| 15–17 | Complex push chains, multiple duplicate IDs |
-| 16 | One-way teleport introduction |
-| 18–19 | Push chains with cargo, 6–7 blocks, timing-sensitive ordering |
-| 20 | Two-way teleport, 5 blocks, 4 colors, forced ordering |
+| 1 | Basic swipe — single block, single direction |
+| 2 | Multiple blocks with different directions |
+| 3 | Synchronized movement — same-direction blocks move together |
+| 4 | All four directions on one board |
+| 5 | Order matters — wrong sequence leads to dead-ends |
+| 6 | Target matching — every block needs a matching target |
+| 7 | Push collisions — blocks push other blocks on contact |
+| 8 | Cargo blocks (`dir: none`) — need pushing from other blocks |
+| 9 | Two colors — each color has its own destinations |
+| 10 | Teleport portals — blocks warp between paired cells |
+| 11–21 | Combinations of all mechanics at increasing complexity |
 
 ---
 
-### 6.2 Level Design Constraints
+### 7.2 Level Design Constraints
 
 - Every level must be **provably solvable**
 - Blocks should NOT start on their own color's target (creates visual confusion)
@@ -305,55 +400,116 @@ The game currently contains **20 hand-crafted levels**:
 
 ---
 
-### 6.3 JSON Format
+### 7.3 JSON Format
 
-Each level is stored as `level_NNN.json` in the `levels/` directory. Top-level fields:
+Each level is stored as `level_NNN.json` in the `levels/` directory. Challenge levels use `challenge_NNN.json` in subdirectories. Top-level fields:
 
 | Field | Type | Description |
 |---|---|---|
 | `A` | Array | Board squares as `[x, y]` or `[x, y, target_id]` |
 | `B` | Array | Block definitions with `id`, `dir`, `origin` |
-| `C` | Array | *(Optional)* Fixed block definitions |
-| `T` | Array | *(Optional)* Teleport pair definitions |
+| `C` | Array | *(Optional)* Fixed block definitions with `id`, `origin`, `squares` |
+| `D` | Array | *(Optional)* Destroy block definitions with `origin` |
+| `T` | Array | *(Optional)* Teleport pair definitions with `id`, `pos`, `one_way` |
 | `message` | String | *(Optional)* Tutorial text shown below the board |
 
 **Example — Level 1 (tutorial):**
 
 ```json
 {
-  "A": [[0,0], [1,0], [2,0,1]],
-  "B": [
-    {"id": 1, "dir": "right", "origin": [0, 0]}
-  ],
-  "message": "Swipe right anywhere\non the screen"
+  "A": [[1,0], [2,0], [3,0,1], [0,0], [4,0]],
+  "B": [{"dir": "right", "id": 1, "origin": [1, 0]}],
+  "message": "Swipe anywhere on the screen to move the block to its destination."
 }
 ```
 
-**Example — Level 20 (teleport):**
+**Example — Level with destroy blocks:**
 
 ```json
 {
-  "A": [[0,0], [1,0], [2,0,4], [3,0,2], [4,0], [0,1], [1,1], [2,1], [3,1], [4,1], [0,2], [1,2,1], [2,2,3], [3,2,2], [4,2]],
-  "B": [
-    {"id": 1, "dir": "right", "origin": [1, 1]},
-    {"id": 2, "dir": "down", "origin": [3, 0]},
-    {"id": 2, "dir": "left", "origin": [4, 0]},
-    {"id": 3, "dir": "left", "origin": [3, 2]},
-    {"id": 4, "dir": "up", "origin": [2, 1]}
-  ],
-  "T": [
-    {"id": 1, "pos": [4, 1, 0, 2]}
-  ]
+  "A": [[0,0], [1,0], [2,0,1], [0,1], [1,1], [2,1]],
+  "B": [{"dir": "right", "id": 1, "origin": [0, 0]}],
+  "D": [{"origin": [1, 0]}]
+}
+```
+
+**Example — Level with teleports:**
+
+```json
+{
+  "A": [[0,1], [2,1], [0,2], [2,2], [4,4,1], [4,5,1]],
+  "B": [{"dir": "none", "id": 1, "origin": [0, 3]}, {"dir": "down", "id": 1, "origin": [0, 1]}],
+  "T": [{"id": 1, "one_way": false, "pos": [0, 5, 2, 0]}, {"id": 2, "one_way": false, "pos": [2, 5, 4, 0]}]
 }
 ```
 
 ---
 
-## 7. Screens & Navigation
+## 8. Level Editor
+
+The in-game level editor is activated by setting `Globals.LEVEL_EDITOR_MODE = true`. It provides a full suite of tools for creating, editing, validating, and play-testing levels.
+
+### 8.1 Tools
+
+The editor panel (bottom of screen) contains tool buttons organized in rows:
+
+**Row 1 — Block tools:**
+
+| Button | Tool | Description |
+|---|---|---|
+| B1 | Block 1 | Place block with color 1 |
+| B2 | Block 2 | Place block with color 2 |
+| B3 | Block 3 | Place block with color 3 |
+| B4 | Block 4 | Place block with color 4 |
+| D | Destroy | Place a destroy block |
+
+**Row 2 — Target & Teleport tools:**
+
+| Button | Tool | Description |
+|---|---|---|
+| T1–T4 | Target 1–4 | Mark cell as target for block ID 1–4 |
+| TP1–TP3 | Teleport 1–3 | Place teleport pair (click two cells) |
+
+**Placement:** Click a cell with a tool selected to place. Click an occupied cell to remove the element. Click with no tool selected to toggle board squares on/off.
+
+**Block direction:** Hold W/A/S/D while clicking to set the block's direction (up/left/down/right). Without a key held, the block defaults to `dir: "none"` (cargo).
+
+**Message display:** The editor shows the level's tutorial message (if any) in quotes above the tool buttons.
+
+### 8.2 Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| Ctrl+W/A/S/D | Expand grid (add row/column in that direction) |
+| Shift+W/A/S/D | Shrink grid (remove row/column from that direction) |
+| X | Deselect active tool |
+| , (comma) | Load previous level |
+| . (period) | Load next level |
+
+### 8.3 Actions
+
+| Button | Action |
+|---|---|
+| Validate | Checks all blocks have targets, runs BFS solvability check (max 20 moves) |
+| Save | Repositions grid to (0,0), exports JSON to `res://levels/level_NNN.json` |
+| Play | Launches quick play-test mode with current editor state |
+
+### 8.4 Play Testing
+
+The `LevelEditorPlay` scene loads the level from editor state and allows full gameplay testing:
+- All game mechanics work (movement, pushing, teleports, destroy blocks)
+- ESC returns to editor
+- R key reloads the level
+- Double-tap reloads the level
+- Shows "Solved!" overlay on win, then auto-reloads
+
+---
+
+## 9. Screens & Navigation
 
 All screens are managed by `Main.gd` with fade transitions (0.18s quad ease). Screens are shown/hidden with `process_mode` toggling to prevent background input.
 
-### 7.1 Main Menu
+### 9.1 Main Menu
 
 The title "DAXTLE" is displayed as 6 individual colored blocks with letters, animated with a chain scale effect followed by a snake-like staggered rise to the top.
 
@@ -368,7 +524,7 @@ The title "DAXTLE" is displayed as 6 individual colored blocks with letters, ani
 
 Play is larger; the three secondary buttons are 72% of Play's size, positioned below at 78% screen height.
 
-### 7.2 Level Select
+### 9.2 Level Select
 
 - 4×5 grid (20 levels per page) with horizontal swipe pagination
 - Page indicator dots at bottom
@@ -377,14 +533,15 @@ Play is larger; the three secondary buttons are 72% of Play's size, positioned b
 - SceneHeader with "Level select" title and back button
 - 10% horizontal margins matching board alignment
 
-### 7.3 Game Scene
+### 9.3 Game Scene
 
 - Board centered on screen with 10% margin
 - SceneHeader with level number as title (font size 62)
 - ResetIcon (top-right, aligned with SceneHeader's `right_x`) — appears after first move
 - Tutorial message panel below board (when level has a `message` field)
+- Challenge mode: timer progress bar at top, streak counter at bottom
 
-### 7.4 Settings
+### 9.4 Settings
 
 Three toggle rows with pulse animation feedback:
 
@@ -396,7 +553,7 @@ Three toggle rows with pulse animation feedback:
 
 Each row has a label on the left and a toggle indicator on the right (filled circle = on, outlined circle = off). SceneHeader with "Settings" title. 10% horizontal margins.
 
-### 7.5 About
+### 9.5 About
 
 Static text screen with game description and developer credit:
 
@@ -408,7 +565,7 @@ Static text screen with game description and developer credit:
 
 Tapping anywhere on the screen returns to the main menu (with click sound and haptic). SceneHeader with "About" title also provides back navigation.
 
-### 7.6 SceneHeader Component
+### 9.6 SceneHeader Component
 
 A reusable `Node2D` component (`SceneHeader.gd` + `SceneHeader.tscn`) used by all sub-screens:
 
@@ -420,21 +577,21 @@ A reusable `Node2D` component (`SceneHeader.gd` + `SceneHeader.tscn`) used by al
 
 ---
 
-## 8. Visual Design
+## 10. Visual Design
 
-### 8.1 Aesthetic
+### 10.1 Aesthetic
 
 Minimalist throughout. Clean, calm, and deliberate. Every visual element serves a functional purpose. The design language is rounded rectangles and rounded triangles — consistent across board squares, blocks, arrows, buttons, and icons. All UI is custom-drawn using Godot's `_draw()` API and `StyleBoxFlat`, not scene-tree UI nodes.
 
 ---
 
-### 8.2 Typography
+### 10.2 Typography
 
 The project uses **Fredoka Bold** as the universal font for all text. A variable font file (`Fredoka-Variable.ttf`) is used with a TRES resource for weight control. The font color across all UI matches the theme's `text` color.
 
 ---
 
-### 8.3 Color & Theme System
+### 10.3 Color & Theme System
 
 Three themes are defined. The active theme (`WARM_SAND`) is set as a constant in `GameTheme.gd`.
 
@@ -446,13 +603,17 @@ Three themes are defined. The active theme (`WARM_SAND`) is set as a constant in
 
 Each theme also defines:
 - `fixed` — C block color (neutral dark tone)
-- `teleport` — array of 4 portal pair colors (purple, cyan, orange, green)
+- `teleport` — array of 4 portal pair colors:
+  - **Magenta** `#D94F8E` — Color(0.85, 0.31, 0.56)
+  - **Electric Blue** `#4FA3D9` — Color(0.31, 0.64, 0.85)
+  - **Gold** `#D9A84F` — Color(0.85, 0.66, 0.31)
+  - **Teal** `#4FD9A8` — Color(0.31, 0.85, 0.66)
 
 **Layout constants:** `GAP_FRACTION = 0.064`, `CORNER_FRACTION = 0.08`
 
 ---
 
-### 8.4 Animations
+### 10.4 Animations
 
 All animations use Tween-based interpolation. Input is disabled during all animations.
 
@@ -460,19 +621,20 @@ All animations use Tween-based interpolation. Input is disabled during all anima
 |---|---|
 | **Title intro** | Chain scale effect on "DAXTLE" letters, then snake-like staggered rise (0.06s per letter) |
 | **Button intro** | Chain scale pop-in (play first, then secondary L→R, 0.12s stagger) |
-| **Level intro** | Diagonal wave (top-left → bottom-right): board squares, C blocks, teleports scale up with back-ease. Then B blocks scale up with stagger, arrows fade in |
+| **Level intro** | Diagonal wave (top-left → bottom-right): board squares, C blocks, D blocks, teleports scale up with back-ease. Then B blocks scale up with stagger, arrows fade in |
 | **Normal move** | Cubic ease-out slide, synced to slide SFX duration |
 | **Teleport move** | Slide → shrink (0.14s) → jump → pop (0.18s, back ease) → continuation slide |
+| **Destroy collision** | D block removed instantly → B block fade out/in (0.1s each) → enlarge to 115% (0.08s) → shrink to 0 (0.18s) |
 | **Invalid move** | Nudge toward wall (cubic, 45% of move duration) + spring back (85% of move duration) |
 | **Stuck state** | Board horizontal oscillation (5 tweens) → 0.25s pause → auto-reset |
-| **Reset** | All blocks slide to start (cubic ease-in-out, 2.5× duration) |
-| **Win** | Hide targets/A cells/teleports → arrow scale-down (0.25s, back ease) → double flash → reverse diagonal exit wave |
+| **Reset** | All blocks slide to start (cubic ease-in-out, 2.5× duration). Full reload if D blocks were consumed |
+| **Win** | Hide targets/A cells/teleports/D blocks → arrow scale-down (0.25s, back ease) → double flash → reverse diagonal exit wave |
 | **Tap pulse** | Scale 1.0 → 1.15 → 1.0 (0.09s + 0.12s, sine ease). Used on all tappable elements |
 | **Reset icon** | Scale 0 → 1 on appear (0.2s, back ease), scale 1 → 0 on hide (0.15s, back ease-in) |
 
 ---
 
-### 8.5 Layout & Safe Area
+### 10.5 Layout & Safe Area
 
 The board is always centered with 10% margin (`Board.MARGIN = 0.10`). All UI elements respect this margin: SceneHeader icons, settings rows, level select grid, and about screen text.
 
@@ -480,9 +642,9 @@ Safe area is detected via `DisplayServer.get_display_safe_area()` and applied at
 
 ---
 
-### 8.6 App Icon
+### 10.6 App Icon
 
-The app icon is defined as a single `icon.svg` at the project root — a 2×2 grid showing a green block with right arrow, a green target with border, a red target with border, and a red block with left arrow, all on a white background.
+The app icon is defined as `icon.svg` at the project root — a full green square (`#3DA391`) with a rounded right-pointing triangle arrow (`#2B7366`) centered inside it.
 
 **iOS:** A deploy script renders the SVG to a single 1024×1024 PNG using `cairosvg` and places it in the Xcode asset catalog with single-size `Contents.json`. iOS auto-generates all required sizes.
 
@@ -490,33 +652,35 @@ The app icon is defined as a single `icon.svg` at the project root — a 2×2 gr
 
 ---
 
-## 9. Audio Design
+## 11. Audio Design
 
 Audio reinforces the calm, meditative feel. The `AudioManager` autoload manages a music player and a 4-slot SFX pool (allows overlapping sounds). Music volume is set 12dB below SFX.
 
-| Sound | File | Description |
-|---|---|---|
-| Background music | `music_bg.ogg` | Soft, looping ambient track |
-| Slide | `sfx_slide.wav` | Block movement sound (syncs animation duration) |
-| Win | `sfx_win.wav` | Warm resolving chord on level complete |
-| Click | `click.wav` | UI button/icon tap feedback |
-| Invalid | *(referenced)* | Gentle tone on blocked movement |
-| Reset | *(referenced)* | Soft whoosh on level reset |
-| Teleport | *(referenced)* | Brief chime on portal activation |
+| Sound | File | Trigger | Description |
+|---|---|---|---|
+| Background music | `music_bg.ogg` | Game start (if enabled) | Soft, looping ambient track |
+| Slide | `sfx_slide.wav` | Block movement | Movement sound (syncs animation duration) |
+| Win | `sfx_win.wav` | Level complete | Warm resolving chord |
+| Invalid | `sfx_invalid.wav` | Blocked movement | Gentle tone on failed move |
+| Reset | `sfx_reset.wav` | Level reset | Soft whoosh |
+| Teleport | `sfx_teleport.wav` | Portal activation | Brief chime |
+| Click | `click.wav` | UI tap (buttons, icons) | Tactile click feedback |
+
+**SFX pool:** 4 `AudioStreamPlayer` instances allow overlapping sounds. If all are busy, the first player is reused. `get_sfx_duration()` is used to sync movement animation length to the slide SFX.
 
 All audio can be toggled independently (music / SFX) via Settings, persisted to disk.
 
 ---
 
-## 10. Haptic Feedback
+## 12. Haptic Feedback
 
 Three haptic patterns provide tactile feedback on mobile devices:
 
-| Pattern | iOS (Native UIKit) | Android (Fallback) |
-|---|---|---|
-| **Tap** | `UIImpactFeedbackGenerator(.light)` | 15ms vibration |
-| **Win** | `UINotificationFeedbackGenerator(.success)` | Triple-tap: 10ms + 20ms + 35ms |
-| **Fail** | `UINotificationFeedbackGenerator(.error)` | Double-hit: 40ms + 60ms |
+| Pattern | Trigger | iOS (Native UIKit) | Android (Fallback) |
+|---|---|---|---|
+| **Tap** | Swipe, UI tap | `UIImpactFeedbackGenerator(.light)` | 15ms vibration |
+| **Win** | Level complete | `UINotificationFeedbackGenerator(.success)` | Triple-tap: 10ms + 20ms + 35ms |
+| **Fail** | Stuck state | `UINotificationFeedbackGenerator(.error)` | Double-hit: 40ms + 60ms |
 
 **iOS native implementation** uses a GDExtension (`DaxtleHaptics`) built with godot-cpp, compiled as a static library (`libdaxtle_haptics.ios.template_*.arm64.a`) bundled with godot-cpp. Registered as an Engine singleton, called from `Haptics.gd` via `Engine.get_singleton("DaxtleHaptics")`.
 
@@ -526,7 +690,7 @@ Haptics are disabled on desktop. Toggleable in Settings, persisted to SaveData.
 
 ---
 
-## 11. Save System
+## 13. Save System
 
 `SaveData.gd` (autoload singleton) persists to `user://save.json`:
 
@@ -537,12 +701,13 @@ Haptics are disabled on desktop. Toggleable in Settings, persisted to SaveData.
 | `music_enabled` | bool | true | Music toggle state |
 | `sfx_enabled` | bool | true | Sound effects toggle state |
 | `haptics_enabled` | bool | true | Haptic feedback toggle state |
+| `best_streak` | int | 0 | Best challenge mode streak |
 
 Uses a load-merge-save pattern to preserve other fields when writing individual values.
 
 ---
 
-## 12. Build & Deployment
+## 14. Build & Deployment
 
 ### Deploy Script
 
@@ -569,36 +734,40 @@ Uses a load-merge-save pattern to preserve other fields when writing individual 
 
 ---
 
-## 13. Current Status & Roadmap
+## 15. Current Status & Roadmap
 
 ### Implemented
 
 | Feature | Status |
 |---|---|
-| iOS and Android builds + Firebase deployment | ✅ |
-| 20 hand-crafted levels | ✅ |
-| All game elements (A, B, C, T) | ✅ |
-| Cargo blocks (dir: "none") with push mechanics | ✅ |
-| One-way and two-way teleports | ✅ |
-| Stuck detection + auto-reset | ✅ |
-| Manual reset + double-tap reset | ✅ |
-| 5 screens: Main Menu, Level Select, Game, Settings, About | ✅ |
-| SceneHeader reusable component | ✅ |
-| Icon buttons with SVG assets (play, levels, settings, about) | ✅ |
-| 4×5 scrollable level select with page dots | ✅ |
-| Chain scale intro animations (title, buttons, board, blocks) | ✅ |
-| Snake-like title rise animation | ✅ |
-| Win sequence: arrow shrink → flash → exit wave | ✅ |
-| Background music + 4 SFX | ✅ |
-| Native iOS haptics (GDExtension) + Android fallback | ✅ |
-| Touch, keyboard, and gamepad input | ✅ |
-| Safe area / notch support | ✅ |
-| Three visual themes (dev use, WARM_SAND active) | ✅ |
-| Progress + preferences saved to disk | ✅ |
-| Portrait orientation only | ✅ |
-| Fredoka Bold font | ✅ |
-| Completion popup when all levels beaten | ✅ |
-| Automated icon generation from SVG | ✅ |
+| iOS and Android builds + Firebase deployment | Done |
+| 21 hand-crafted campaign levels | Done |
+| Challenge mode (easy/medium/hard pools, timer, streaks) | Done |
+| All game elements (A, B, C, D, T) | Done |
+| Cargo blocks (dir: "none") with push mechanics | Done |
+| Destroy blocks (D) with flash + shrink animation | Done |
+| One-way and two-way teleports | Done |
+| Stuck detection + auto-reset | Done |
+| Manual reset + double-tap reset + R key reset | Done |
+| 6 screens: Main Menu, Level Select, Game, Settings, About, Challenge Intro | Done |
+| In-game level editor with validate, save, play-test | Done |
+| SceneHeader reusable component | Done |
+| Icon buttons with SVG assets (play, levels, settings, about) | Done |
+| 4×5 scrollable level select with page dots | Done |
+| Chain scale intro animations (title, buttons, board, blocks) | Done |
+| Snake-like title rise animation | Done |
+| Win sequence: arrow shrink → flash → exit wave | Done |
+| Background music + 6 SFX (slide, win, invalid, reset, teleport, click) | Done |
+| Native iOS haptics (GDExtension) + Android fallback | Done |
+| Touch, keyboard, and gamepad input | Done |
+| Safe area / notch support | Done |
+| Three visual themes (dev use, WARM_SAND active) | Done |
+| Progress + preferences + best streak saved to disk | Done |
+| Portrait orientation only | Done |
+| Fredoka Bold font | Done |
+| Completion popup when all campaign levels beaten | Done |
+| Automated icon generation from SVG | Done |
+| PuzzleSolver BFS (solvability check, max 20 moves) | Done |
 
 ### Not Yet Implemented
 
@@ -608,14 +777,12 @@ Uses a load-merge-save pattern to preserve other fields when writing individual 
 | Localization (10+ languages) | High |
 | Game Center (leaderboards, achievements) | Medium |
 | Move counter / star rating per level | Medium |
-| Endless / High Score mode | Medium |
 | Undo single move | Low |
 | Hint system | Low |
 | In-game theme switcher | Low |
 | Cloud save / sync | Low |
-| Level editor | Low |
 
 ---
 
-*Document version 5.0 — Daxtle Current Implementation*
-*Last updated: March 22, 2026*
+*Document version 6.0 — Daxtle Current Implementation*
+*Last updated: March 24, 2026*

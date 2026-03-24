@@ -6,6 +6,7 @@
 #   "B": [{id, dir, origin}, ...]       — movable blocks (dir: "left"/"right"/"up"/"down"/"none")
 #   "C": [{id, origin, squares}, ...]   — fixed obstacle blocks (optional)
 #   "T": [{id, pos:[ax,ay,bx,by]}, ...] — teleport portal pairs (optional)
+#   "D": [{origin}, ...]                — destroy blocks (optional)
 #   "message": "..."                     — tutorial text (optional)
 # =============================================================================
 class_name LevelLoader
@@ -126,6 +127,15 @@ static func get_teleports(level_data: Dictionary) -> Array[TeleportData]:
 	for entry in level_data["T"]:
 		pairs.append(TeleportData.from_dict(entry))
 	return pairs
+
+
+static func get_destroy_blocks(level_data: Dictionary) -> Array[DestroyBlockData]:
+	if not level_data.has("D"):
+		return []
+	var blocks: Array[DestroyBlockData] = []
+	for entry in level_data["D"]:
+		blocks.append(DestroyBlockData.from_dict(entry))
+	return blocks
 
 
 static func get_message(level_data: Dictionary) -> String:

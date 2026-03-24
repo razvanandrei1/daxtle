@@ -10,7 +10,8 @@ extends Node2D
 const BoardScene      := preload("res://scenes/entities/Board.tscn")
 const BlockScene      := preload("res://scenes/entities/Block.tscn")
 const FixedBlockScene := preload("res://scenes/entities/FixedBlock.tscn")
-const TeleportScene   := preload("res://scenes/entities/Teleport.tscn")
+const TeleportScene      := preload("res://scenes/entities/Teleport.tscn")
+const DestroyBlockScene  := preload("res://scenes/entities/DestroyBlock.tscn")
 const MOVE_DURATION   := 0.13
 
 signal back_pressed
@@ -18,9 +19,11 @@ signal back_pressed
 var _board: Board
 var _blocks: Array[Block] = []
 var _fixed_blocks: Array[FixedBlock] = []
+var _destroy_blocks: Array[DestroyBlock] = []
 var _teleports: Array[Teleport] = []
 var _board_set: Dictionary = {}
 var _fixed_set: Dictionary = {}
+var _destroy_set: Dictionary = {}       # Vector2i -> DestroyBlock
 var _teleport_map: Dictionary = {}
 var _active: bool = false
 var _value_a: float = 0.0
@@ -41,6 +44,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		back_pressed.emit()
+		get_viewport().set_input_as_handled()
+	if event is InputEventKey and event.pressed and event.keycode == KEY_R:
+		_reload()
 		get_viewport().set_input_as_handled()
 
 
@@ -64,9 +70,11 @@ func _load_level_data(level_data: Dictionary) -> void:
 		_board.queue_free()
 	_blocks.clear()
 	_fixed_blocks.clear()
+	_destroy_blocks.clear()
 	_teleports.clear()
 	_board_set.clear()
 	_fixed_set.clear()
+	_destroy_set.clear()
 	_teleport_map.clear()
 
 	var squares := LevelLoader.get_board_squares(level_data)
@@ -85,6 +93,14 @@ func _load_level_data(level_data: Dictionary) -> void:
 		_fixed_blocks.append(fb)
 		for cell in fd.cells():
 			_fixed_set[cell] = true
+
+	var destroy_data := LevelLoader.get_destroy_blocks(level_data)
+	for dd in destroy_data:
+		var db := DestroyBlockScene.instantiate() as DestroyBlock
+		_board.add_child(db)
+		db.setup(dd, _value_a, _board)
+		_destroy_blocks.append(db)
+		_destroy_set[dd.origin] = db
 
 	var teleport_data := LevelLoader.get_teleports(level_data)
 	for i in teleport_data.size():
@@ -194,9 +210,11 @@ func _on_swipe(direction: String) -> void:
 					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 		var on_done := func() -> void:
-			_active = true
-			_swipe_detector.enabled = true
-			_check_win()
+			_handle_destroy_collisions(func() -> void:
+				_active = true
+				_swipe_detector.enabled = true
+				_check_win()
+			)
 
 		if has_teleport:
 			var total_dur := maxf(max_tp_dur, MOVE_DURATION)
@@ -226,6 +244,63 @@ func _shake_blocks(blocks: Array[Block], direction: String, re_enable_after: boo
 		if re_enable_after:
 			_active = true
 			_swipe_detector.enabled = true
+	)
+
+
+func _handle_destroy_collisions(on_done: Callable) -> void:
+	var to_destroy_blocks: Array[Block] = []
+	var to_destroy_dbs: Array[DestroyBlock] = []
+
+	for block in _blocks:
+		if _destroy_set.has(block.grid_origin):
+			to_destroy_blocks.append(block)
+			to_destroy_dbs.append(_destroy_set[block.grid_origin])
+
+	if to_destroy_blocks.is_empty():
+		on_done.call()
+		return
+
+	# Flash B block white, then shrink both away
+	const FLASH_DUR := 0.10
+	const DESTROY_DUR := 0.18
+
+	# Remove D blocks immediately
+	for db in to_destroy_dbs:
+		_destroy_blocks.erase(db)
+		_destroy_set.erase(db.grid_origin)
+		db.queue_free()
+
+	# Flash B block: fade out then fade in, then shrink away
+	var flash := create_tween()
+	flash.tween_method(func(v: float) -> void:
+		for block in to_destroy_blocks:
+			block.modulate.a = v,
+		1.0, 0.0, FLASH_DUR) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	flash.tween_method(func(v: float) -> void:
+		for block in to_destroy_blocks:
+			block.modulate.a = v,
+		0.0, 1.0, FLASH_DUR) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	flash.finished.connect(func() -> void:
+		var anim := create_tween()
+		anim.tween_method(func(v: float) -> void:
+			for block in to_destroy_blocks:
+				block.block_scale = v,
+			1.0, 1.15, 0.08) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		anim.tween_method(func(v: float) -> void:
+			for block in to_destroy_blocks:
+				block.block_scale = v,
+			1.15, 0.0, DESTROY_DUR) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		anim.finished.connect(func() -> void:
+			for block in to_destroy_blocks:
+				_blocks.erase(block)
+				block.queue_free()
+			on_done.call()
+		)
 	)
 
 

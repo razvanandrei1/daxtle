@@ -1,31 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- Background — Warm Sand -->
-  <rect width="1024" height="1024" fill="#FFFFFF"/>
+  <!-- Green background (full screen) -->
+  <rect width="1024" height="1024" fill="#3DA391"/>
 
-  <!-- 2x2 board, cells 326px, gap 55px, centered, very rounded -->
-  <!-- Total: 326+55+326 = 707px. Offset: (1024-707)/2 = 158.5 -->
-
-  <!-- Row 0, Col 0: Green block with right arrow -->
-  <rect x="158.5" y="158.5" width="326" height="326" rx="60" fill="#D9D1C2"/>
-  <rect x="158.5" y="158.5" width="326" height="326" rx="60" fill="#3DA391"/>
-  <path d="M 375.5,321.5 L 291.5,267.5 L 291.5,375.5 Z"
-        fill="#2B7366" stroke="#2B7366" stroke-width="51"
-        stroke-linejoin="round" stroke-linecap="round"/>
-
-  <!-- Row 0, Col 1: Green target (empty) — muted fill with border -->
-  <rect x="539.5" y="158.5" width="326" height="326" rx="60" fill="#3DA391" opacity="0.25"/>
-  <rect x="548.5" y="167.5" width="308" height="308" rx="51"
-        fill="none" stroke="#3DA391" stroke-width="30.3"/>
-
-  <!-- Row 1, Col 0: Red target (empty) — muted fill with border -->
-  <rect x="158.5" y="539.5" width="326" height="326" rx="60" fill="#D4615A" opacity="0.25"/>
-  <rect x="167.5" y="548.5" width="308" height="308" rx="51"
-        fill="none" stroke="#D4615A" stroke-width="30.3"/>
-
-  <!-- Row 1, Col 1: Red block with left arrow -->
-  <rect x="539.5" y="539.5" width="326" height="326" rx="60" fill="#D9D1C2"/>
-  <rect x="539.5" y="539.5" width="326" height="326" rx="60" fill="#D4615A"/>
-  <path d="M 648.5,702.5 L 732.5,648.5 L 732.5,756.5 Z"
-        fill="#A33B35" stroke="#A33B35" stroke-width="51"
+  <!-- Right-pointing triangle — more rounded via larger stroke-width -->
+  <path d="M 626,512 L 399,364 L 399,660 Z"
+        fill="#2B7366" stroke="#2B7366" stroke-width="132"
         stroke-linejoin="round" stroke-linecap="round"/>
 </svg>

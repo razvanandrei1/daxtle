@@ -11,7 +11,8 @@ extends Node2D
 const BoardScene      := preload("res://scenes/entities/Board.tscn")
 const BlockScene      := preload("res://scenes/entities/Block.tscn")
 const FixedBlockScene := preload("res://scenes/entities/FixedBlock.tscn")
-const TeleportScene   := preload("res://scenes/entities/Teleport.tscn")
+const TeleportScene      := preload("res://scenes/entities/Teleport.tscn")
+const DestroyBlockScene  := preload("res://scenes/entities/DestroyBlock.tscn")
 const _MOVE_DURATION_DEFAULT := 0.13  # fallback if no slide SFX loaded
 var MOVE_DURATION: float = _MOVE_DURATION_DEFAULT
 
@@ -47,13 +48,16 @@ var _has_message: bool = false
 var current_level: int = 20
 var _moved: bool = false
 var _active: bool = false   # false while stopped or transitioning out
+var _current_level_data: Dictionary = {}  # stored for reset with destroy blocks
 var value_a: float = 0.0    # cell size in pixels, computed by Board.setup()
 
 var _board: Board
 var _blocks: Array[Block] = []
 var _fixed_blocks: Array[FixedBlock] = []
+var _destroy_blocks: Array[DestroyBlock] = []
 var _board_set:    Dictionary = {}   # Vector2i -> true, for fast cell lookup
 var _fixed_set:    Dictionary = {}   # Vector2i -> true, C block occupied cells
+var _destroy_set:  Dictionary = {}   # Vector2i -> DestroyBlock
 var _teleport_map: Dictionary = {}   # Vector2i -> Vector2i, portal entrance -> exit
 var _teleports:    Array[Teleport] = []
 var _swipe_detector: SwipeDetector
@@ -360,6 +364,7 @@ func _load_challenge_next() -> void:
 
 
 func _load_level_data(level_data: Dictionary) -> void:
+	_current_level_data = level_data
 	# Shared level loading logic — used by both campaign and challenge
 	for tw in _intro_tweens:
 		if tw:
@@ -370,9 +375,11 @@ func _load_level_data(level_data: Dictionary) -> void:
 		_board.queue_free()
 	_blocks.clear()
 	_fixed_blocks.clear()
+	_destroy_blocks.clear()
 	_teleports.clear()
 	_board_set.clear()
 	_fixed_set.clear()
+	_destroy_set.clear()
 	_teleport_map.clear()
 
 	var squares := LevelLoader.get_board_squares(level_data)
@@ -391,6 +398,14 @@ func _load_level_data(level_data: Dictionary) -> void:
 		_fixed_blocks.append(fb)
 		for cell in fd.cells():
 			_fixed_set[cell] = true
+
+	var destroy_data := LevelLoader.get_destroy_blocks(level_data)
+	for dd in destroy_data:
+		var db := DestroyBlockScene.instantiate() as DestroyBlock
+		_board.add_child(db)
+		db.setup(dd, value_a, _board)
+		_destroy_blocks.append(db)
+		_destroy_set[dd.origin] = db
 
 	var teleport_data := LevelLoader.get_teleports(level_data)
 	for i in teleport_data.size():
@@ -539,14 +554,16 @@ func _on_swipe(direction: String) -> void:
 				block.grid_origin += dv
 			block.position = _board.grid_to_local(block.grid_origin)
 
-		if _check_win():
-			_on_win()
-		elif _is_stuck():
-			_on_stuck()
-		elif mode == Mode.CHALLENGE and not _is_winnable():
-			_on_stuck()
-		else:
-			_swipe_detector.enabled = true
+		_handle_destroy_collisions(func() -> void:
+			if _check_win():
+				_on_win()
+			elif _is_stuck():
+				_on_stuck()
+			elif mode == Mode.CHALLENGE and not _is_winnable():
+				_on_stuck()
+			else:
+				_swipe_detector.enabled = true
+		)
 		return
 
 	if not movers.is_empty():
@@ -596,15 +613,16 @@ func _on_swipe(direction: String) -> void:
 					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 		var on_done := func() -> void:
-
-			if _check_win():
-				_on_win()
-			elif _is_stuck():
-				_on_stuck()
-			elif mode == Mode.CHALLENGE and not _is_winnable():
-				_on_stuck()
-			else:
-				_swipe_detector.enabled = true
+			_handle_destroy_collisions(func() -> void:
+				if _check_win():
+					_on_win()
+				elif _is_stuck():
+					_on_stuck()
+				elif mode == Mode.CHALLENGE and not _is_winnable():
+					_on_stuck()
+				else:
+					_swipe_detector.enabled = true
+			)
 
 		if has_teleport:
 			var total_dur := maxf(max_tp_dur, MOVE_DURATION)
@@ -643,6 +661,62 @@ func _shake_blocks(blocks: Array[Block], direction: String, re_enable_after: boo
 	tween.finished.connect(func() -> void:
 		if re_enable_after:
 			_swipe_detector.enabled = true
+	)
+
+
+func _handle_destroy_collisions(on_done: Callable) -> void:
+	var to_destroy_blocks: Array[Block] = []
+	var to_destroy_dbs: Array[DestroyBlock] = []
+
+	for block in _blocks:
+		if _destroy_set.has(block.grid_origin):
+			to_destroy_blocks.append(block)
+			to_destroy_dbs.append(_destroy_set[block.grid_origin])
+
+	if to_destroy_blocks.is_empty():
+		on_done.call()
+		return
+
+	const FLASH_DUR := 0.10
+	const DESTROY_DUR := 0.18
+
+	# Remove D blocks immediately
+	for db in to_destroy_dbs:
+		_destroy_blocks.erase(db)
+		_destroy_set.erase(db.grid_origin)
+		db.queue_free()
+
+	# Flash B block: fade out then fade in, then shrink away
+	var flash := create_tween()
+	flash.tween_method(func(v: float) -> void:
+		for block in to_destroy_blocks:
+			block.modulate.a = v,
+		1.0, 0.0, FLASH_DUR) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	flash.tween_method(func(v: float) -> void:
+		for block in to_destroy_blocks:
+			block.modulate.a = v,
+		0.0, 1.0, FLASH_DUR) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	flash.finished.connect(func() -> void:
+		var anim := create_tween()
+		anim.tween_method(func(v: float) -> void:
+			for block in to_destroy_blocks:
+				block.block_scale = v,
+			1.0, 1.15, 0.08) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		anim.tween_method(func(v: float) -> void:
+			for block in to_destroy_blocks:
+				block.block_scale = v,
+			1.15, 0.0, DESTROY_DUR) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		anim.finished.connect(func() -> void:
+			for block in to_destroy_blocks:
+				_blocks.erase(block)
+				block.queue_free()
+			on_done.call()
+		)
 	)
 
 
@@ -753,6 +827,8 @@ func _on_win() -> void:
 		_board.set_cell_scale(block.grid_origin, 0.0)
 	for tp in _teleports:
 		tp.visible = false
+	for db in _destroy_blocks:
+		db.visible = false
 
 	# --- Shrink arrows on B blocks, then flash ---
 	var arrow_shrink := create_tween().set_parallel(true)
@@ -865,6 +941,17 @@ func reset_level() -> void:
 	_moved = false
 	level_loaded.emit(current_level)  # triggers UI to hide reset icon via set_level
 
+	# If any destroy blocks were consumed, do a full reload
+	var needs_full_reload := false
+	if not _current_level_data.is_empty() and _current_level_data.has("D"):
+		var original_count := (_current_level_data["D"] as Array).size()
+		if _destroy_blocks.size() < original_count:
+			needs_full_reload = true
+
+	if needs_full_reload:
+		_load_level_data(_current_level_data)
+		return
+
 	if Globals.DEBUG_MODE:
 		for block in _blocks:
 			block.grid_origin = block.data.origin
@@ -924,6 +1011,8 @@ func _play_intro_animation() -> void:
 			_board.set_cell_scale(sq, 1.0)
 		for fb in _fixed_blocks:
 			fb.block_scale = 1.0
+		for db in _destroy_blocks:
+			db.block_scale = 1.0
 		for tp in _teleports:
 			tp.block_scale = 1.0
 		for block in _blocks:
@@ -969,6 +1058,22 @@ func _play_intro_animation() -> void:
 		var t := create_tween()
 		_intro_tweens.append(t)
 		t.tween_method(func(v: float) -> void: captured_fb.block_scale = v,
+			0.0, 1.0, _INTRO_CHAIN_SCALE) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	# Destroy blocks scale in during the same wave
+	for db in _destroy_blocks:
+		db.block_scale = 0.0
+		var db_diag := db.grid_origin.x + db.grid_origin.y
+		var wave_index := 0
+		for j in sorted_squares.size():
+			if (sorted_squares[j].x + sorted_squares[j].y) <= db_diag:
+				wave_index = j
+		var delay := _INTRO_CHAIN_DELAY + wave_index * stagger
+		var captured_db := db
+		var t := create_tween()
+		_intro_tweens.append(t)
+		t.tween_method(func(v: float) -> void: captured_db.block_scale = v,
 			0.0, 1.0, _INTRO_CHAIN_SCALE) \
 			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 

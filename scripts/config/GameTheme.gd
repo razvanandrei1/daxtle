@@ -22,10 +22,10 @@ const WARM_SAND := {
 		Color(0.88, 0.65, 0.20),  # B4 — amber
 	],
 	"teleport": [
-		Color(0.65, 0.45, 0.78),  # T1 — muted purple
-		Color(0.22, 0.71, 0.87),  # T2 — cyan
-		Color(0.95, 0.55, 0.12),  # T3 — orange
-		Color(0.35, 0.82, 0.46),  # T4 — green
+		Color(0.85, 0.31, 0.56),  # T1 — magenta
+		Color(0.31, 0.64, 0.85),  # T2 — electric blue
+		Color(0.85, 0.66, 0.31),  # T3 — gold
+		Color(0.31, 0.85, 0.66),  # T4 — teal
 	],
 }
 
@@ -41,10 +41,10 @@ const COOL_SLATE := {
 		Color(0.82, 0.61, 0.22),  # B4 — amber
 	],
 	"teleport": [
-		Color(0.55, 0.25, 0.84),  # T1 — purple
-		Color(0.18, 0.68, 0.85),  # T2 — cyan
-		Color(0.92, 0.52, 0.10),  # T3 — orange
-		Color(0.32, 0.78, 0.44),  # T4 — green
+		Color(0.85, 0.31, 0.56),  # T1 — magenta
+		Color(0.31, 0.64, 0.85),  # T2 — electric blue
+		Color(0.85, 0.66, 0.31),  # T3 — gold
+		Color(0.31, 0.85, 0.66),  # T4 — teal
 	],
 }
 
@@ -60,10 +60,10 @@ const DARK_CHARCOAL := {
 		Color(0.96, 0.78, 0.33),  # B4 — amber
 	],
 	"teleport": [
-		Color(0.72, 0.42, 0.98),  # T1 — purple
-		Color(0.30, 0.82, 0.96),  # T2 — cyan
-		Color(0.98, 0.65, 0.22),  # T3 — orange
-		Color(0.42, 0.92, 0.56),  # T4 — green
+		Color(0.85, 0.31, 0.56),  # T1 — magenta
+		Color(0.31, 0.64, 0.85),  # T2 — electric blue
+		Color(0.85, 0.66, 0.31),  # T3 — gold
+		Color(0.31, 0.85, 0.66),  # T4 — teal
 	],
 }
 

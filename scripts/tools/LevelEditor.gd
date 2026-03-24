@@ -11,7 +11,8 @@ extends Node2D
 const BoardScene      := preload("res://scenes/entities/Board.tscn")
 const BlockScene      := preload("res://scenes/entities/Block.tscn")
 const FixedBlockScene := preload("res://scenes/entities/FixedBlock.tscn")
-const TeleportScene   := preload("res://scenes/entities/Teleport.tscn")
+const TeleportScene      := preload("res://scenes/entities/Teleport.tscn")
+const DestroyBlockScene  := preload("res://scenes/entities/DestroyBlock.tscn")
 
 signal menu_pressed
 signal play_pressed
@@ -22,12 +23,14 @@ enum Tool {
 	BLOCK_1, BLOCK_2, BLOCK_3, BLOCK_4,
 	TARGET_1, TARGET_2, TARGET_3, TARGET_4,
 	TELEPORT_1, TELEPORT_2, TELEPORT_3,
+	DESTROY,
 }
 
 const TOOL_LABELS := {
 	Tool.BLOCK_1: "B1", Tool.BLOCK_2: "B2", Tool.BLOCK_3: "B3", Tool.BLOCK_4: "B4",
 	Tool.TARGET_1: "T1", Tool.TARGET_2: "T2", Tool.TARGET_3: "T3", Tool.TARGET_4: "T4",
 	Tool.TELEPORT_1: "TP1", Tool.TELEPORT_2: "TP2", Tool.TELEPORT_3: "TP3",
+	Tool.DESTROY: "D",
 }
 
 # ── State ────────────────────────────────────────────────────────────────────
@@ -39,6 +42,7 @@ var _squares: Dictionary = {}          # Vector2i -> true
 var _removed_squares: Dictionary = {}  # Vector2i -> true (squares toggled off)
 var _targets: Dictionary = {}          # Vector2i -> int (block_id)
 var _blocks: Array = []                # [{id:int, dir:String, origin:Vector2i}, ...]
+var _destroy_blocks: Array = []        # [{origin:Vector2i}, ...]
 var _teleports: Array = []             # [{id:int, portal_a:Vector2i, portal_b:Vector2i}, ...]
 var _message: String = ""              # tutorial message preserved across saves
 
@@ -52,6 +56,7 @@ var _value_a: float = 0.0
 var _panel_layer: CanvasLayer
 var _tool_buttons: Dictionary = {}     # Tool -> Button
 var _status_label: Label
+var _message_label: Label
 var _tp_pending: Dictionary = {}       # Tool -> Vector2i (first portal click)
 var _last_click_frame: int = -1        # prevent double-fire from touch emulation
 
@@ -84,6 +89,7 @@ func load_empty(n: int, grid_size: int) -> void:
 	_removed_squares.clear()
 	_targets.clear()
 	_blocks.clear()
+	_destroy_blocks.clear()
 	_teleports.clear()
 	_message = ""
 	for y in grid_size:
@@ -99,6 +105,7 @@ func _parse_level_data(data: Dictionary) -> void:
 	_removed_squares.clear()
 	_targets.clear()
 	_blocks.clear()
+	_destroy_blocks.clear()
 	_teleports.clear()
 	_message = data.get("message", "")
 
@@ -114,6 +121,12 @@ func _parse_level_data(data: Dictionary) -> void:
 			_blocks.append({
 				"id": int(entry["id"]),
 				"dir": entry["dir"],
+				"origin": Vector2i(entry["origin"][0], entry["origin"][1]),
+			})
+
+	if data.has("D"):
+		for entry in data["D"]:
+			_destroy_blocks.append({
 				"origin": Vector2i(entry["origin"][0], entry["origin"][1]),
 			})
 
@@ -179,6 +192,14 @@ func _rebuild_visuals() -> void:
 			tp.setup(cell, _value_a, _board, pair_col)
 			_teleport_nodes.append(tp)
 
+	# Destroy blocks
+	for entry in _destroy_blocks:
+		var dd := DestroyBlockData.new()
+		dd.origin = entry["origin"]
+		var db := DestroyBlockScene.instantiate() as DestroyBlock
+		_board.add_child(db)
+		db.setup(dd, _value_a, _board)
+
 	# Blocks
 	for entry in _blocks:
 		var bd := BlockData.new()
@@ -194,6 +215,12 @@ func _rebuild_visuals() -> void:
 		_board.add_child(block)
 		block.setup(bd, _value_a, _board)
 		_block_nodes.append(block)
+
+	if _message_label:
+		if _message.is_empty():
+			_message_label.text = ""
+		else:
+			_message_label.text = "\"%s\"" % _message
 
 	queue_redraw()
 
@@ -257,6 +284,10 @@ func _input(event: InputEvent) -> void:
 				_select_tool(Tool.NONE)
 				for tid in _tool_buttons:
 					_tool_buttons[tid].button_pressed = false
+				get_viewport().set_input_as_handled()
+				return
+			KEY_P:
+				_quick_play()
 				get_viewport().set_input_as_handled()
 				return
 
@@ -344,6 +375,8 @@ func _handle_cell_click(cell: Vector2i, event: InputEvent) -> void:
 			_place_target(cell)
 		Tool.TELEPORT_1, Tool.TELEPORT_2, Tool.TELEPORT_3:
 			_handle_teleport_click(cell)
+		Tool.DESTROY:
+			_place_destroy_block(cell)
 
 
 func _expand_grid(direction: String) -> void:
@@ -420,6 +453,11 @@ func _shrink_grid(direction: String) -> void:
 		if (remove_y != -999 and o.y == remove_y) or (remove_x != -999 and o.x == remove_x):
 			_blocks.remove_at(i)
 
+	for i in range(_destroy_blocks.size() - 1, -1, -1):
+		var o: Vector2i = _destroy_blocks[i]["origin"]
+		if (remove_y != -999 and o.y == remove_y) or (remove_x != -999 and o.x == remove_x):
+			_destroy_blocks.remove_at(i)
+
 	for i in range(_teleports.size() - 1, -1, -1):
 		var td: Dictionary = _teleports[i]
 		var a: Vector2i = td["portal_a"]
@@ -443,6 +481,12 @@ func _remove_element_at(cell: Vector2i) -> bool:
 	if _targets.has(cell):
 		_targets.erase(cell)
 		return true
+
+	# Remove any destroy block at this cell
+	for i in range(_destroy_blocks.size() - 1, -1, -1):
+		if _destroy_blocks[i]["origin"] == cell:
+			_destroy_blocks.remove_at(i)
+			return true
 
 	# Remove any teleport portal at this cell
 	for i in range(_teleports.size() - 1, -1, -1):
@@ -534,6 +578,11 @@ func _handle_teleport_click(cell: Vector2i) -> void:
 	_set_status("Click second portal for TP%d" % tp_id)
 
 
+func _place_destroy_block(cell: Vector2i) -> void:
+	_destroy_blocks.append({"origin": cell})
+	_rebuild_visuals()
+
+
 # ── Serialization ────────────────────────────────────────────────────────────
 
 func _to_level_dict() -> Dictionary:
@@ -559,6 +608,15 @@ func _to_level_dict() -> Dictionary:
 			"origin": [entry["origin"].x, entry["origin"].y],
 		})
 	data["B"] = b_arr
+
+	# D array (only if non-empty)
+	if not _destroy_blocks.is_empty():
+		var d_arr: Array = []
+		for entry in _destroy_blocks:
+			d_arr.append({
+				"origin": [entry["origin"].x, entry["origin"].y],
+			})
+		data["D"] = d_arr
 
 	# T array (only if non-empty)
 	if not _teleports.is_empty():
@@ -612,6 +670,10 @@ func _reposition() -> void:
 
 	# Shift blocks
 	for entry in _blocks:
+		entry["origin"] = entry["origin"] - mn
+
+	# Shift destroy blocks
+	for entry in _destroy_blocks:
 		entry["origin"] = entry["origin"] - mn
 
 	# Shift teleports
@@ -761,12 +823,23 @@ func _build_panel() -> void:
 	vbox.add_theme_constant_override("separation", 10)
 	margin.add_child(vbox)
 
+	# Message label
+	_message_label = Label.new()
+	_message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_message_label.add_theme_font_override("font", font)
+	_message_label.add_theme_font_size_override("font_size", 22)
+	var msg_col := text_col
+	msg_col.a = 0.6
+	_message_label.add_theme_color_override("font_color", msg_col)
+	vbox.add_child(_message_label)
+
 	# Row 1: Tool buttons (B1-B4)
 	var row1 := HBoxContainer.new()
 	row1.add_theme_constant_override("separation", 8)
 	row1.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(row1)
-	for tool_id in [Tool.BLOCK_1, Tool.BLOCK_2, Tool.BLOCK_3, Tool.BLOCK_4]:
+	for tool_id in [Tool.BLOCK_1, Tool.BLOCK_2, Tool.BLOCK_3, Tool.BLOCK_4, Tool.DESTROY]:
 		var btn := _create_tool_button(tool_id, row1)
 		_tool_buttons[tool_id] = btn
 
@@ -907,6 +980,7 @@ func _get_tool_color(tool_id: Tool) -> Color:
 		Tool.TELEPORT_1: return GameTheme.ACTIVE["teleport"][0]
 		Tool.TELEPORT_2: return GameTheme.ACTIVE["teleport"][1]
 		Tool.TELEPORT_3: return GameTheme.ACTIVE["teleport"][2]
+		Tool.DESTROY: return GameTheme.ACTIVE["fixed"].lightened(0.15)
 	return GameTheme.ACTIVE["text"]
 
 
