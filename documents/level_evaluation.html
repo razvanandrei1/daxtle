@@ -213,33 +213,6 @@
 </div>
 
 <!-- ═══ LEVEL 5 ═══ -->
-<div class="level-card good">
-  <div class="board-container">
-    <div class="board" style="grid-template-columns: repeat(4, 44px); grid-template-rows: repeat(4, 44px);">
-      <div class="cell hole"></div>
-      <div class="cell empty"><div class="block b1"><span class="arrow">&#9660;</span></div></div>
-      <div class="cell empty"></div><div class="cell hole"></div>
-      <div class="cell empty"><div class="block b1"><span class="arrow">&#9654;</span></div></div>
-      <div class="cell empty"><div class="block b1"><span class="arrow">&#9654;</span></div></div>
-      <div class="cell empty"></div><div class="cell t1"></div>
-      <div class="cell empty"></div><div class="cell empty"></div><div class="cell empty"></div><div class="cell empty"></div>
-      <div class="cell hole"></div><div class="cell t1"></div><div class="cell empty"></div><div class="cell t1"></div>
-    </div>
-  </div>
-  <div class="info">
-    <div class="level-header"><span class="level-num">05</span><span class="level-title">Order Matters</span></div>
-    <div class="scores-row">
-      <div class="score-group"><span class="score-label">Quality</span><div class="score s7">7 <span class="max">/ 10</span></div></div>
-      <div class="score-group"><span class="score-label">Difficulty</span><div class="diff d3">3 <span class="max">/ 10</span></div></div>
-    </div>
-    <div class="tags"><span class="tag shape">Irregular</span><span class="tag mechanic">Ordering</span><span class="tag mechanic">3 blocks</span></div>
-    <div class="stats">13 cells &middot; 3 blocks &middot; 1 color</div>
-    <p class="eval">Good irregular shape with missing corners. The ordering constraint creates real tension — wrong sequence leads to dead-ends. First level where the player can get stuck.</p>
-    <p class="message">"Order matters! Double-tap to restart if you get stuck."</p>
-  </div>
-</div>
-
-<!-- ═══ LEVEL 6 ═══ -->
 <div class="level-card great">
   <div class="board-container">
     <div class="board" style="grid-template-columns: repeat(5, 44px); grid-template-rows: repeat(3, 44px);">
@@ -253,15 +226,54 @@
     </div>
   </div>
   <div class="info">
-    <div class="level-header"><span class="level-num">06</span><span class="level-title">Target Matching</span></div>
+    <div class="level-header"><span class="level-num">05</span><span class="level-title">Push Intro</span></div>
     <div class="scores-row">
       <div class="score-group"><span class="score-label">Quality</span><div class="score s9">9 <span class="max">/ 10</span></div></div>
       <div class="score-group"><span class="score-label">Difficulty</span><div class="diff d3">3 <span class="max">/ 10</span></div></div>
     </div>
-    <div class="tags"><span class="tag shape">Asymmetric L</span><span class="tag mechanic">Targets</span><span class="tag mechanic">3 blocks</span></div>
+    <div class="tags"><span class="tag tut">Tutorial</span><span class="tag shape">Asymmetric L</span><span class="tag mechanic">Pushing</span><span class="tag mechanic">3 blocks</span></div>
     <div class="stats">9 cells &middot; 3 blocks &middot; 1 color</div>
-    <p class="eval">Extremely compact — 3 blocks on just 9 cells. The asymmetric L-shape with a target column is distinctive and instantly readable. Every cell is either occupied or functionally necessary. One of the densest levels in the game.</p>
-    <p class="message">"Every block needs to reach a matching target."</p>
+    <p class="eval">Extremely compact — 3 blocks on just 9 cells. The asymmetric L-shape with a target column is distinctive and instantly readable. Every cell is either occupied or functionally necessary. Introduces the push mechanic: the right-block must push others into column 4 before they fan out. One of the densest levels in the game.</p>
+    <p class="message">"Moving blocks can push other blocks out of the way."</p>
+  </div>
+</div>
+
+<!-- ═══ LEVEL 6 ═══ -->
+<div class="level-card great">
+  <div class="board-container">
+    <div class="board" style="grid-template-columns: repeat(4, 44px); grid-template-rows: repeat(4, 44px);">
+      <!-- row 0 -->
+      <div class="cell hole"></div>
+      <div class="cell empty"><div class="block b1"><span class="arrow">&#9660;</span></div></div>
+      <div class="cell hole"></div>
+      <div class="cell hole"></div>
+      <!-- row 1 -->
+      <div class="cell empty"><div class="block b1"><span class="arrow">&#9654;</span></div></div>
+      <div class="cell empty"><div class="block b1"><span class="arrow">&#9654;</span></div></div>
+      <div class="cell empty"></div>
+      <div class="cell t1"></div>
+      <!-- row 2 -->
+      <div class="cell hole"></div>
+      <div class="cell empty"></div>
+      <div class="cell empty"></div>
+      <div class="cell hole"></div>
+      <!-- row 3 -->
+      <div class="cell hole"></div>
+      <div class="cell t1"></div>
+      <div class="cell empty"></div>
+      <div class="cell t1"></div>
+    </div>
+  </div>
+  <div class="info">
+    <div class="level-header"><span class="level-num">06</span><span class="level-title">Order Matters</span></div>
+    <div class="scores-row">
+      <div class="score-group"><span class="score-label">Quality</span><div class="score s8">8 <span class="max">/ 10</span></div></div>
+      <div class="score-group"><span class="score-label">Difficulty</span><div class="diff d4">4 <span class="max">/ 10</span></div></div>
+    </div>
+    <div class="tags"><span class="tag shape">Irregular</span><span class="tag mechanic">Ordering</span><span class="tag mechanic">Push</span><span class="tag mechanic">3 blocks</span></div>
+    <div class="stats">10 cells &middot; 3 blocks &middot; 1 color</div>
+    <p class="eval"><strong>Tight redesign.</strong> Cut from 13 to 10 cells — every cell earns its place. The down-block must push a right-block south before the right-blocks can spread to their targets. Wrong order (right first) creates a dead-end collision at [3,1]. 6-move solution with a clear ordering trap. First level where the player can genuinely get stuck. The irregular shape with a protruding [0,1] and split column 3 is instantly readable.</p>
+    <p class="message">"Order matters! Double-tap to restart if you get stuck."</p>
   </div>
 </div>
 
@@ -283,15 +295,14 @@
     </div>
   </div>
   <div class="info">
-    <div class="level-header"><span class="level-num">07</span><span class="level-title">Push Intro</span></div>
+    <div class="level-header"><span class="level-num">07</span><span class="level-title">Chain Reaction</span></div>
     <div class="scores-row">
       <div class="score-group"><span class="score-label">Quality</span><div class="score s8">8 <span class="max">/ 10</span></div></div>
       <div class="score-group"><span class="score-label">Difficulty</span><div class="diff d4">4 <span class="max">/ 10</span></div></div>
     </div>
-    <div class="tags"><span class="tag shape">Irregular</span><span class="tag mechanic">Pushing</span><span class="tag mechanic">4 blocks</span></div>
+    <div class="tags"><span class="tag shape">Irregular</span><span class="tag mechanic">Push chains</span><span class="tag mechanic">4 blocks</span></div>
     <div class="stats">16 cells &middot; 4 blocks &middot; 1 color</div>
-    <p class="eval">Great irregular shape — missing corners create a cross-like silhouette. The push mechanic feels natural to discover. 4 blocks with 3 different directions keeps complexity manageable.</p>
-    <p class="message">"Moving blocks can push other blocks out of the way."</p>
+    <p class="eval">Great irregular shape — missing corners create a cross-like silhouette. First level with 4 blocks and multi-step push chains. 3 different directions keeps complexity manageable while building on L5-6's push foundation.</p>
   </div>
 </div>
 
@@ -365,29 +376,31 @@
       <div class="cell empty"><div class="tp tp2"></div></div>
       <!-- row 1 -->
       <div class="cell empty"><div class="block b1"><span class="arrow">&#9660;</span></div></div><div></div>
-      <div class="cell empty"></div><div></div><div class="cell empty"></div>
+      <div class="cell t1"></div><div></div><div class="cell empty"></div>
       <!-- row 2 -->
-      <div class="cell empty"></div><div></div><div class="cell empty"></div><div></div><div class="cell empty"></div>
+      <div class="cell empty"></div><div></div><div class="cell t1"></div><div></div>
+      <div class="cell empty"><div class="block b2" style="opacity:0.7"><span class="arrow">&#9679;</span></div></div>
       <!-- row 3 -->
       <div class="cell empty"><div class="block b1" style="opacity:0.7"><span class="arrow">&#9679;</span></div></div><div></div>
-      <div class="cell empty"></div><div></div><div class="cell empty"></div>
+      <div class="cell t2"></div><div></div><div class="cell empty"></div>
       <!-- row 4 -->
-      <div class="cell empty"></div><div></div><div class="cell empty"></div><div></div><div class="cell t1"></div>
+      <div class="cell empty"></div><div></div><div class="cell t2"></div><div></div>
+      <div class="cell empty"><div class="block b2"><span class="arrow">&#9650;</span></div></div>
       <!-- row 5 -->
       <div class="cell empty"><div class="tp tp1"></div></div><div></div>
       <div class="cell empty"><div class="tp tp2"></div></div><div></div>
-      <div class="cell t1"></div>
+      <div class="cell empty"></div>
     </div>
   </div>
   <div class="info">
     <div class="level-header"><span class="level-num">10</span><span class="level-title">Teleports</span></div>
     <div class="scores-row">
       <div class="score-group"><span class="score-label">Quality</span><div class="score s8">8 <span class="max">/ 10</span></div></div>
-      <div class="score-group"><span class="score-label">Difficulty</span><div class="diff d3">3 <span class="max">/ 10</span></div></div>
+      <div class="score-group"><span class="score-label">Difficulty</span><div class="diff d4">4 <span class="max">/ 10</span></div></div>
     </div>
-    <div class="tags"><span class="tag shape">3 Columns</span><span class="tag mechanic">Teleports</span><span class="tag mechanic">Cargo</span></div>
-    <div class="stats">18 cells &middot; 2 blocks (1 cargo) &middot; 1 color &middot; 2 teleport pairs</div>
-    <p class="eval">Three-column layout with gaps is instantly memorable. Teleports feel essential, not gimmicky. The disconnected columns immediately signal "something different is happening here." Slightly simple for its position (only 2 blocks).</p>
+    <div class="tags"><span class="tag tut">Tutorial</span><span class="tag shape">3 Columns</span><span class="tag mechanic">Teleports</span><span class="tag mechanic">Cargo</span><span class="tag mechanic">2 Colors</span></div>
+    <div class="stats">18 cells &middot; 4 blocks (2 cargo) &middot; 2 colors &middot; 2 teleport pairs</div>
+    <p class="eval">Three disconnected columns connected only by teleports — the layout immediately signals a new mechanic. Elegant mirrored structure: B1 pushes cargo down through T1 to column 2, B2 pushes cargo up through T2 to column 2. 10-move solution in two independent 5-move halves. Two colors and 4 targets in the central column give the level substance. Every cell earns its place.</p>
     <p class="message">"Portals teleport a block to the paired portal."</p>
   </div>
 </div>
@@ -472,56 +485,45 @@
 </div>
 
 <!-- ═══ LEVEL 13 ═══ -->
-<div class="level-card good">
+<div class="level-card great">
   <div class="board-container">
-    <div class="board" style="grid-template-columns: repeat(6, 36px); grid-template-rows: repeat(6, 36px); gap: 3px;">
+    <div class="board" style="grid-template-columns: repeat(4, 44px); grid-template-rows: repeat(5, 44px);">
       <!-- row 0 -->
-      <div class="cell hole"></div><div class="cell hole"></div>
-      <div class="cell empty" style="width:36px;height:36px"><div class="block b2" style="width:32px;height:32px"><span class="arrow" style="font-size:11px">&#9660;</span></div></div>
-      <div class="cell empty" style="width:36px;height:36px"><div class="block b2" style="width:32px;height:32px"><span class="arrow" style="font-size:11px">&#9660;</span></div></div>
-      <div class="cell hole"></div><div class="cell hole"></div>
+      <div class="cell hole"></div>
+      <div class="cell t1"></div>
+      <div class="cell t1"></div>
+      <div class="cell hole"></div>
       <!-- row 1 -->
-      <div class="cell hole"></div><div class="cell hole"></div>
-      <div class="cell empty" style="width:36px;height:36px"><div class="block b2" style="width:32px;height:32px"><span class="arrow" style="font-size:11px">&#9660;</span></div></div>
-      <div class="cell empty" style="width:36px;height:36px"><div class="block b2" style="width:32px;height:32px"><span class="arrow" style="font-size:11px">&#9660;</span></div></div>
-      <div class="cell hole"></div><div class="cell hole"></div>
+      <div class="cell hole"></div>
+      <div class="cell t2"></div>
+      <div class="cell t2"></div>
+      <div class="cell hole"></div>
       <!-- row 2 -->
-      <div class="cell empty" style="width:36px;height:36px"><div class="block b1" style="width:32px;height:32px"><span class="arrow" style="font-size:11px">&#9654;</span></div></div>
-      <div class="cell empty" style="width:36px;height:36px"><div class="block b1" style="width:32px;height:32px"><span class="arrow" style="font-size:11px">&#9654;</span></div></div>
-      <div class="cell empty" style="width:36px;height:36px"></div>
-      <div class="cell empty" style="width:36px;height:36px"></div>
-      <div class="cell empty" style="width:36px;height:36px"></div>
-      <div class="cell empty" style="width:36px;height:36px"></div>
+      <div class="cell empty"><div class="block b1"><span class="arrow">&#9654;</span></div></div>
+      <div class="cell empty"></div>
+      <div class="cell empty"></div>
+      <div class="cell empty"></div>
       <!-- row 3 -->
-      <div class="cell empty" style="width:36px;height:36px"><div class="block b1" style="width:32px;height:32px"><span class="arrow" style="font-size:11px">&#9654;</span></div></div>
-      <div class="cell empty" style="width:36px;height:36px"><div class="block b1" style="width:32px;height:32px"><span class="arrow" style="font-size:11px">&#9654;</span></div></div>
-      <div class="cell empty" style="width:36px;height:36px"></div>
-      <div class="cell empty" style="width:36px;height:36px"></div>
-      <div class="cell empty" style="width:36px;height:36px"></div>
-      <div class="cell empty" style="width:36px;height:36px"></div>
+      <div class="cell empty"><div class="block b1"><span class="arrow">&#9654;</span></div></div>
+      <div class="cell empty"></div>
+      <div class="cell empty"></div>
+      <div class="cell empty"></div>
       <!-- row 4 -->
-      <div class="cell hole"></div><div class="cell hole"></div>
-      <div class="cell t2" style="width:36px;height:36px"></div>
-      <div class="cell t2" style="width:36px;height:36px"></div>
-      <div class="cell t2" style="width:36px;height:36px"></div>
-      <div class="cell t2" style="width:36px;height:36px"></div>
-      <!-- row 5 -->
-      <div class="cell hole"></div><div class="cell hole"></div>
-      <div class="cell t1" style="width:36px;height:36px"></div>
-      <div class="cell t1" style="width:36px;height:36px"></div>
-      <div class="cell t1" style="width:36px;height:36px"></div>
-      <div class="cell t1" style="width:36px;height:36px"></div>
+      <div class="cell hole"></div>
+      <div class="cell empty"><div class="block b2"><span class="arrow">&#9650;</span></div></div>
+      <div class="cell empty"><div class="block b2"><span class="arrow">&#9650;</span></div></div>
+      <div class="cell hole"></div>
     </div>
   </div>
   <div class="info">
-    <div class="level-header"><span class="level-num">13</span><span class="level-title">Crossing Armies</span></div>
+    <div class="level-header"><span class="level-num">13</span><span class="level-title">Crossing Paths</span></div>
     <div class="scores-row">
-      <div class="score-group"><span class="score-label">Quality</span><div class="score s7">7 <span class="max">/ 10</span></div></div>
-      <div class="score-group"><span class="score-label">Difficulty</span><div class="diff d7">7 <span class="max">/ 10</span></div></div>
+      <div class="score-group"><span class="score-label">Quality</span><div class="score s8">8 <span class="max">/ 10</span></div></div>
+      <div class="score-group"><span class="score-label">Difficulty</span><div class="diff d6">6 <span class="max">/ 10</span></div></div>
     </div>
-    <div class="tags"><span class="tag shape">L-shape</span><span class="tag mechanic">8 Sync blocks</span><span class="tag mechanic">2 Colors</span><span class="tag mechanic">Crossing paths</span></div>
-    <div class="stats">24 cells &middot; 8 blocks (4+4 synchronized) &middot; 2 colors</div>
-    <p class="eval">Two synchronized 2x2 armies (4 right, 4 down) must cross paths through a shared central area to fill a 4x2 target grid. Down-blocks need row 4, right-blocks need row 5 — ordering is critical. Cascading push chains when groups collide. Hardest level in the set. Big difficulty jump from L12 (5→7). Some empty highway cells dilute density.</p>
+    <div class="tags"><span class="tag shape">Cross</span><span class="tag mechanic">Push chains</span><span class="tag mechanic">2 Colors</span><span class="tag mechanic">Crossing paths</span></div>
+    <div class="stats">14 cells &middot; 4 blocks (2+2) &middot; 2 colors</div>
+    <p class="eval"><strong>Elegant redesign.</strong> Distilled from 8 blocks on 24 cells to 4 blocks on 14 — every cell earns its place. The cross shape with missing corners is distinctive. 6-move solution (right, up&times;3, right, up) has a brilliant ordering trap: B2 must reach [2,1] early (move 4) to act as a wall preventing B1 from escaping right, then B1@[1,0] vacates to [2,0] (move 5), and the final push slides B1 into the now-empty [1,0]. Push chains, cross-color blocking, and a non-obvious right-up-right alternation. Major upgrade over the old 6&times;6 army version.</p>
   </div>
 </div>
 

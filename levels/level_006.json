@@ -1,4 +1,5 @@
 {
-"A":[[0,1],[1,1],[2,1],[3,1],[4,1,1],[2,2],[4,2,1],[3,0],[4,0,1]],
-"B":[{"dir":"right","id":1,"origin":[0,1]},{"dir":"up","id":1,"origin":[3,1]},{"dir":"down","id":1,"origin":[2,1]}]
+"A":[[2,3],[3,3,1],[2,2],[2,1],[3,1,1],[1,0],[1,1],[1,2],[1,3,1],[0,1]],
+"B":[{"dir":"down","id":1,"origin":[1,0]},{"dir":"right","id":1,"origin":[1,1]},{"dir":"right","id":1,"origin":[0,1]}],
+"message":"Order matters! Double-tap to restart if you get stuck."
 }
