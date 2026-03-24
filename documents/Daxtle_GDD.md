@@ -718,14 +718,12 @@ Uses a load-merge-save pattern to preserve other fields when writing individual 
 ```
 
 **Pipeline:**
-1. Set `DEBUG_MODE = false` for release
-2. Increment build number (shared counter in `.build_number`)
+1. Increment build number (shared counter in `.build_number`)
 3. Godot headless export
 4. *(iOS only)* Regenerate icon from SVG via `scripts/tools/regenerate_ios_icons.sh`
 5. *(iOS only)* Patch launch screen, signing config
 6. *(iOS only)* `xcodebuild archive` + `exportArchive` (release-testing method)
 7. Firebase App Distribution upload
-8. Restore `DEBUG_MODE`
 
 ### Icon Generation
 

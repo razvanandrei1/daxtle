@@ -3,13 +3,14 @@
 # =============================================================================
 extends Node
 
-## When true: skip all animations, go directly to Game scene on launch.
-## The deploy script forces this to false for release builds.
-const DEBUG_MODE := false
-
 ## When true: level selection opens the LevelEditor instead of the game,
 ## and a "New Level" button appears in Level Selection.
-const LEVEL_EDITOR_MODE := true
+## Forced to false on iOS/Android.
+static var LEVEL_EDITOR_MODE: bool:
+	get:
+		if OS.get_name() in ["iOS", "Android"]:
+			return false
+		return true
 
 ## Temporary storage for level data passed between editor and play-test scene.
 var editor_level_data: Dictionary = {}

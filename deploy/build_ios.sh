@@ -25,17 +25,12 @@ error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
 # ─── Release mode ───────────────────────────────────────────────────────────
 enforce_release_mode() {
-    ORIGINAL_DEBUG_LINE=$(grep 'const DEBUG_MODE' "$GLOBALS_FILE")
     ORIGINAL_EDITOR_LINE=$(grep 'const LEVEL_EDITOR_MODE' "$GLOBALS_FILE")
-    sed -i '' 's/const DEBUG_MODE := true/const DEBUG_MODE := false/' "$GLOBALS_FILE"
     sed -i '' 's/const LEVEL_EDITOR_MODE := true/const LEVEL_EDITOR_MODE := false/' "$GLOBALS_FILE"
-    info "DEBUG_MODE and LEVEL_EDITOR_MODE set to false"
+    info "LEVEL_EDITOR_MODE set to false"
 }
 
 restore_globals() {
-    if [ -n "${ORIGINAL_DEBUG_LINE:-}" ]; then
-        sed -i '' "s/const DEBUG_MODE := false/$ORIGINAL_DEBUG_LINE/" "$GLOBALS_FILE"
-    fi
     if [ -n "${ORIGINAL_EDITOR_LINE:-}" ]; then
         sed -i '' "s/const LEVEL_EDITOR_MODE := false/$ORIGINAL_EDITOR_LINE/" "$GLOBALS_FILE"
     fi

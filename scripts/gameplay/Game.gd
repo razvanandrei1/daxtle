@@ -226,9 +226,6 @@ func show_reset() -> void:
 		return
 	if not _reset.visible:
 		_reset.visible = true
-		if Globals.DEBUG_MODE:
-			_reset.scale = Vector2.ONE
-			return
 		_reset.scale = Vector2.ZERO
 		var tween := create_tween()
 		tween.tween_property(_reset, "scale", Vector2.ONE, 0.2) \
@@ -237,9 +234,6 @@ func show_reset() -> void:
 
 func _hide_reset() -> void:
 	if _reset.visible:
-		if Globals.DEBUG_MODE:
-			_reset.visible = false
-			return
 		var tween := create_tween()
 		tween.tween_property(_reset, "scale", Vector2.ZERO, 0.15) \
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
@@ -450,41 +444,6 @@ func _load_level_data(level_data: Dictionary) -> void:
 
 
 # Debug: skip intro animation and jump to a level instantly
-func _debug_load(n: int) -> void:
-	n = clampi(n, 1, LevelLoader.count_levels())
-	stop()
-	_load_level(n)
-	# Skip intro — set everything to final state immediately
-	for tw in _intro_tweens:
-		if tw:
-			tw.kill()
-	_intro_tweens.clear()
-	for sq in _board.board_squares:
-		_board.set_cell_scale(sq, 1.0)
-	for fb in _fixed_blocks:
-		fb.block_scale = 1.0
-	for tp in _teleports:
-		tp.block_scale = 1.0
-	for block in _blocks:
-		block.block_scale = 1.0
-		block.arrow_alpha = 1.0
-	_swipe_detector.enabled = true
-	_active = true
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if not _active or not Globals.DEBUG_MODE:
-		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		match event.keycode:
-			KEY_COMMA:
-				_debug_load(current_level - 1)
-			KEY_PERIOD:
-				_debug_load(current_level + 1)
-			KEY_R:
-				_debug_load(current_level)
-
-
 func stop() -> void:
 	_active = false
 	_challenge_timer_active = false
@@ -542,29 +501,6 @@ func _on_swipe(direction: String) -> void:
 		show_reset()
 
 	_swipe_detector.enabled = false
-
-	if Globals.DEBUG_MODE:
-		if not movers.is_empty():
-			AudioManager.play_sfx("slide")
-			Haptics.tap()
-		for block in movers:
-			if teleport_exits.has(block):
-				block.grid_origin = teleport_exits[block]
-			else:
-				block.grid_origin += dv
-			block.position = _board.grid_to_local(block.grid_origin)
-
-		_handle_destroy_collisions(func() -> void:
-			if _check_win():
-				_on_win()
-			elif _is_stuck():
-				_on_stuck()
-			elif mode == Mode.CHALLENGE and not _is_winnable():
-				_on_stuck()
-			else:
-				_swipe_detector.enabled = true
-		)
-		return
 
 	if not movers.is_empty():
 		AudioManager.play_sfx("slide")
@@ -760,10 +696,6 @@ func _on_stuck() -> void:
 		, _challenge_timer_alpha, 0.0, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	Haptics.fail()
 
-	if Globals.DEBUG_MODE:
-		reset_level()
-		return
-
 	var origin := _board.position
 	var s      := value_a * 0.06
 
@@ -807,15 +739,6 @@ func _on_win() -> void:
 		var next := current_level + 1
 		if next > SaveData.get_progress_level():
 			SaveData.set_progress_level(next)
-
-	if Globals.DEBUG_MODE:
-		if _has_message:
-			dismiss_message.emit()
-		if current_level >= LevelLoader.count_levels():
-			all_levels_completed.emit()
-		else:
-			_load_level(current_level + 1)
-		return
 
 	if _has_message:
 		dismiss_message.emit()
@@ -952,14 +875,6 @@ func reset_level() -> void:
 		_load_level_data(_current_level_data)
 		return
 
-	if Globals.DEBUG_MODE:
-		for block in _blocks:
-			block.grid_origin = block.data.origin
-			block.position = _board.grid_to_local(block.grid_origin)
-
-		_swipe_detector.enabled = true
-		return
-
 	var slide := create_tween().set_parallel(true)
 	for block in _blocks:
 		block.grid_origin = block.data.origin
@@ -1005,24 +920,6 @@ const _INTRO_ARROW_DUR     := 0.10   # arrow fade-in duration after block lands
 const _INTRO_HOLD          := 0.20   # pause after last arrow before input opens
 
 func _play_intro_animation() -> void:
-	if Globals.DEBUG_MODE:
-		# Skip intro — set everything to final state immediately
-		for sq in _board.board_squares:
-			_board.set_cell_scale(sq, 1.0)
-		for fb in _fixed_blocks:
-			fb.block_scale = 1.0
-		for db in _destroy_blocks:
-			db.block_scale = 1.0
-		for tp in _teleports:
-			tp.block_scale = 1.0
-		for block in _blocks:
-			block.block_scale = 1.0
-			block.arrow_alpha = 1.0
-		_swipe_detector.enabled = true
-		_start_challenge_timer()
-		intro_finished.emit()
-		return
-
 	_swipe_detector.enabled = false
 
 	# Chain scale across board squares — diagonal wave top-left → bottom-right

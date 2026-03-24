@@ -87,11 +87,6 @@ func animate_message() -> void:
 	if not _msg_panel.visible or _msg_label.text.is_empty():
 		return
 
-	if Globals.DEBUG_MODE:
-		_msg_panel.scale    = Vector2.ONE
-		_msg_panel.modulate = Color.WHITE
-		return
-
 	_msg_panel.scale    = Vector2(0.8, 0.8)
 	_msg_panel.modulate = Color.TRANSPARENT
 

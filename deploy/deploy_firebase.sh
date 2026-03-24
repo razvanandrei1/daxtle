@@ -48,13 +48,11 @@ check_dependencies() {
     fi
 }
 
-# Force DEBUG_MODE and LEVEL_EDITOR_MODE to false before building, restore after
+# Force LEVEL_EDITOR_MODE to false before building, restore after
 enforce_release_mode() {
-    ORIGINAL_DEBUG_LINE=$(grep 'const DEBUG_MODE' "$GLOBALS_FILE")
     ORIGINAL_EDITOR_LINE=$(grep 'const LEVEL_EDITOR_MODE' "$GLOBALS_FILE")
-    sed -i '' 's/const DEBUG_MODE := true/const DEBUG_MODE := false/' "$GLOBALS_FILE"
     sed -i '' 's/const LEVEL_EDITOR_MODE := true/const LEVEL_EDITOR_MODE := false/' "$GLOBALS_FILE"
-    info "DEBUG_MODE and LEVEL_EDITOR_MODE set to false for release build"
+    info "LEVEL_EDITOR_MODE set to false for release build"
 }
 
 increment_build_number() {
@@ -76,17 +74,14 @@ increment_build_number() {
     info "Build number incremented to $BUILD_NUMBER"
 }
 
-restore_debug_mode() {
-    if [ -n "${ORIGINAL_DEBUG_LINE:-}" ]; then
-        sed -i '' "s/const DEBUG_MODE := false/$ORIGINAL_DEBUG_LINE/" "$GLOBALS_FILE"
-    fi
+restore_release_mode() {
     if [ -n "${ORIGINAL_EDITOR_LINE:-}" ]; then
         sed -i '' "s/const LEVEL_EDITOR_MODE := false/$ORIGINAL_EDITOR_LINE/" "$GLOBALS_FILE"
     fi
     info "Globals restored to original values"
 }
 
-trap restore_debug_mode EXIT
+trap restore_release_mode EXIT
 
 # ─── Android ──────────────────────────────────────────────────────────────────
 build_android() {

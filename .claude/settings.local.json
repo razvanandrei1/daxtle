@@ -89,7 +89,9 @@
       "Bash(TMP_PNG=\"/tmp/daxtle_fg_test.png\")",
       "Bash(sed '/<rect/d' /Users/razvanandrei/daxtle/icon.svg)",
       "Bash(\"$TMP_SVG\")",
-      "Bash(cairosvg \"$TMP_SVG\" -o \"$TMP_PNG\" -W 172 -H 172)"
+      "Bash(cairosvg \"$TMP_SVG\" -o \"$TMP_PNG\" -W 172 -H 172)",
+      "Bash(do grep:*)",
+      "Bash(grep:*)"
     ]
   }
 }

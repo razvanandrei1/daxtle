@@ -71,30 +71,6 @@ func _ready() -> void:
 
 	AudioManager.play_music()
 
-	if Globals.DEBUG_MODE:
-		# Jump straight into the game, skipping menus
-		_main_menu.visible         = false
-		_main_menu.process_mode    = Node.PROCESS_MODE_DISABLED
-		_level_select.visible      = false
-		_level_select.process_mode = Node.PROCESS_MODE_DISABLED
-		_settings.visible          = false
-		_settings.process_mode     = Node.PROCESS_MODE_DISABLED
-		_about.visible             = false
-		_about.process_mode        = Node.PROCESS_MODE_DISABLED
-		_challenge_intro.visible   = false
-		_challenge_intro.process_mode = Node.PROCESS_MODE_DISABLED
-		_level_editor.visible      = false
-		_level_editor.process_mode = Node.PROCESS_MODE_DISABLED
-		_level_editor_play.visible = false
-		_level_editor_play.process_mode = Node.PROCESS_MODE_DISABLED
-		_game.visible              = true
-		_game.process_mode         = Node.PROCESS_MODE_INHERIT
-		_ui.visible                = true
-		var last := SaveData.get_last_level()
-		_game.set_level(last)
-		_game.load_level(last)
-		return
-
 	# Start on main menu — hide everything else
 	_game.visible              = false
 	_game.process_mode         = Node.PROCESS_MODE_DISABLED
@@ -114,11 +90,8 @@ func _ready() -> void:
 
 
 # Fade transition: fades screen to opaque, runs callback (scene switch), fades back in.
-# Blocks input during the transition. Skipped entirely in DEBUG_MODE.
+# Blocks input during the transition.
 func _fade_to(callback: Callable) -> void:
-	if Globals.DEBUG_MODE:
-		callback.call()
-		return
 	_fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
 	var fade_out := create_tween()
 	fade_out.tween_property(_fade_rect, "color:a", 1.0, FADE_DURATION) \
