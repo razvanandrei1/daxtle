@@ -117,11 +117,12 @@ static func resolve(
 			for cell in block.data.cells(block.grid_origin):
 				stationary_cells[cell] = true
 
-	var blocked_cells:    Dictionary = {}
-	var movers:           Array[Block] = []
-	var invalid:          Array[Block] = []
-	var teleport_exits:   Dictionary = {}
-	var teleport_entries: Dictionary = {}
+	var blocked_cells:      Dictionary = {}
+	var mover_destinations: Dictionary = {}   # tracks where movers will land
+	var movers:             Array[Block] = []
+	var invalid:            Array[Block] = []
+	var teleport_exits:     Dictionary = {}
+	var teleport_entries:   Dictionary = {}
 
 	for block in sorted:
 		var new_origin := block.grid_origin + dv
@@ -143,41 +144,92 @@ static func resolve(
 					if not board_set.has(cell) or fixed_set.has(cell) or blocked_cells.has(cell):
 						can_move = false
 						break
-				if can_move:
-					teleport_entries[block] = new_origin
-					teleport_exits[block]   = exit
 
-					# T72 — Continuation: try one extra step past the exit
-					var cont := exit + dv
-					var cont_ok := board_set.has(cont) \
-						and not fixed_set.has(cont) \
-						and not blocked_cells.has(cont) \
-						and not stationary_cells.has(cont) \
-						and not teleport_map.has(cont)
-					# Also ensure cont isn't occupied by a block in the sorted set
-					# that hasn't been processed yet (it may be a future mover or invalid)
-					if cont_ok:
-						for other in sorted:
-							if other == block:
-								continue
-							if not movers.has(other) and not invalid.has(other):
-								for cell in other.data.cells(other.grid_origin):
-									if cell == cont:
-										cont_ok = false
-										break
-							if not cont_ok:
+				# Check if an unprocessed active block sits at the exit cell
+				var exit_occupied := false
+				if can_move:
+					for other in sorted:
+						if other == block:
+							continue
+						if movers.has(other) or invalid.has(other):
+							continue
+						for cell in other.data.cells(other.grid_origin):
+							if cell == exit:
+								exit_occupied = true
 								break
-					if cont_ok:
-						teleport_exits[block] = cont
+						if exit_occupied:
+							break
+
+				if can_move:
+					if exit_occupied:
+						# Exit cell has an unprocessed block — teleport only works
+						# if continuation cell is free (block slides past the exit)
+						var cont := exit + dv
+						var cont_ok := board_set.has(cont) \
+							and not fixed_set.has(cont) \
+							and not blocked_cells.has(cont) \
+							and not stationary_cells.has(cont) \
+							and not teleport_map.has(cont) \
+							and not mover_destinations.has(cont)
+						if cont_ok:
+							for other in sorted:
+								if other == block:
+									continue
+								if not movers.has(other) and not invalid.has(other):
+									for cell in other.data.cells(other.grid_origin):
+										if cell == cont:
+											cont_ok = false
+											break
+								if not cont_ok:
+									break
+						if cont_ok:
+							teleport_entries[block] = new_origin
+							teleport_exits[block]   = cont
+						else:
+							# Can't continue past exit, and exit is occupied — blocked
+							can_move = false
+					else:
+						teleport_entries[block] = new_origin
+						teleport_exits[block]   = exit
+
+						# T72 — Continuation: try one extra step past the exit
+						var cont := exit + dv
+						var cont_ok := board_set.has(cont) \
+							and not fixed_set.has(cont) \
+							and not blocked_cells.has(cont) \
+							and not stationary_cells.has(cont) \
+							and not teleport_map.has(cont) \
+							and not mover_destinations.has(cont)
+						if cont_ok:
+							for other in sorted:
+								if other == block:
+									continue
+								if not movers.has(other) and not invalid.has(other):
+									for cell in other.data.cells(other.grid_origin):
+										if cell == cont:
+											cont_ok = false
+											break
+								if not cont_ok:
+									break
+						if cont_ok:
+							teleport_exits[block] = cont
 			else:
 				# Normal move — check entrance for fixed/blocked obstructions
 				for cell in block.data.cells(new_origin):
-					if fixed_set.has(cell) or blocked_cells.has(cell):
+					if fixed_set.has(cell) or blocked_cells.has(cell) or mover_destinations.has(cell):
 						can_move = false
 						break
 
 		if can_move:
 			movers.append(block)
+			# Track the destination so later blocks don't overlap
+			var dest: Vector2i
+			if teleport_exits.has(block):
+				dest = teleport_exits[block]
+			else:
+				dest = block.grid_origin + dv
+			for cell in block.data.cells(dest):
+				mover_destinations[cell] = true
 		else:
 			invalid.append(block)
 			for cell in block.data.cells(block.grid_origin):
