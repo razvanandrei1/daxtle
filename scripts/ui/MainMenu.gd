@@ -7,10 +7,7 @@ signal select_level_pressed
 signal settings_pressed
 signal about_pressed
 
-var _font:      Font  = GameTheme.FONT_BOLD
 var _font_bold: Font  = GameTheme.FONT_BOLD
-var _text_col:  Color
-var _sub_col:   Color
 
 var _play_rect:         Rect2
 var _challenge_rect:      Rect2
@@ -50,9 +47,6 @@ func _ready() -> void:
 	_about_tex    = preload("res://assets/img/icon_about.svg")
 	_challenge_tex  = preload("res://assets/img/icon_challenge.svg")
 	_play_tex       = preload("res://assets/img/icon_play.svg")
-	_text_col = GameTheme.ACTIVE["text"]
-	_sub_col  = GameTheme.ACTIVE["text"]
-	_sub_col.a = 0.5
 	_safe_top = GameTheme.get_safe_area_top()
 
 	_letter_scales.resize(TITLE_LETTERS.length())

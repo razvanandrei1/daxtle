@@ -39,5 +39,4 @@ func _unhandled_input(event: InputEvent) -> void:
 	)
 	if hit.has_point(pos):
 		get_viewport().set_input_as_handled()
-		pressed.emit()
-		GameTheme.play_tap_pulse(self, func() -> void: pass)
+		GameTheme.play_tap_pulse(self, func() -> void: pressed.emit())

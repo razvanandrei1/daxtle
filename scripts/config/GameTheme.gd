@@ -1,7 +1,6 @@
 class_name GameTheme
 
 # ── Font ──────────────────────────────────────────────────────────────────
-const FONT:      Font = preload("res://assets/fonts/Fredoka-Bold.tres")
 const FONT_BOLD: Font = preload("res://assets/fonts/Fredoka-Bold.tres")
 
 # ── Palette definitions ────────────────────────────────────────────────────
