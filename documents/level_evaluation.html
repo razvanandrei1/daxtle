@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daxtle — Level Evaluation (1-14)</title>
+<title>Daxtle — Level Evaluation (1-15)</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -91,7 +91,7 @@
 <body>
 
 <h1>DAXTLE</h1>
-<p class="subtitle">Level Evaluation — Quality &amp; Difficulty (1-10)</p>
+<p class="subtitle">Level Evaluation 1-15 — Quality &amp; Difficulty (1-10)</p>
 
 <div class="legend">
   <div class="legend-item"><div class="legend-swatch" style="background:#D9D1C2"></div> Board cell</div>
@@ -563,6 +563,59 @@
     <div class="stats">12 cells &middot; 5 blocks &middot; 2 colors &middot; 1 destroy block</div>
     <p class="eval"><strong>Excellent D-block introduction.</strong> Cutting all four corners creates a diamond silhouette — compact and distinctive. 5 blocks on 12 cells is dense; every cell earns its place. 9-move solution in three clean phases: (1) column 2 sacrifice — down pushes left into the D cell, then walks to [2,3]; (2) B2 crosses the board left&times;3 to [0,1]; (3) column 1 push chain — right positions, then up pushes it through [1,1] and [1,0]. Critical ordering trap: B2 must cross column 1 before the push chain fills [1,1]. Shape and puzzle logic now both deliver.</p>
     <p class="message">"Push a block onto the X to destroy it."</p>
+  </div>
+</div>
+
+<!-- ═══ LEVEL 15 ═══ -->
+<div class="level-card great">
+  <div class="board-container">
+    <div class="board" style="grid-template-columns: repeat(6, 44px); grid-template-rows: repeat(5, 44px);">
+      <!-- row 0 -->
+      <div class="cell hole"></div>
+      <div class="cell hole"></div>
+      <div class="cell empty"><div class="block b1"><span class="arrow">&#9660;</span></div></div>
+      <div class="cell hole"></div>
+      <div class="cell hole"></div>
+      <div class="cell hole"></div>
+      <!-- row 1 -->
+      <div class="cell hole"></div>
+      <div class="cell empty"><div class="block b1"><span class="arrow">&#9654;</span></div></div>
+      <div class="cell empty"></div>
+      <div class="cell empty"></div>
+      <div class="cell hole"></div>
+      <div class="cell hole"></div>
+      <!-- row 2 -->
+      <div class="cell hole"></div>
+      <div class="cell empty"><div class="block destroy">&#10005;</div></div>
+      <div class="cell t1"></div>
+      <div class="cell t2"></div>
+      <div class="cell empty"></div>
+      <div class="cell hole"></div>
+      <!-- row 3 -->
+      <div class="cell t1"></div>
+      <div class="cell t1"></div>
+      <div class="cell empty"></div>
+      <div class="cell empty"><div class="block b1"><span class="arrow">&#9664;</span></div></div>
+      <div class="cell empty"></div>
+      <div class="cell empty"><div class="block b1"><span class="arrow">&#9664;</span></div></div>
+      <!-- row 4 -->
+      <div class="cell hole"></div>
+      <div class="cell hole"></div>
+      <div class="cell empty"><div class="block b2"><span class="arrow">&#9650;</span></div></div>
+      <div class="cell empty"></div>
+      <div class="cell hole"></div>
+      <div class="cell hole"></div>
+    </div>
+  </div>
+  <div class="info">
+    <div class="level-header"><span class="level-num">15</span><span class="level-title">Funnel</span></div>
+    <div class="scores-row">
+      <div class="score-group"><span class="score-label">Quality</span><div class="score s8">8 <span class="max">/ 10</span></div></div>
+      <div class="score-group"><span class="score-label">Difficulty</span><div class="diff d6">6 <span class="max">/ 10</span></div></div>
+    </div>
+    <div class="tags"><span class="tag shape">Hourglass</span><span class="tag mechanic">Destroy block</span><span class="tag mechanic">Column contest</span><span class="tag mechanic">Cross-color routing</span><span class="tag mechanic">2 Colors</span><span class="tag mechanic">5 blocks</span></div>
+    <div class="stats">16 cells &middot; 5 blocks &middot; 2 colors &middot; 1 destroy block</div>
+    <p class="eval"><strong>Second color elevates everything.</strong> Tightened to 16 cells with a distinctive hourglass silhouette — single cell top, widening to 6-cell row 3, narrowing to 2 at bottom. Three interacting systems: (1) column 2 vertical contest — B1[2,0]&#9660; and B2[2,4]&#9650; compete for the same column, but B2 (red) needs T2 at [3,2], requiring a push to change columns; (2) row 3 sequencing gate — [5,3]&#9664; blocked by [3,3]&#9664;, forcing ordered resolution toward [0,3] and [1,3]; (3) destroy sacrifice at [1,2] adjacent to targets. The cross-color push routing creates a genuine "aha" moment — B2 can't reach its target alone. Every cell earns its place at 0.31 density.</p>
   </div>
 </div>
 
