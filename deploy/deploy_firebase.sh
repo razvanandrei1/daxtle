@@ -35,7 +35,6 @@ usage() {
     exit 0
 }
 
-GLOBALS_FILE="$PROJECT_DIR/scripts/Globals.gd"
 EXPORT_PRESETS="$PROJECT_DIR/export_presets.cfg"
 BUILD_NUMBER_FILE="$BUILD_DIR/.build_number"
 
@@ -46,13 +45,6 @@ check_dependencies() {
     if ! command -v firebase &> /dev/null; then
         error "Firebase CLI not found. Install with: npm install -g firebase-tools"
     fi
-}
-
-# Force LEVEL_EDITOR_MODE to false before building, restore after
-enforce_release_mode() {
-    ORIGINAL_EDITOR_LINE=$(grep 'const LEVEL_EDITOR_MODE' "$GLOBALS_FILE")
-    sed -i '' 's/const LEVEL_EDITOR_MODE := true/const LEVEL_EDITOR_MODE := false/' "$GLOBALS_FILE"
-    info "LEVEL_EDITOR_MODE set to false for release build"
 }
 
 increment_build_number() {
@@ -73,15 +65,6 @@ increment_build_number() {
 
     info "Build number incremented to $BUILD_NUMBER"
 }
-
-restore_release_mode() {
-    if [ -n "${ORIGINAL_EDITOR_LINE:-}" ]; then
-        sed -i '' "s/const LEVEL_EDITOR_MODE := false/$ORIGINAL_EDITOR_LINE/" "$GLOBALS_FILE"
-    fi
-    info "Globals restored to original values"
-}
-
-trap restore_release_mode EXIT
 
 # ─── Android ──────────────────────────────────────────────────────────────────
 build_android() {
@@ -218,22 +201,19 @@ case "$TARGET" in
     -h|--help) usage ;;
     android)
         check_dependencies
-        enforce_release_mode
-        increment_build_number
+increment_build_number
         build_android
         deploy_android
         ;;
     ios)
         check_dependencies
-        enforce_release_mode
-        increment_build_number
+increment_build_number
         build_ios
         deploy_ios
         ;;
     all)
         check_dependencies
-        enforce_release_mode
-        increment_build_number
+increment_build_number
         build_android
         deploy_android
         build_ios

@@ -622,6 +622,8 @@ func _handle_destroy_collisions(on_done: Callable) -> void:
 		_destroy_set.erase(db.grid_origin)
 		db.queue_free()
 
+	AudioManager.play_sfx("destroy")
+
 	# Flash B block: fade out then fade in, then shrink away
 	var flash := create_tween()
 	flash.tween_method(func(v: float) -> void:

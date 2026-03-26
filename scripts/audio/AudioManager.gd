@@ -14,6 +14,7 @@ const SFX_PATHS := {
 	"reset":    "res://assets/audio/sfx_reset.wav",
 	"win":      "res://assets/audio/sfx_win.wav",
 	"teleport": "res://assets/audio/sfx_teleport.wav",
+	"destroy":  "res://assets/audio/sfx_destroy.wav",
 	"click":    "res://assets/audio/click.wav",
 }
 

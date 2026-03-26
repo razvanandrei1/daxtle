@@ -91,7 +91,8 @@
       "Bash(\"$TMP_SVG\")",
       "Bash(cairosvg \"$TMP_SVG\" -o \"$TMP_PNG\" -W 172 -H 172)",
       "Bash(do grep:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(bash -n /Users/razvanandrei/daxtle/deploy/deploy_firebase.sh)"
     ]
   }
 }

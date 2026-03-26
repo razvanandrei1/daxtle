@@ -260,6 +260,8 @@ func _handle_destroy_collisions(on_done: Callable) -> void:
 		on_done.call()
 		return
 
+	AudioManager.play_sfx("destroy")
+
 	# Flash B block white, then shrink both away
 	const FLASH_DUR := 0.10
 	const DESTROY_DUR := 0.18
