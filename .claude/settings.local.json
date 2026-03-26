@@ -92,7 +92,12 @@
       "Bash(cairosvg \"$TMP_SVG\" -o \"$TMP_PNG\" -W 172 -H 172)",
       "Bash(do grep:*)",
       "Bash(grep:*)",
-      "Bash(bash -n /Users/razvanandrei/daxtle/deploy/deploy_firebase.sh)"
+      "Bash(bash -n /Users/razvanandrei/daxtle/deploy/deploy_firebase.sh)",
+      "Bash(mv level_011.json level_011_old.json)",
+      "Bash(mv level_012.json level_011.json)",
+      "Bash(mv level_011_old.json level_012.json)",
+      "Bash(mv level_016.json level_016_old.json)",
+      "Bash(mv level_017.json level_016.json)"
     ]
   }
 }

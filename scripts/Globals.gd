@@ -10,7 +10,7 @@ static var LEVEL_EDITOR_MODE: bool:
 	get:
 		if OS.get_name() in ["iOS", "Android"]:
 			return false
-		return true
+		return false
 
 ## Temporary storage for level data passed between editor and play-test scene.
 var editor_level_data: Dictionary = {}
