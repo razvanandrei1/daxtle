@@ -1,0 +1,37 @@
+Daxtle — Minimalist Puzzle
+
+Slide colored blocks to their matching targets. Figure out the order. That's the whole game.
+
+WHAT MAKES DAXTLE DIFFERENT
+
+Daxtle adds depth through interaction, not more rules. Blocks push each other. Portals connect split boards. Sacrifice blocks clear the path. Every mechanic changes how you think about the ones before it.
+
+THE RULES ARE SIMPLE
+Swipe in a direction. All blocks pointing that direction move one step. Match every block to its color's target. That's it.
+
+WHERE IT GETS INTERESTING
+• Blocks form push chains — moving one shoves the next
+• Cargo blocks only move when pushed by others
+• Teleport portals bridge disconnected islands
+• Destroy blocks must be cleared by sacrificing the right piece
+• Wrong order? The block you needed just died. Reset and rethink.
+
+TWO WAYS TO PLAY
+
+Campaign — 20 hand-crafted levels. No timer. No lives. Each level teaches or combines a mechanic. Take your time, find the "aha."
+
+Challenge — Endless streak mode. Solve puzzles against a shrinking timer. 73 puzzles across easy, medium, and hard tiers. How far can you go?
+
+NO NONSENSE
+• No energy systems or wait timers
+• No intrusive ads during puzzles
+• No forced tutorials — learn by playing
+• Single optional purchase to remove ads
+• Works offline
+
+
+SHORT DESCRIPTION (80 chars):
+Slide blocks to their targets. Simple rules, deep logic. A minimalist puzzler.
+
+TAGLINE:
+Think in order.

@@ -1,0 +1,29 @@
+Daxtle — Minimalist Puzzle
+
+Slide colored blocks across elegant boards to match each one with its target. Simple to learn, deeply satisfying to master.
+
+THINK, DON'T RUSH
+Every block moves in one fixed direction. Every swipe moves all blocks of that direction together. The challenge isn't speed — it's figuring out the right order. One wrong move and you'll need to rethink everything.
+
+PURE LOGIC, NO FILLER
+• No timers in campaign — take all the time you need
+• No lives, no fail state — reset instantly with a double-tap
+• No ads interrupting your flow
+• No tutorials longer than one sentence
+
+MECHANICS THAT UNFOLD
+What starts as sliding a single block grows into a rich puzzle language:
+• Push chains — blocks shove each other into position
+• Cargo blocks — they can't move alone, only when pushed
+• Teleport portals — warp across split boards
+• Destroy blocks — sacrifice the right piece to clear the path
+• Multiple colors — each with its own targets and traps
+
+20 HAND-CRAFTED CAMPAIGN LEVELS
+Each one designed around a single "aha" moment. No filler levels. No padding. Every puzzle earns its place.
+
+CHALLENGE MODE
+Solve as many puzzles as you can in a row. The timer shrinks after each solve. No resets. No undo. One mistake and it's over. 73 challenge puzzles across three difficulty tiers.
+
+—
+Daxtle is free to play with a single optional purchase to remove ads. No subscriptions. No loot boxes. No energy systems. Just puzzles.
