@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>razvi.dev — Games by Razvan Andrei</title>
+  <meta name="description" content="Indie games by Razvan Andrei. Minimalist puzzles that respect your time and your intelligence.">
+  <link rel="icon" type="image/png" href="inertix/assets/icon.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: #fafafa;
+      color: #1a1a1a;
+      min-height: 100vh;
+      line-height: 1.6;
+      display: flex;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 580px;
+      padding: 80px 0 40px;
+    }
+
+    /* ── Hero ── */
+    .greeting {
+      font-size: 15px;
+      color: #999;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    .intro {
+      font-size: 16px;
+      color: #777;
+      margin-top: 16px;
+      font-weight: 300;
+      line-height: 1.7;
+    }
+
+    /* ── Games ── */
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #999;
+      margin-top: 60px;
+      margin-bottom: 20px;
+    }
+    .game-card {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 16px;
+      text-decoration: none;
+      color: #1a1a1a;
+      border: 1px solid #eee;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .game-card:hover {
+      border-color: #ccc;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .game-card img {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      flex-shrink: 0;
+    }
+    .placeholder-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      background: #e8e4da;
+      flex-shrink: 0;
+    }
+    .game-info h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .game-info p {
+      font-size: 13px;
+      color: #777;
+      margin: 0;
+    }
+    .game-info .meta {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 6px;
+    }
+    .coming-soon {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: #1a1a1a;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 60px;
+      padding-top: 32px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #aaa;
+    }
+    footer a {
+      color: #777;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    footer a:hover { color: #1a1a1a; }
+
+    @media (max-width: 540px) {
+      .page { padding: 60px 32px 32px; }
+      h1 { font-size: 24px; }
+      footer { flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page">
+
+    <p class="greeting">Hey there!</p>
+    <h1>I'm Razvan, and I love creating puzzle games.</h1>
+    <p class="intro">Small, focused games built around a single idea — the kind you pick up for a minute and end up playing for an hour. This is where I share what I've been working on. Hope you enjoy it!</p>
+
+    <h2 class="section-title">My Games</h2>
+
+    <a href="https://inertix.razvi.dev" class="game-card">
+      <img src="inertix/inertix.png" alt="Inertix">
+      <div class="game-info">
+        <h3>Inertix</h3>
+        <p>A timing-based puzzle where orbiting particles must be launched between rings with precision and calm.</p>
+        <div class="meta">iOS &middot; 50+ levels &middot; App Store Editor's Choice</div>
+      </div>
+    </a>
+
+    <div class="game-card coming-soon">
+      <div class="placeholder-icon"></div>
+      <div class="game-info">
+        <h3>Daxtle <span class="badge">Coming Soon</span></h3>
+        <p>Slide colored blocks to their targets. Figure out the order.</p>
+        <div class="meta">iOS &amp; Android</div>
+      </div>
+    </div>
+
+    <footer>
+      <span>Razvan Andrei</span>
+      <a href="mailto:contact@razvi.dev">contact@razvi.dev</a>
+    </footer>
+
+  </div>
+
+</body>
+</html>

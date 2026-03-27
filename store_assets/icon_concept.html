@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daxtle Icon — Variant A with Game Background + Targets</title>
+<style>
+  body {
+    background: #2a2a3a;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    gap: 50px;
+  }
+  h1 { font-size: 24px; letter-spacing: 2px; opacity: 0.5; }
+  h2 { font-size: 16px; opacity: 0.4; margin-bottom: 12px; }
+  .row { display: flex; gap: 30px; align-items: end; flex-wrap: wrap; justify-content: center; }
+  .label { font-size: 11px; opacity: 0.35; text-align: center; margin-top: 6px; }
+  .concept { text-align: center; }
+  .concept p { font-size: 13px; opacity: 0.5; max-width: 280px; margin: 10px auto 0; }
+
+  /* Game colors from GameTheme.gd WARM_SAND */
+  :root {
+    --bg: #F5F0E3;
+    --surface: rgb(217, 209, 194);
+    --b1: #3DA391;      /* teal */
+    --b2: rgb(212, 97, 84);  /* coral */
+    --b3: rgb(74, 130, 201);  /* blue */
+    --b4: rgb(224, 166, 51);  /* amber */
+  }
+
+  .icon {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cell {
+    position: absolute;
+    background: var(--surface);
+  }
+  .target {
+    position: absolute;
+    border: 3px solid;
+    opacity: 0.4;
+  }
+  .target-fill {
+    position: absolute;
+    opacity: 0.15;
+  }
+  .block {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: rgba(255,255,255,0.9);
+  }
+
+  /* ═══ 400px preview size ═══ */
+  .s400 {
+    width: 400px; height: 400px;
+    border-radius: 88px;
+    background: var(--bg);
+  }
+  .s400 .cell { width: 88px; height: 88px; border-radius: 14px; }
+  .s400 .target { width: 88px; height: 88px; border-radius: 14px; }
+  .s400 .target-fill { width: 88px; height: 88px; border-radius: 14px; }
+  .s400 .block { width: 78px; height: 78px; border-radius: 12px; font-size: 34px; }
+
+  /* ═══ 180px iPhone ═══ */
+  .s180 {
+    width: 180px; height: 180px;
+    border-radius: 40px;
+    background: var(--bg);
+  }
+  .s180 .cell { width: 40px; height: 40px; border-radius: 6px; }
+  .s180 .target { width: 40px; height: 40px; border-radius: 6px; border-width: 2px; }
+  .s180 .target-fill { width: 40px; height: 40px; border-radius: 6px; }
+  .s180 .block { width: 35px; height: 35px; border-radius: 5px; font-size: 15px; }
+
+  /* ═══ 120px ═══ */
+  .s120 {
+    width: 120px; height: 120px;
+    border-radius: 27px;
+    background: var(--bg);
+  }
+  .s120 .cell { width: 26px; height: 26px; border-radius: 4px; }
+  .s120 .target { width: 26px; height: 26px; border-radius: 4px; border-width: 1.5px; }
+  .s120 .target-fill { width: 26px; height: 26px; border-radius: 4px; }
+  .s120 .block { width: 23px; height: 23px; border-radius: 3px; font-size: 10px; }
+
+  /* ═══ 60px ═══ */
+  .s60 {
+    width: 60px; height: 60px;
+    border-radius: 13px;
+    background: var(--bg);
+  }
+  .s60 .cell { width: 13px; height: 13px; border-radius: 2px; }
+  .s60 .target { width: 13px; height: 13px; border-radius: 2px; border-width: 1px; }
+  .s60 .target-fill { width: 13px; height: 13px; border-radius: 2px; }
+  .s60 .block { width: 11px; height: 11px; border-radius: 2px; font-size: 5px; }
+</style>
+</head>
+<body>
+
+<h1>DAXTLE ICON — GAME BACKGROUND + TARGETS</h1>
+
+<!-- ═══════════════════════════════════════════════════════
+     VARIANT A: X pattern + 2 targets (diagonal)
+     Target at top-right and bottom-left corners
+     ═══════════════════════════════════════════════════════ -->
+<div class="concept">
+  <h2>A — Two Diagonal Targets</h2>
+  <div class="icon s400">
+    <!-- 3x3 grid of board cells, gap ~8px -->
+    <!-- Row 0 -->
+    <div class="cell" style="top:42px; left:42px;"></div>
+    <div class="cell" style="top:42px; left:156px;"></div>
+    <div class="cell" style="top:42px; left:270px;"></div>
+    <!-- Row 1 -->
+    <div class="cell" style="top:156px; left:42px;"></div>
+    <div class="cell" style="top:156px; left:156px;"></div>
+    <div class="cell" style="top:156px; left:270px;"></div>
+    <!-- Row 2 -->
+    <div class="cell" style="top:270px; left:42px;"></div>
+    <div class="cell" style="top:270px; left:156px;"></div>
+    <div class="cell" style="top:270px; left:270px;"></div>
+
+    <!-- Target fills (muted block color at 15% opacity) -->
+    <div class="target-fill" style="top:42px; left:270px; background: var(--b1);"></div>
+    <div class="target-fill" style="top:270px; left:42px; background: var(--b2);"></div>
+
+    <!-- Target borders (block color at 40%) -->
+    <div class="target" style="top:42px; left:270px; border-color: var(--b1);"></div>
+    <div class="target" style="top:270px; left:42px; border-color: var(--b2);"></div>
+
+    <!-- Blocks in X pattern: top, right, bottom, left of center -->
+    <div class="block" style="top:47px; left:161px; background: var(--b1);">&#9650;</div>
+    <div class="block" style="top:161px; left:275px; background: var(--b2);">&#9654;</div>
+    <div class="block" style="top:275px; left:161px; background: var(--b3);">&#9660;</div>
+    <div class="block" style="top:161px; left:47px; background: var(--b4);">&#9664;</div>
+  </div>
+  <p>Targets on opposite corners hint at the goal. Board cells match the actual game surface.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     VARIANT B: X pattern + 2 targets (adjacent to blocks)
+     Each target next to its matching color block
+     ═══════════════════════════════════════════════════════ -->
+<div class="concept">
+  <h2>B — Targets Adjacent to Blocks</h2>
+  <div class="icon s400">
+    <!-- 3x3 grid -->
+    <div class="cell" style="top:42px; left:42px;"></div>
+    <div class="cell" style="top:42px; left:156px;"></div>
+    <div class="cell" style="top:42px; left:270px;"></div>
+    <div class="cell" style="top:156px; left:42px;"></div>
+    <div class="cell" style="top:156px; left:156px;"></div>
+    <div class="cell" style="top:156px; left:270px;"></div>
+    <div class="cell" style="top:270px; left:42px;"></div>
+    <div class="cell" style="top:270px; left:156px;"></div>
+    <div class="cell" style="top:270px; left:270px;"></div>
+
+    <!-- Target at top-left for teal (block is at top-center pointing ↑) -->
+    <div class="target-fill" style="top:42px; left:42px; background: var(--b1);"></div>
+    <div class="target" style="top:42px; left:42px; border-color: var(--b1);"></div>
+
+    <!-- Target at bottom-right for coral (block is at right-center pointing →) -->
+    <div class="target-fill" style="top:270px; left:270px; background: var(--b2);"></div>
+    <div class="target" style="top:270px; left:270px; border-color: var(--b2);"></div>
+
+    <!-- Blocks -->
+    <div class="block" style="top:47px; left:161px; background: var(--b1);">&#9650;</div>
+    <div class="block" style="top:161px; left:275px; background: var(--b2);">&#9654;</div>
+    <div class="block" style="top:275px; left:161px; background: var(--b3);">&#9660;</div>
+    <div class="block" style="top:161px; left:47px; background: var(--b4);">&#9664;</div>
+  </div>
+  <p>Teal target at top-left, coral target at bottom-right. Suggests "figure out the path" even from the icon.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     VARIANT C: Only center target (clean focus)
+     ═══════════════════════════════════════════════════════ -->
+<div class="concept">
+  <h2>C — Single Center Target</h2>
+  <div class="icon s400">
+    <!-- 3x3 grid -->
+    <div class="cell" style="top:42px; left:42px;"></div>
+    <div class="cell" style="top:42px; left:156px;"></div>
+    <div class="cell" style="top:42px; left:270px;"></div>
+    <div class="cell" style="top:156px; left:42px;"></div>
+    <div class="cell" style="top:156px; left:156px;"></div>
+    <div class="cell" style="top:156px; left:270px;"></div>
+    <div class="cell" style="top:270px; left:42px;"></div>
+    <div class="cell" style="top:270px; left:156px;"></div>
+    <div class="cell" style="top:270px; left:270px;"></div>
+
+    <!-- Center target — teal -->
+    <div class="target-fill" style="top:156px; left:156px; background: var(--b1);"></div>
+    <div class="target" style="top:156px; left:156px; border-color: var(--b1);"></div>
+
+    <!-- Blocks converging on center -->
+    <div class="block" style="top:47px; left:161px; background: var(--b1);">&#9650;</div>
+    <div class="block" style="top:161px; left:275px; background: var(--b2);">&#9654;</div>
+    <div class="block" style="top:275px; left:161px; background: var(--b3);">&#9660;</div>
+    <div class="block" style="top:161px; left:47px; background: var(--b4);">&#9664;</div>
+  </div>
+  <p>One teal target at center — all arrows point toward it. Cleanest read. Communicates "get the block here."</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SIZE PREVIEWS for Variant A
+     ═══════════════════════════════════════════════════════ -->
+<h2>Variant A — All Sizes</h2>
+<div class="row">
+  <div>
+    <div class="icon s180">
+      <div class="cell" style="top:18px; left:18px;"></div><div class="cell" style="top:18px; left:70px;"></div><div class="cell" style="top:18px; left:122px;"></div>
+      <div class="cell" style="top:70px; left:18px;"></div><div class="cell" style="top:70px; left:70px;"></div><div class="cell" style="top:70px; left:122px;"></div>
+      <div class="cell" style="top:122px; left:18px;"></div><div class="cell" style="top:122px; left:70px;"></div><div class="cell" style="top:122px; left:122px;"></div>
+      <div class="target-fill" style="top:18px; left:122px; background: var(--b1);"></div>
+      <div class="target" style="top:18px; left:122px; border-color: var(--b1);"></div>
+      <div class="target-fill" style="top:122px; left:18px; background: var(--b2);"></div>
+      <div class="target" style="top:122px; left:18px; border-color: var(--b2);"></div>
+      <div class="block" style="top:20px; left:73px; background: var(--b1);">&#9650;</div>
+      <div class="block" style="top:73px; left:125px; background: var(--b2);">&#9654;</div>
+      <div class="block" style="top:125px; left:73px; background: var(--b3);">&#9660;</div>
+      <div class="block" style="top:73px; left:20px; background: var(--b4);">&#9664;</div>
+    </div>
+    <div class="label">180px</div>
+  </div>
+  <div>
+    <div class="icon s120">
+      <div class="cell" style="top:12px; left:12px;"></div><div class="cell" style="top:12px; left:47px;"></div><div class="cell" style="top:12px; left:82px;"></div>
+      <div class="cell" style="top:47px; left:12px;"></div><div class="cell" style="top:47px; left:47px;"></div><div class="cell" style="top:47px; left:82px;"></div>
+      <div class="cell" style="top:82px; left:12px;"></div><div class="cell" style="top:82px; left:47px;"></div><div class="cell" style="top:82px; left:82px;"></div>
+      <div class="target-fill" style="top:12px; left:82px; background: var(--b1);"></div>
+      <div class="target" style="top:12px; left:82px; border-color: var(--b1);"></div>
+      <div class="target-fill" style="top:82px; left:12px; background: var(--b2);"></div>
+      <div class="target" style="top:82px; left:12px; border-color: var(--b2);"></div>
+      <div class="block" style="top:13px; left:49px; background: var(--b1);">&#9650;</div>
+      <div class="block" style="top:49px; left:84px; background: var(--b2);">&#9654;</div>
+      <div class="block" style="top:84px; left:49px; background: var(--b3);">&#9660;</div>
+      <div class="block" style="top:49px; left:13px; background: var(--b4);">&#9664;</div>
+    </div>
+    <div class="label">120px</div>
+  </div>
+  <div>
+    <div class="icon s60">
+      <div class="cell" style="top:6px; left:6px;"></div><div class="cell" style="top:6px; left:24px;"></div><div class="cell" style="top:6px; left:41px;"></div>
+      <div class="cell" style="top:24px; left:6px;"></div><div class="cell" style="top:24px; left:24px;"></div><div class="cell" style="top:24px; left:41px;"></div>
+      <div class="cell" style="top:41px; left:6px;"></div><div class="cell" style="top:41px; left:24px;"></div><div class="cell" style="top:41px; left:41px;"></div>
+      <div class="target-fill" style="top:6px; left:41px; background: var(--b1);"></div>
+      <div class="target" style="top:6px; left:41px; border-color: var(--b1);"></div>
+      <div class="target-fill" style="top:41px; left:6px; background: var(--b2);"></div>
+      <div class="target" style="top:41px; left:6px; border-color: var(--b2);"></div>
+      <div class="block" style="top:7px; left:25px; background: var(--b1);">&#9650;</div>
+      <div class="block" style="top:25px; left:42px; background: var(--b2);">&#9654;</div>
+      <div class="block" style="top:42px; left:25px; background: var(--b3);">&#9660;</div>
+      <div class="block" style="top:25px; left:7px; background: var(--b4);">&#9664;</div>
+    </div>
+    <div class="label">60px</div>
+  </div>
+</div>
+
+
+<!-- ═══ COLOR SPEC ═══ -->
+<h2>Color Specification (from GameTheme.gd WARM_SAND)</h2>
+<div style="font-size: 13px; opacity: 0.6; line-height: 2.2; background: rgba(0,0,0,0.2); padding: 20px 24px; border-radius: 12px;">
+  Background: <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#F5F0E3;vertical-align:middle;border:1px solid rgba(255,255,255,0.2);"></span> #F5F0E3<br>
+  Board cells: <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgb(217,209,194);vertical-align:middle;"></span> rgb(217, 209, 194)<br>
+  B1 teal (&#9650;): <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#3DA391;vertical-align:middle;"></span> #3DA391<br>
+  B2 coral (&#9654;): <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgb(212,97,84);vertical-align:middle;"></span> rgb(212, 97, 84)<br>
+  B3 blue (&#9660;): <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgb(74,130,201);vertical-align:middle;"></span> rgb(74, 130, 201)<br>
+  B4 amber (&#9664;): <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgb(224,166,51);vertical-align:middle;"></span> rgb(224, 166, 51)<br>
+  Target fill: block color @ 15% opacity<br>
+  Target border: block color @ 40% opacity, 3px width<br>
+  Block arrow text: white @ 90% opacity<br>
+  Block corner radius: ~14% of block size<br>
+  Cell corner radius: ~16% of cell size
+</div>
+
+</body>
+</html>

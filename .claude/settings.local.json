@@ -97,7 +97,12 @@
       "Bash(mv level_012.json level_011.json)",
       "Bash(mv level_011_old.json level_012.json)",
       "Bash(mv level_016.json level_016_old.json)",
-      "Bash(mv level_017.json level_016.json)"
+      "Bash(mv level_017.json level_016.json)",
+      "WebFetch(domain:www.namecheap.com)",
+      "Bash(npm install:*)",
+      "Bash(wrangler login:*)",
+      "Bash(open:*)",
+      "Bash(wrangler pages:*)"
     ]
   }
 }

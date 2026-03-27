@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inertix — Minimalist Puzzle</title>
+  <meta name="description" content="Hurl revolving orbs from one orbit to another in this mellow puzzler.">
+  <meta name="author" content="Razvan Andrei">
+  <meta property="og:url" content="https://inertix.razvi.dev">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Inertix — Minimalist Puzzle">
+  <meta property="og:description" content="Hurl revolving orbs from one orbit to another in this mellow puzzler.">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    @font-face {
+      font-family: BrassMono;
+      src: url("assets/BrassMonoCozyRegular.otf");
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: white;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #097969;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 24px;
+    }
+    .back {
+      position: absolute;
+      top: 20px;
+      left: 24px;
+      font-size: 14px;
+      color: #097969;
+      text-decoration: none;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+    }
+    .back:hover { opacity: 1; }
+    h1 {
+      font-family: BrassMono, monospace;
+      font-size: 72px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-family: BrassMono, monospace;
+      font-size: 18px;
+      text-align: center;
+      opacity: 0.7;
+      margin-bottom: 40px;
+    }
+    .video {
+      margin-bottom: 40px;
+    }
+    .video-thumb {
+      display: block;
+      position: relative;
+      width: 280px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .video-thumb img {
+      width: 100%;
+      display: block;
+    }
+    .play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 56px;
+      height: 56px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 22px;
+      padding-left: 3px;
+      transition: background 0.2s;
+    }
+    .video-thumb:hover .play-btn {
+      background: rgba(0, 0, 0, 0.8);
+    }
+    .stores {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 48px;
+    }
+    .stores a img { height: 52px; }
+    .links {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .links a {
+      color: #097969;
+      text-decoration: none;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+    .links a:hover { opacity: 1; }
+    footer {
+      margin-top: auto;
+      padding-top: 40px;
+      font-size: 12px;
+      opacity: 0.25;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="https://razvi.dev" class="back">&larr; razvi.dev</a>
+
+  <h1>Inertix</h1>
+  <p class="subtitle">A unique minimal puzzle that will satisfyingly tease your brain.</p>
+
+  <div class="video">
+    <a href="https://www.youtube.com/watch?v=YN6OdOTgqnE" target="_blank" rel="noopener" class="video-thumb">
+      <img src="https://img.youtube.com/vi/YN6OdOTgqnE/maxresdefault.jpg" alt="Watch Inertix preview">
+      <div class="play-btn">&#9654;</div>
+    </a>
+  </div>
+
+  <div class="stores">
+    <a href="https://apps.apple.com/us/app/inertix/id6450388850">
+      <img alt="Download on the App Store" src="assets/appstore.svg">
+    </a>
+  </div>
+
+  <div class="links">
+    <a href="mailto:contact@razvi.dev">contact@razvi.dev</a>
+    <a href="privacy.html">privacy policy</a>
+    <a href="https://impress.games/press-kit/razvan-andrei/inertix">press kit</a>
+  </div>
+
+  <footer>Razvan Andrei</footer>
+
+</body>
+</html>
