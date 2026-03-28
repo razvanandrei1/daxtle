@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- Variant C — Amber (B4) -->
-  <rect width="1024" height="1024" fill="#EAAD3A"/>
-
-  <path d="M 645,512 L 418,364 L 418,660 Z"
-        fill="#7A5410" stroke="#7A5410" stroke-width="132"
-        stroke-linejoin="round" stroke-linecap="round"/>
-</svg>

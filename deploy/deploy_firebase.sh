@@ -110,6 +110,29 @@ build_ios() {
         error "iOS export failed — Xcode project not found"
     fi
 
+    # ─── Regenerate app icon (single 1024px PNG) ──────────────────────────
+    info "Generating app icon..."
+    ICON_DIR="$BUILD_DIR/ios/daxtle/Images.xcassets/AppIcon.appiconset"
+    mkdir -p "$ICON_DIR"
+    cairosvg "$PROJECT_DIR/icon.svg" -o "$ICON_DIR/Icon-1024.png" -W 1024 -H 1024
+    cat > "$ICON_DIR/Contents.json" << 'ICON_JSON'
+{
+  "images": [
+    {
+      "idiom": "universal",
+      "platform": "ios",
+      "size": "1024x1024",
+      "filename": "Icon-1024.png"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}
+ICON_JSON
+    info "App icon ready (single 1024x1024)"
+
     # Remove Godot splash from launch screen — show only background color
     info "Patching launch screen..."
     STORYBOARD="$BUILD_DIR/ios/daxtle/Launch Screen.storyboard"

@@ -1,9 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- Variant E — Dark Teal (higher contrast) -->
-  <rect width="1024" height="1024" fill="#4CC4AD"/>
+  <!-- Variant F — B element with sliding trail effect -->
+  <rect width="1024" height="1024" fill="#FFFFFF"/>
 
-  <!-- Right-pointing triangle — deep teal -->
-  <path d="M 645,512 L 418,364 L 418,660 Z"
-        fill="#1A4F43" stroke="#1A4F43" stroke-width="132"
-        stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Trailing ghost squares (fading left-to-right to suggest rightward slide) -->
+  <!-- Trail 3 — farthest, most faded -->
+  <rect x="62" y="242" width="540" height="540" rx="68" ry="68" fill="#2E8A7A" opacity="0.10"/>
+
+  <!-- Trail 2 -->
+  <rect x="142" y="242" width="540" height="540" rx="68" ry="68" fill="#2E8A7A" opacity="0.20"/>
+
+  <!-- Trail 1 — closest to main block -->
+  <rect x="222" y="242" width="540" height="540" rx="68" ry="68" fill="#2E8A7A" opacity="0.35"/>
+
+  <!-- Main block — centered-right to leave room for trail -->
+  <g transform="translate(512,512)">
+    <!-- Green square (deeper teal for contrast against sand) -->
+    <rect x="-190" y="-270" width="540" height="540" rx="68" ry="68" fill="#2E8A7A"/>
+
+    <!-- Right-pointing arrow (darkened further) -->
+    <path d="M 172,0 L 18,-96 L 18,96 Z"
+          fill="#1A4F43" stroke="#1A4F43" stroke-width="80"
+          stroke-linejoin="round" stroke-linecap="round"/>
+  </g>
 </svg>

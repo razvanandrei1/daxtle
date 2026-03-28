@@ -102,7 +102,11 @@
       "Bash(npm install:*)",
       "Bash(wrangler login:*)",
       "Bash(open:*)",
-      "Bash(wrangler pages:*)"
+      "Bash(wrangler pages:*)",
+      "Bash(bash deploy/build_ios.sh)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(cd:*)",
+      "Bash(find /Users/razvanandrei/daxtle -name *firebase* -o -name *deploy*)"
     ]
   }
 }

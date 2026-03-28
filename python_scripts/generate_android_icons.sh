@@ -10,7 +10,7 @@ SVG_PATH="$PROJECT_ROOT/icon.svg"
 OUT_DIR="$PROJECT_ROOT/assets/android_icons"
 
 # Padding config
-FG_PADDING="0.14"    # 30% on each side — keeps triangle within adaptive icon safe zone
+FG_PADDING="0.20"    # 30% on each side — keeps triangle within adaptive icon safe zone
 
 # Extract background color from the first <rect fill="..."> in icon.svg
 BG_COLOR=$(grep -oE '<rect[^>]*fill="[^"]*"' "$SVG_PATH" | head -1 | grep -oE 'fill="[^"]*"' | sed 's/fill="//;s/"//')
@@ -25,9 +25,9 @@ CONTENT_SIZE=$(python3 -c "print(int($CANVAS * (1.0 - 2.0 * $FG_PADDING)))")
 TMP_FG_SVG="/tmp/daxtle_fg.svg"
 TMP_FG_PNG="/tmp/daxtle_fg.png"
 
-# Create a foreground-only SVG by removing the background <rect>
-# This gives us the foreground elements on a transparent background
-sed '/<rect/d' "$SVG_PATH" > "$TMP_FG_SVG"
+# Create a foreground-only SVG by removing the full-size background <rect>
+# Matches the 1024x1024 rect specifically, keeps all other elements
+sed '/<rect width="1024" height="1024"/d' "$SVG_PATH" > "$TMP_FG_SVG"
 
 # ── 1. Legacy icon — 192x192, full bleed ──────────────────────────────────────
 cairosvg "$SVG_PATH" -o "$OUT_DIR/icon_192.png" -W 192 -H 192

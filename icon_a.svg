@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- Variant A — Coral (B2) -->
-  <rect width="1024" height="1024" fill="#E07468"/>
-
-  <path d="M 645,512 L 418,364 L 418,660 Z"
-        fill="#8C2E28" stroke="#8C2E28" stroke-width="132"
-        stroke-linejoin="round" stroke-linecap="round"/>
-</svg>

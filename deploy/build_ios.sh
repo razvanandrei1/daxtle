@@ -11,7 +11,6 @@ GODOT="/Applications/Godot.app/Contents/MacOS/Godot"
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="$PROJECT_DIR/build"
 OUTPUT_DIR="$PROJECT_DIR/ios_exports"
-GLOBALS_FILE="$PROJECT_DIR/scripts/Globals.gd"
 EXPORT_PRESETS="$PROJECT_DIR/export_presets.cfg"
 BUILD_NUMBER_FILE="$BUILD_DIR/.build_number"
 
@@ -24,20 +23,11 @@ info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
 # ─── Release mode ───────────────────────────────────────────────────────────
+# LEVEL_EDITOR_MODE is now a static var that returns false on iOS/Android,
+# so no patching needed. Kept as a no-op for clarity.
 enforce_release_mode() {
-    ORIGINAL_EDITOR_LINE=$(grep 'const LEVEL_EDITOR_MODE' "$GLOBALS_FILE")
-    sed -i '' 's/const LEVEL_EDITOR_MODE := true/const LEVEL_EDITOR_MODE := false/' "$GLOBALS_FILE"
-    info "LEVEL_EDITOR_MODE set to false"
+    info "LEVEL_EDITOR_MODE auto-disabled on iOS — no patching needed"
 }
-
-restore_globals() {
-    if [ -n "${ORIGINAL_EDITOR_LINE:-}" ]; then
-        sed -i '' "s/const LEVEL_EDITOR_MODE := false/$ORIGINAL_EDITOR_LINE/" "$GLOBALS_FILE"
-    fi
-    info "Globals restored"
-}
-
-trap restore_globals EXIT
 
 increment_build_number() {
     if [ ! -f "$BUILD_NUMBER_FILE" ]; then
@@ -76,6 +66,29 @@ sed -i '' 's/application\/export_project_only=true/application\/export_project_o
 if [ ! -d "$BUILD_DIR/ios/daxtle.xcodeproj" ]; then
     error "Xcode project export failed"
 fi
+
+# ─── Regenerate app icon (single 1024px PNG) ──────────────────────────────
+info "Generating app icon..."
+ICON_DIR="$BUILD_DIR/ios/daxtle/Images.xcassets/AppIcon.appiconset"
+mkdir -p "$ICON_DIR"
+cairosvg "$PROJECT_DIR/icon.svg" -o "$ICON_DIR/Icon-1024.png" -W 1024 -H 1024
+cat > "$ICON_DIR/Contents.json" << 'ICON_JSON'
+{
+  "images": [
+    {
+      "idiom": "universal",
+      "platform": "ios",
+      "size": "1024x1024",
+      "filename": "Icon-1024.png"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}
+ICON_JSON
+info "App icon ready (single 1024x1024)"
 
 # Patch launch screen — blank background only
 info "Patching launch screen..."

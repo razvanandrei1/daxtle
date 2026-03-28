@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- Variant D — Teal on Sand (B1 + game background) -->
-  <rect width="1024" height="1024" fill="#F5F0E3"/>
-
-  <path d="M 645,512 L 418,364 L 418,660 Z"
-        fill="#3DA391" stroke="#3DA391" stroke-width="132"
-        stroke-linejoin="round" stroke-linecap="round"/>
-</svg>
