@@ -106,7 +106,9 @@
       "Bash(bash deploy/build_ios.sh)",
       "Bash(echo \"exit: $?\")",
       "Bash(cd:*)",
-      "Bash(find /Users/razvanandrei/daxtle -name *firebase* -o -name *deploy*)"
+      "Bash(find /Users/razvanandrei/daxtle -name *firebase* -o -name *deploy*)",
+      "Bash(find /Users/razvanandrei/daxtle -path */android/* -name AndroidManifest.xml)",
+      "Bash(find /Users/razvanandrei/daxtle -path *android* -name *.xml)"
     ]
   }
 }
