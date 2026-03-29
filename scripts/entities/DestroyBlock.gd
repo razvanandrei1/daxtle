@@ -28,10 +28,22 @@ func _draw() -> void:
 	var r       := radius * block_scale
 	var center := Vector2(value_a, value_a) * 0.5
 
-	# Dark block color — darkened version of the surface color
-	var col := GameTheme.ACTIVE["fixed"]
-	col = col.lightened(0.15)
-	_draw_rounded_rect(Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), col, r)
+	# Outer square — fixed color lightened (same as before)
+	var outer_col := GameTheme.ACTIVE["fixed"]
+	outer_col = outer_col.lightened(0.15)
+	_draw_rounded_rect(Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), outer_col, r)
+
+	# Inner square — surface (gray) with faded tint, same style as targets
+	var inset := value_a * GameTheme.BLOCK_INSET_FRACTION * 2.0 + 2.0
+	var inner_sq := sq_size - inset
+	var inner_size := inner_sq * block_scale
+	var inner_r := radius * (inner_sq / sq_size) * block_scale
+	var inner_rect := Rect2(center - Vector2(inner_size, inner_size) * 0.5, Vector2(inner_size, inner_size))
+	var surface_col: Color = GameTheme.ACTIVE["surface"]
+	_draw_rounded_rect(inner_rect, surface_col, inner_r)
+	var tint := outer_col
+	tint.a = 0.15
+	_draw_rounded_rect(inner_rect, tint, inner_r)
 
 	# Draw an X mark to distinguish from fixed blocks
 	_draw_x_mark(center)

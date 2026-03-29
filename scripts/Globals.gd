@@ -13,7 +13,11 @@ static var LEVEL_EDITOR_MODE: bool:
 		return false
 
 ## When true: all levels are unlocked regardless of progress.
-const ALL_LEVELS_AVAILABLE := false
+const ALL_LEVELS_AVAILABLE := true
+
+# ── Hint system ──────────────────────────────────────────────────────────────
+const FREE_DAILY_HINTS := 5       # hints per day for free players
+const SUPPORTER_DAILY_HINTS := 5  # hints per day for supporters ($1.99 IAP)
 
 ## Temporary storage for level data passed between editor and play-test scene.
 var editor_level_data: Dictionary = {}

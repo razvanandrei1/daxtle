@@ -37,3 +37,14 @@ func is_stuck() -> bool:
 ## Returns true if the current board state can still be solved (BFS check).
 func is_winnable() -> bool:
 	return PuzzleSolver.is_solvable(game._blocks, game._board_set, game._fixed_set, game._teleport_map, game._destroy_set)
+
+
+## Returns the next optimal swipe direction, or "" if no solution exists.
+func get_hint_direction() -> String:
+	var solution := PuzzleSolver.solve(
+		game._blocks, game._board_set, game._fixed_set,
+		game._teleport_map, game._destroy_set
+	)
+	if solution.is_empty():
+		return ""
+	return solution[0]

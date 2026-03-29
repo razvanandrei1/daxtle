@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/Game.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/gameplay/SwipeDetector.gd" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/ui/SceneHeader.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/ui/ResetIcon.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/ui/HintIcon.tscn" id="5"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1")
@@ -15,3 +16,5 @@ script = ExtResource("2")
 
 [node name="ResetIcon" parent="." instance=ExtResource("4")]
 position = Vector2(994, 36)
+
+[node name="HintIcon" parent="." instance=ExtResource("5")]

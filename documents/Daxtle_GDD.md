@@ -1,5 +1,5 @@
 # Daxtle — Game Design Document
-**Version 6.0 — Current Implementation**
+**Version 7.0 — Current Implementation**
 
 ---
 
@@ -50,9 +50,13 @@
     - 10.6 [App Icon](#106-app-icon)
 11. [Audio Design](#11-audio-design)
 12. [Haptic Feedback](#12-haptic-feedback)
-13. [Save System](#13-save-system)
-14. [Build & Deployment](#14-build--deployment)
-15. [Current Status & Roadmap](#15-current-status--roadmap)
+13. [Monetization & Hints](#13-monetization--hints)
+    - 13.1 [Strategy](#131-strategy)
+    - 13.2 [Hint System](#132-hint-system)
+    - 13.3 [Purchase Flow](#133-purchase-flow)
+14. [Save System](#14-save-system)
+15. [Build & Deployment](#15-build--deployment)
+16. [Current Status & Roadmap](#16-current-status--roadmap)
 
 ---
 
@@ -118,7 +122,7 @@ Left stick axis input with 0.5 deadzone. The `_axis_held` flag ensures one swipe
 
 Element A is the static playing field. It is composed of adjoining squares arranged in a grid pattern, but not necessarily rectangular. The board can take any shape: L-shapes, crosses, staircases, hourglasses, T-shapes, or any other configuration. Missing squares create holes that blocks cannot enter.
 
-**Rendering.** The board is always centered on screen. Each square's size (`Value_A`) is calculated dynamically so the board fits with a 10% margin on all sides. Squares are rendered as flat rounded rectangles in the active theme's surface color, separated by a small gap (6.4% of `Value_A`), with corner radius at 8% of `Value_A`. Target squares show a semi-transparent tint of the corresponding block's color. Target borders are drawn on a separate overlay node with z_index = 1, ensuring they render above B blocks.
+**Rendering.** The board is always centered on screen. Each square's size (`Value_A`) is calculated dynamically so the board fits with a 10% margin on all sides. Squares are rendered as flat rounded rectangles in the active theme's surface color, separated by a small gap (6.4% of `Value_A`), with corner radius at 12.6% of `Value_A`. Target squares are rendered as two layers: the full cell filled with the block's solid color, and a smaller inner square (same size as a B element) in the surface color with a faded target color tint (15% alpha). This creates a colored frame around a ghost block placeholder.
 
 **Data format.** Board squares are defined as coordinate pairs, with an optional third element for target assignment:
 
@@ -132,7 +136,7 @@ The third element (e.g. `1` in `[2,0,1]`) marks that cell as a target for block 
 
 ### 4.2 Element B — The Blocks
 
-Element B refers to the movable blocks that the player manipulates. All B blocks are 1×1 (single square). There are two variants:
+Element B refers to the movable blocks that the player manipulates. All B blocks are 1×1 (single square), drawn slightly smaller than the cell size (inset by `BLOCK_INSET_FRACTION` = 7.25% of `Value_A` per side) so that target borders are visible when a block sits on a target. Antialiasing is disabled on block rendering. There are two variants:
 
 **Directional blocks** have a fixed movement direction (`"left"`, `"right"`, `"up"`, or `"down"`) that never changes during gameplay. A directional arrow — rendered as a filled rounded triangle with arc-based corner rounding (6 points per arc), darkened 30% from the block's color — indicates the direction.
 
@@ -328,11 +332,13 @@ The level is won when all remaining B blocks (those not destroyed by D blocks) s
 A reset icon (circular arrow) appears in the top-right corner after the player's first move (animated scale-up with back ease). Tapping it:
 
 1. Plays reset sound
-2. If any D blocks were consumed, performs a full level reload (restores destroyed blocks)
-3. Otherwise smoothly slides all blocks back to their starting positions (cubic ease-in-out, 2.5× normal duration)
-4. Hides the reset icon
+2. Restores any consumed D blocks (recreated at scale 0, hidden until blocks settle)
+3. Restores any destroyed B blocks (recreated at scale 0 at their original positions)
+4. Smoothly slides all existing B blocks back to their starting positions (cubic ease-in-out, 2.5× normal duration)
+5. After blocks settle, restored D and B blocks pop in with back-ease animation (0.2s)
+6. Hides the reset icon
 
-Double-tap anywhere also triggers reset. The game auto-resets when stuck (see 5.5). Pressing R resets during play testing.
+No full level reload is needed — the board, fixed blocks, and teleports remain untouched. Double-tap anywhere also triggers reset. The game auto-resets when stuck (see 5.5). Pressing R resets during play testing.
 
 ---
 
@@ -627,8 +633,8 @@ All animations use Tween-based interpolation. Input is disabled during all anima
 | **Destroy collision** | D block removed instantly → B block fade out/in (0.1s each) → enlarge to 115% (0.08s) → shrink to 0 (0.18s) |
 | **Invalid move** | Nudge toward wall (cubic, 45% of move duration) + spring back (85% of move duration) |
 | **Stuck state** | Board horizontal oscillation (5 tweens) → 0.25s pause → auto-reset |
-| **Reset** | All blocks slide to start (cubic ease-in-out, 2.5× duration). Full reload if D blocks were consumed |
-| **Win** | Hide targets/A cells/teleports/D blocks → arrow scale-down (0.25s, back ease) → double flash → reverse diagonal exit wave |
+| **Reset** | All blocks slide to start (cubic ease-in-out, 2.5× duration). Consumed D blocks and destroyed B blocks are restored with pop-in animation |
+| **Win** | Blocks expand to full cell size (`full_size = true`) → hide targets/A cells/teleports/D blocks → arrow scale-down (0.25s, back ease) → double flash → reverse diagonal exit wave |
 | **Tap pulse** | Scale 1.0 → 1.15 → 1.0 (0.09s + 0.12s, sine ease). Used on all tappable elements |
 | **Reset icon** | Scale 0 → 1 on appear (0.2s, back ease), scale 1 → 0 on hide (0.15s, back ease-in) |
 
@@ -644,29 +650,36 @@ Safe area is detected via `DisplayServer.get_display_safe_area()` and applied at
 
 ### 10.6 App Icon
 
-The app icon is defined as `icon.svg` at the project root — a full green square (`#3DA391`) with a rounded right-pointing triangle arrow (`#2B7366`) centered inside it.
+The app icon is defined as `icon.svg` at the project root — a B element (rounded teal square `#2E8A7A` with a right-pointing arrow `#1A4F43`) on an off-white background (`#F8F8F8`). Three trailing ghost squares at decreasing opacity (10%, 20%, 35%) create a sliding-to-the-right motion effect. The off-white background avoids the thin edge artifact iOS creates with pure white icons.
 
-**iOS:** A deploy script renders the SVG to a single 1024×1024 PNG using `cairosvg` and places it in the Xcode asset catalog with single-size `Contents.json`. iOS auto-generates all required sizes.
+**iOS:** Both `build_ios.sh` and `deploy_firebase.sh` render `icon.svg` → single 1024×1024 PNG via `cairosvg`, placed in the Xcode asset catalog with single-size `Contents.json`. iOS auto-generates all required sizes.
 
-**Android:** Adaptive icon with separate foreground (transparent background, centered game elements) and background (solid white). Generated by `generate_android_icons.py` using `cairosvg` + Pillow.
+**Android:** Adaptive icon generated by `python_scripts/generate_android_icons.sh`. The script removes only the background `<rect>` (matched by `width="1024"`) and keeps all other elements as foreground. Output: legacy 192px, adaptive foreground 432px (transparent bg, 20% padding), adaptive background 432px (solid color extracted from SVG), monochrome 432px.
 
 ---
 
 ## 11. Audio Design
 
-Audio reinforces the calm, meditative feel. The `AudioManager` autoload manages a music player and a 4-slot SFX pool (allows overlapping sounds). Music volume is set 12dB below SFX.
+Audio reinforces the calm, meditative feel. The `AudioManager` autoload manages a music player and a 4-slot SFX pool (allows overlapping sounds).
+
+**Volume levels:**
+- Music: -12 dB (target volume after fade-in)
+- SFX pool: -6 dB
+
+**Music fade-in:** Background music starts at -80 dB (silent) and fades to -12 dB over 1.6 seconds with a quad ease-out curve on startup and when re-enabled from settings.
 
 | Sound | File | Trigger | Description |
 |---|---|---|---|
-| Background music | `music_bg.ogg` | Game start (if enabled) | Soft, looping ambient track |
+| Background music | `music_bg.ogg` | Game start (if enabled) | Soft, looping ambient track with fade-in |
 | Slide | `sfx_slide.wav` | Block movement | Movement sound (syncs animation duration) |
 | Win | `sfx_win.wav` | Level complete | Warm resolving chord |
-| Invalid | `sfx_invalid.wav` | Blocked movement | Gentle tone on failed move |
+| Invalid | `sfx_invalid.wav` | Blocked movement / stuck state | Gentle tone on failed move and board shake |
 | Reset | `sfx_reset.wav` | Level reset | Soft whoosh |
-| Teleport | `sfx_teleport.wav` | Portal activation | Brief chime |
+| Teleport | `sfx_teleport.wav` | Portal activation | Brief chime, triggered when block jumps between portals |
+| Destroy | `sfx_destroy.wav` | Block destruction | Played with 150ms delay after D block collision |
 | Click | `click.wav` | UI tap (buttons, icons) | Tactile click feedback |
 
-**SFX pool:** 4 `AudioStreamPlayer` instances allow overlapping sounds. If all are busy, the first player is reused. `get_sfx_duration()` is used to sync movement animation length to the slide SFX.
+**SFX pool:** 4 `AudioStreamPlayer` instances (each at -6 dB) allow overlapping sounds. If all are busy, the first player is reused. `get_sfx_duration()` is used to sync movement animation length to the slide SFX.
 
 All audio can be toggled independently (music / SFX) via Settings, persisted to disk.
 
@@ -676,21 +689,87 @@ All audio can be toggled independently (music / SFX) via Settings, persisted to 
 
 Three haptic patterns provide tactile feedback on mobile devices:
 
-| Pattern | Trigger | iOS (Native UIKit) | Android (Fallback) |
-|---|---|---|---|
-| **Tap** | Swipe, UI tap | `UIImpactFeedbackGenerator(.light)` | 15ms vibration |
-| **Win** | Level complete | `UINotificationFeedbackGenerator(.success)` | Triple-tap: 10ms + 20ms + 35ms |
-| **Fail** | Stuck state | `UINotificationFeedbackGenerator(.error)` | Double-hit: 40ms + 60ms |
+| Pattern | Trigger | iOS (Native UIKit) | Android (Native) | Fallback |
+|---|---|---|---|---|
+| **Tap** | Swipe, UI tap | `UIImpactFeedbackGenerator(.light)` | `HapticFeedbackConstants.CONFIRM` (API 30+) / `KEYBOARD_TAP` | 15ms vibration |
+| **Win** | Level complete | `UINotificationFeedbackGenerator(.success)` | `VibrationEffect.createWaveform` rising pattern (20/30/50ms) | Triple-tap: 10ms + 20ms + 35ms |
+| **Fail** | Stuck state | `UINotificationFeedbackGenerator(.error)` | `VibrationEffect.createWaveform` sharp double-hit (40/70ms) | Double-hit: 40ms + 60ms |
 
-**iOS native implementation** uses a GDExtension (`DaxtleHaptics`) built with godot-cpp, compiled as a static library (`libdaxtle_haptics.ios.template_*.arm64.a`) bundled with godot-cpp. Registered as an Engine singleton, called from `Haptics.gd` via `Engine.get_singleton("DaxtleHaptics")`.
+**Native implementations** use a shared `DaxtleHaptics` singleton name on both platforms:
 
-A macOS no-op stub is included so the editor doesn't produce extension errors.
+- **iOS:** GDExtension built with godot-cpp, compiled as a static library (`libdaxtle_haptics.ios.template_*.arm64.a`). A macOS no-op stub is included so the editor doesn't produce extension errors.
+- **Android:** Godot plugin (`DaxtleHaptics.java`) registered via `org.godotengine.plugin.v2.DaxtleHaptics` meta-data in `AndroidManifest.xml`. Uses `HapticFeedbackConstants` for taps and `VibrationEffect` for patterns. Requires `VIBRATE` permission declared in the manifest.
+
+`Haptics.gd` checks for the singleton on both platforms via `Engine.has_singleton("DaxtleHaptics")` and falls back to `Input.vibrate_handheld()` if unavailable.
 
 Haptics are disabled on desktop. Toggleable in Settings, persisted to SaveData.
 
 ---
 
-## 13. Save System
+## 13. Monetization & Hints
+
+### 13.1 Strategy
+
+The game is **completely free** with no ads, no content gates, and no friction. All levels and modes are available to every player from the start.
+
+A single **one-time IAP ($1.99)** — framed as "Support Daxtle" — unlocks a daily hint system and supports independent development. The purchase is never pushed or required. Players buy because they want to, not because they're blocked.
+
+This approach prioritizes:
+- Player goodwill and trust (no dark patterns)
+- App Store editorial appeal (full free game, respectful monetization)
+- Sustainable indie revenue through genuine player support
+
+### 13.2 Hint System
+
+**Availability:** Hints are only available after purchasing the "Support Daxtle" IAP. Before purchase, the hint icon never appears during gameplay.
+
+**Daily limit:** 5 hints per day, resetting at midnight local time.
+
+**Hint levels** (progressive — each tap on the hint icon escalates):
+
+| Level | What it shows | Cost |
+|---|---|---|
+| **Nudge** | Highlights/flashes the next block to move | 1 hint |
+| **Direction** | Shows which block + which swipe direction | 2 hints |
+| **Full solve** | Plays the entire remaining solution step-by-step | 5 hints |
+
+**When the hint icon appears:** After the player resets a level twice (signals genuine struggle, not first attempt).
+
+**Hints exhausted:** Shows "Come back tomorrow for more hints" — no upsell, no additional purchase options.
+
+**Challenge mode:** Hints are disabled to preserve the competitive integrity.
+
+**Implementation notes:**
+- Hint count and daily reset timestamp persisted in `SaveData`
+- Solution path extracted from `PuzzleSolver` (extend `is_solvable` to return the move sequence)
+- Nudge only needs the first move from the solver
+
+### 13.3 Purchase Flow
+
+**Purchase entry points:**
+- Settings screen: "Support Daxtle — $1.99"
+- About screen: brief mention with purchase link
+
+**Purchase screen copy:**
+
+> **Support Daxtle**
+>
+> Get up to 5 daily hints to help when you're stuck, and support an independent developer.
+>
+> $1.99 — one-time purchase
+
+**After purchase:**
+- Hint icon becomes available during gameplay (after 2 resets on a level)
+- Subtle daily hint counter near the hint icon: `○○○○○` → fills as hints are used
+- Optional "thank you" acknowledgment in the About screen
+
+**Technical:**
+- StoreKit 2 (iOS) / Google Play Billing (Android)
+- Purchase state persisted locally in `SaveData` with receipt validation
+
+---
+
+## 14. Save System
 
 `SaveData.gd` (autoload singleton) persists to `user://save.json`:
 
@@ -707,7 +786,7 @@ Uses a load-merge-save pattern to preserve other fields when writing individual 
 
 ---
 
-## 14. Build & Deployment
+## 15. Build & Deployment
 
 ### Deploy Script
 
@@ -719,20 +798,22 @@ Uses a load-merge-save pattern to preserve other fields when writing individual 
 
 **Pipeline:**
 1. Increment build number (shared counter in `.build_number`)
-3. Godot headless export
-4. *(iOS only)* Regenerate icon from SVG via `scripts/tools/regenerate_ios_icons.sh`
-5. *(iOS only)* Patch launch screen, signing config
-6. *(iOS only)* `xcodebuild archive` + `exportArchive` (release-testing method)
-7. Firebase App Distribution upload
+2. Godot headless export
+3. *(iOS only)* Regenerate app icon: `cairosvg icon.svg` → single `Icon-1024.png` + simplified `Contents.json`
+4. *(iOS only)* Patch launch screen, signing config
+5. *(iOS only)* `xcodebuild archive` + `exportArchive` (release-testing method)
+6. Firebase App Distribution upload
+
+A standalone `deploy/build_ios.sh` performs steps 1–5 without Firebase upload, saving the IPA to `ios_exports/`.
 
 ### Icon Generation
 
-- **iOS:** `scripts/tools/regenerate_ios_icons.sh` — renders `icon.svg` → 1024px PNG → Xcode asset catalog (single size, iOS auto-generates all variants)
-- **Android:** `scripts/tools/generate_android_icons.py` — renders `icon.svg` → legacy 192px, adaptive foreground 432px (transparent bg), adaptive background 432px (white), monochrome 432px
+- **iOS:** Integrated into `build_ios.sh` and `deploy_firebase.sh` — renders `icon.svg` → single 1024×1024 PNG via `cairosvg`, placed in `Images.xcassets/AppIcon.appiconset/` with single-size `Contents.json` (Xcode 14+ auto-generates all variants)
+- **Android:** `python_scripts/generate_android_icons.sh` — renders `icon.svg` → legacy 192px, adaptive foreground 432px (transparent bg, 20% padding, background `<rect>` removed by matching `width="1024"`), adaptive background 432px (solid color auto-extracted from SVG), monochrome 432px
 
 ---
 
-## 15. Current Status & Roadmap
+## 16. Current Status & Roadmap
 
 ### Implemented
 

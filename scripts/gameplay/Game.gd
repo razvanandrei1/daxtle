@@ -56,6 +56,15 @@ var logic: GameLogic
 
 @onready var _header: SceneHeader = $SceneHeader
 @onready var _reset:  ResetIcon   = $ResetIcon
+@onready var _hint:   HintIcon    = $HintIcon
+
+# --- Hint system state ---
+var _hint_direction: String = ""   # cached direction from solver
+var _hint_consumed: bool = false   # true after hint tapped for current move
+var _hinted_block: Block = null    # block currently being nudged
+var _level_hints_used: int = 0     # number of moves from start that are hinted (persisted)
+var _move_index: int = 0           # how many moves the player has made from initial state
+var _hint_eligible: bool = true    # false after a non-hinted move breaks the chain
 
 
 func _process(delta: float) -> void:
@@ -68,6 +77,18 @@ func _draw() -> void:
 	if mode != Mode.CHALLENGE:
 		return
 	challenge.draw()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		SaveData.check_and_reset_daily_hints()
+		if _hint.visible and _hint_eligible:
+			_update_hint_counter()
+			if _move_index >= _level_hints_used:
+				if SaveData.get_hints_remaining() > 0:
+					_hint.state = &"available"
+				else:
+					_hint.state = &"disabled"
 
 
 func _ready() -> void:
@@ -95,6 +116,12 @@ func _ready() -> void:
 	_reset.position = Vector2(_header.right_x, _header.bar_cy)
 	_reset.visible = false
 
+	_hint.position = Vector2(_header.right_x - ResetIcon.ICON_SIZE - 20, _header.bar_cy)
+	_hint.visible = false
+	_hint.pressed.connect(_on_hint_pressed)
+	intro_finished.connect(_show_hint_if_eligible)
+	SaveData.check_and_reset_daily_hints()
+
 
 func set_level(n: int) -> void:
 	if mode == Mode.CHALLENGE:
@@ -102,6 +129,7 @@ func set_level(n: int) -> void:
 	else:
 		_header.set_title("%d" % n)
 	_reset.visible = false
+	_hint.visible = false
 
 
 func show_reset() -> void:
@@ -115,6 +143,13 @@ func _hide_reset() -> void:
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 		tween.finished.connect(func() -> void:
 			_reset.visible = false
+		)
+	if _hint.visible:
+		var tween := create_tween()
+		tween.tween_property(_hint, "scale", Vector2.ZERO, 0.15) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tween.finished.connect(func() -> void:
+			_hint.visible = false
 		)
 
 
@@ -130,6 +165,13 @@ func start_challenge() -> void:
 func _load_level_data(level_data: Dictionary) -> void:
 	_current_level_data = level_data
 	anim.kill_intro_tweens()
+	_hint_consumed = false
+	_hint_direction = ""
+	_hinted_block = null
+	_hint_eligible = true
+	_move_index = 0
+	_hint.visible = false
+	_level_hints_used = SaveData.get_level_hints_used(current_level)
 
 	if _board:
 		_board.queue_free()
@@ -310,7 +352,27 @@ func _on_swipe(direction: String) -> void:
 				par.tween_property(block, "position", target_pos, MOVE_DURATION) \
 					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
+		var move_was_in_hinted_range := _move_index < _level_hints_used
+		var was_hinted_move := _hint_consumed and direction == _hint_direction
 		var on_done := func() -> void:
+			_move_index += 1
+			# Disable hints if: move was not hinted AND not in the previously hinted range
+			if not was_hinted_move and not move_was_in_hinted_range:
+				_hint_eligible = false
+				if _hint.visible:
+					_hint.state = &"disabled"
+			_hint_consumed = false
+			_hint_direction = ""
+			_hinted_block = null
+			if _hint.visible and _hint_eligible:
+				_update_hint_counter()
+				if _move_index < _level_hints_used:
+					# Still within previously hinted range — free
+					_hint.state = &"consumed"
+				elif SaveData.get_hints_remaining() <= 0:
+					_hint.state = &"disabled"
+				else:
+					_hint.state = &"available"
 			anim.handle_destroy_collisions(func() -> void:
 				if logic.check_win():
 					_on_win()
@@ -366,6 +428,7 @@ func _on_stuck() -> void:
 
 
 func _on_win() -> void:
+	SaveData.clear_level_hints(current_level)
 	anim.play_win()
 
 
@@ -373,6 +436,11 @@ func reset_level() -> void:
 	AudioManager.play_sfx("reset")
 	_swipe_detector.enabled = false
 	_moved = false
+	_hint_consumed = false
+	_hint_direction = ""
+	_hinted_block = null
+	_hint_eligible = true
+	_move_index = 0
 	level_loaded.emit(current_level)
 
 	# Restore consumed D blocks
@@ -427,7 +495,115 @@ func reset_level() -> void:
 					0.0, 1.0, 0.2) \
 					.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		_swipe_detector.enabled = true
+		_show_hint_if_eligible()
 	)
+
+
+# --- Hint system ---
+
+func _show_hint_if_eligible() -> void:
+	if mode == Mode.CHALLENGE:
+		return
+	if not _hint.visible:
+		_hint.visible = true
+		_hint.scale = Vector2.ZERO
+		_update_hint_counter()
+		if _move_index < _level_hints_used:
+			# Current move is within the hinted range — free re-show
+			_hint.state = &"consumed"
+		elif SaveData.get_hints_remaining() <= 0:
+			_hint.state = &"disabled"
+		else:
+			_hint.state = &"available"
+		var tween := create_tween()
+		tween.tween_property(_hint, "scale", Vector2.ONE, 0.2) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _update_hint_counter() -> void:
+	SaveData.check_and_reset_daily_hints()
+	_hint.hints_remaining = SaveData.get_hints_remaining()
+	_hint.hints_total = SaveData.get_daily_hint_limit()
+
+
+func _on_hint_pressed() -> void:
+	if mode == Mode.CHALLENGE:
+		return
+	if not _hint_eligible:
+		if SaveData.get_hints_remaining() > 0:
+			_hint.show_message("Reset to use hints")
+		return
+	if _hint_consumed:
+		# Re-show the same nudge at no cost
+		_flash_hinted_block()
+		return
+	# Within previously hinted range — free re-show
+	if _move_index < _level_hints_used:
+		_hint_direction = logic.get_hint_direction()
+		if _hint_direction.is_empty():
+			return
+		_hinted_block = _find_hint_block(_hint_direction)
+		if not _hinted_block:
+			return
+		_hint_consumed = true
+		_hint.state = &"consumed"
+		_flash_hinted_block()
+		return
+	# Check daily hints
+	SaveData.check_and_reset_daily_hints()
+	if SaveData.get_hints_remaining() <= 0:
+		# Shake the hint icon to indicate no hints left
+		var origin := _hint.position
+		var s := 6.0
+		var tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(_hint, "position", origin + Vector2(s, 0), 0.05)
+		tween.tween_property(_hint, "position", origin + Vector2(-s, 0), 0.05)
+		tween.tween_property(_hint, "position", origin, 0.05)
+		return
+	# Consume one new hint
+	SaveData.set_hints_remaining(SaveData.get_hints_remaining() - 1)
+	_level_hints_used += 1
+	SaveData.set_level_hints_used(current_level, _level_hints_used)
+	_hint_direction = logic.get_hint_direction()
+	if _hint_direction.is_empty():
+		return
+	_hinted_block = _find_hint_block(_hint_direction)
+	if not _hinted_block:
+		return
+	_hint_consumed = true
+	_hint.state = &"consumed"
+	_update_hint_counter()
+	_flash_hinted_block()
+
+
+func _find_hint_block(direction: String) -> Block:
+	var candidates: Array[Block] = []
+	for block in _blocks:
+		if block.data.dir == direction:
+			candidates.append(block)
+	if candidates.is_empty():
+		return null
+	var result := Movement.resolve(candidates, _blocks, _board_set, direction, _fixed_set, _teleport_map)
+	var movers: Array[Block] = result["movers"]
+	# Return the first directional mover (the initiator), never a pushed cargo block
+	for block in movers:
+		if block.data.dir == direction:
+			return block
+	return null
+
+
+func _flash_hinted_block() -> void:
+	if not _hinted_block:
+		return
+	# Flash the block 3 times with a bright pulse
+	var tween := create_tween()
+	for i in 3:
+		tween.tween_property(_hinted_block, "modulate",
+			Color(1.6, 1.6, 1.6, 1.0), 0.12) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(_hinted_block, "modulate",
+			Color(1.0, 1.0, 1.0, 1.0), 0.12) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 
 
 func go_next_level() -> void:

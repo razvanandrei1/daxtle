@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 58 58" width="58" height="58">
+  <!-- Lightbulb: bulb outline + base lines -->
+  <path d="M 29,8 C 18,8 11,16 11,25 C 11,31 15,36 20,39 L 20,44 L 38,44 L 38,39 C 43,36 47,31 47,25 C 47,16 40,8 29,8 Z"
+        fill="none" stroke="#2B7366" stroke-width="5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="22" y1="49" x2="36" y2="49" stroke="#2B7366" stroke-width="5" stroke-linecap="round"/>
+</svg>

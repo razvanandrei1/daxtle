@@ -5,6 +5,80 @@ class_name PuzzleSolver
 const MAX_DEPTH := 20  # max moves to search before declaring unsolvable
 
 
+## Returns the solution as an Array[String] of swipe directions, or empty if unsolvable.
+static func solve(
+	blocks: Array[Block],
+	board_set: Dictionary,
+	fixed_set: Dictionary,
+	teleport_map: Dictionary,
+	destroy_set: Dictionary = {}
+) -> Array[String]:
+	var initial_positions := _get_positions(blocks)
+	var initial_alive: Array[bool] = []
+	initial_alive.resize(blocks.size())
+	initial_alive.fill(true)
+	var initial_destroy := destroy_set.duplicate()
+
+	if _check_win(initial_positions, initial_alive, blocks):
+		return []
+
+	var initial_state := _encode(initial_positions, initial_alive, initial_destroy)
+	# came_from maps state -> { "parent": parent_state, "dir": direction }
+	var came_from := { initial_state: null }
+	var queue: Array[Dictionary] = []
+	queue.append({
+		"positions": initial_positions,
+		"alive": initial_alive,
+		"destroy": initial_destroy,
+		"depth": 0,
+		"state": initial_state,
+	})
+
+	while not queue.is_empty():
+		var current: Dictionary = queue.pop_front()
+		var positions: Array = current["positions"]
+		var alive: Array[bool] = current["alive"]
+		var destroy: Dictionary = current["destroy"]
+		var depth: int = current["depth"]
+		var current_state: String = current["state"]
+
+		if depth >= MAX_DEPTH:
+			continue
+
+		for dir in ["left", "right", "up", "down"]:
+			var result := _simulate_move(positions, alive, blocks, dir, board_set, fixed_set, teleport_map, destroy)
+			if result.is_empty():
+				continue
+
+			var new_positions: Array = result["positions"]
+			var new_alive: Array[bool] = result["alive"]
+			var new_destroy: Dictionary = result["destroy"]
+
+			var state := _encode(new_positions, new_alive, new_destroy)
+			if came_from.has(state):
+				continue
+			came_from[state] = { "parent": current_state, "dir": dir }
+
+			if _check_win(new_positions, new_alive, blocks):
+				# Backtrack to build solution path
+				var path: Array[String] = []
+				var s := state
+				while came_from[s] != null:
+					path.push_front(came_from[s]["dir"])
+					s = came_from[s]["parent"]
+				return path
+
+			queue.append({
+				"positions": new_positions,
+				"alive": new_alive,
+				"destroy": new_destroy,
+				"depth": depth + 1,
+				"state": state,
+			})
+
+	return []
+
+
 ## Returns true if the puzzle is solvable from the given block positions.
 static func is_solvable(
 	blocks: Array[Block],
