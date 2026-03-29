@@ -18,7 +18,9 @@ const SFX_PATHS := {
 	"click":    "res://assets/audio/click.wav",
 }
 
-const SFX_POOL_SIZE := 4
+const MUSIC_VOLUME   := -12.0  # target music volume in dB
+const MUSIC_FADE_IN  := 1.6   # fade-in duration in seconds
+const SFX_POOL_SIZE  := 4
 
 var _music_player: AudioStreamPlayer
 var _sfx_pool: Array[AudioStreamPlayer] = []
@@ -34,12 +36,13 @@ func _ready() -> void:
 
 	_music_player = AudioStreamPlayer.new()
 	_music_player.bus = "Master"
-	_music_player.volume_db = -12.0  # music sits below SFX
+	_music_player.volume_db = -80.0  # start silent for fade-in
 	add_child(_music_player)
 
 	for i in SFX_POOL_SIZE:
 		var p := AudioStreamPlayer.new()
 		p.bus = "Master"
+		p.volume_db = -6.0
 		add_child(p)
 		_sfx_pool.append(p)
 
@@ -60,14 +63,22 @@ func _ready() -> void:
 			if stream.has_method("set_loop") or "loop" in stream:
 				stream.loop = true
 			if _music_enabled:
-				_music_player.play()
+				_fade_in_music()
 	else:
 		push_warning("AudioManager: missing music file '%s'" % MUSIC_PATH)
 
 
+func _fade_in_music() -> void:
+	_music_player.volume_db = -80.0
+	_music_player.play()
+	var tween := create_tween()
+	tween.tween_property(_music_player, "volume_db", MUSIC_VOLUME, MUSIC_FADE_IN) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
 func play_music() -> void:
 	if _music_enabled and _music_player.stream and not _music_player.playing:
-		_music_player.play()
+		_fade_in_music()
 
 
 func stop_music() -> void:

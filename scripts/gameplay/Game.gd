@@ -532,7 +532,10 @@ func _on_swipe(direction: String) -> void:
 				tp.tween_method(func(v: float) -> void: block.block_scale = v,
 					1.0, 0.0, SHRINK) \
 					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-				tp.tween_callback(func(): block.position = exit_pos)
+				tp.tween_callback(func() -> void:
+					block.position = exit_pos
+					_pulse_portal_pair(entry, exit_cell)
+				)
 				tp.tween_method(func(v: float) -> void: block.block_scale = v,
 					0.0, 1.0, POP) \
 					.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -622,7 +625,9 @@ func _handle_destroy_collisions(on_done: Callable) -> void:
 		_destroy_set.erase(db.grid_origin)
 		db.queue_free()
 
-	AudioManager.play_sfx("destroy")
+	get_tree().create_timer(0.18).timeout.connect(func() -> void:
+		AudioManager.play_sfx("destroy")
+	)
 
 	# Flash B block: fade out then fade in, then shrink away
 	var flash := create_tween()
@@ -697,6 +702,7 @@ func _on_stuck() -> void:
 			queue_redraw()
 		, _challenge_timer_alpha, 0.0, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	Haptics.fail()
+	AudioManager.play_sfx("invalid")
 
 	var origin := _board.position
 	var s      := value_a * 0.06
@@ -733,7 +739,9 @@ func _on_win() -> void:
 			_challenge_timer_alpha = v
 			queue_redraw()
 		, _challenge_timer_alpha, 0.0, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	AudioManager.play_sfx("win")
+	get_tree().create_timer(0.3).timeout.connect(func() -> void:
+		AudioManager.play_sfx("win")
+	)
 	_hide_reset()
 
 	# Advance progress if this is the furthest level completed (campaign only)
