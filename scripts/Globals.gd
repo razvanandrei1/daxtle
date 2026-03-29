@@ -16,7 +16,7 @@ static var LEVEL_EDITOR_MODE: bool:
 const ALL_LEVELS_AVAILABLE := true
 
 # ── Hint system ──────────────────────────────────────────────────────────────
-const FREE_DAILY_HINTS := 5       # hints per day for free players
+const FREE_DAILY_HINTS := 1       # hints per day for free players
 const SUPPORTER_DAILY_HINTS := 5  # hints per day for supporters ($1.99 IAP)
 
 ## Temporary storage for level data passed between editor and play-test scene.

@@ -712,7 +712,14 @@ Haptics are disabled on desktop. Toggleable in Settings, persisted to SaveData.
 
 The game is **completely free** with no ads, no content gates, and no friction. All levels and modes are available to every player from the start.
 
-A single **one-time IAP ($1.99)** — framed as "Support Daxtle" — unlocks a daily hint system and supports independent development. The purchase is never pushed or required. Players buy because they want to, not because they're blocked.
+A single **one-time IAP ($1.99)** — framed as "Support Daxtle" — increases the daily hint limit and supports independent development. The purchase is never pushed or required. Players buy because they want to, not because they're blocked.
+
+| Player | Daily hints |
+|---|---|
+| Free | 1/day |
+| Supporter ($1.99) | 5/day |
+
+Both values are configurable in `Globals.gd` (`FREE_DAILY_HINTS`, `SUPPORTER_DAILY_HINTS`).
 
 This approach prioritizes:
 - Player goodwill and trust (no dark patterns)
@@ -721,28 +728,58 @@ This approach prioritizes:
 
 ### 13.2 Hint System
 
-**Availability:** Hints are only available after purchasing the "Support Daxtle" IAP. Before purchase, the hint icon never appears during gameplay.
+**Overview.** The hint system provides a "nudge" — it flashes the next block the player should move, without revealing the swipe direction. One hint = one move revealed. Hints are always available during campaign gameplay (the lightbulb icon is always visible). Disabled in challenge mode.
 
-**Daily limit:** 5 hints per day, resetting at midnight local time.
+**Hint type:** Single-tier nudge. Tapping the lightbulb icon highlights the directional block that should move next (3× bright flash pulse). Cargo blocks are never nudged — instead the directional block that would push them is highlighted.
 
-**Hint levels** (progressive — each tap on the hint icon escalates):
+**Solver.** `PuzzleSolver.solve()` runs a BFS from the **current** board state (not the initial state) to find the optimal solution path. Returns `Array[String]` of swipe directions. The hint uses `solution[0]` — the next optimal move. The solver respects the current positions of all blocks, remaining D blocks, and teleport state. Max search depth: 20 moves.
 
-| Level | What it shows | Cost |
+**Daily limit.** Hints reset at midnight local time. The reset is checked:
+- On app launch (`_ready()`)
+- On app resume from background (`NOTIFICATION_APPLICATION_FOCUS_IN`)
+- Before each hint tap
+
+**Lightbulb icon states:**
+
+| State | Appearance | Tap behavior |
 |---|---|---|
-| **Nudge** | Highlights/flashes the next block to move | 1 hint |
-| **Direction** | Shows which block + which swipe direction | 2 hints |
-| **Full solve** | Plays the entire remaining solution step-by-step | 5 hints |
+| **Available** | Full opacity + counter `3/5` | Consumes 1 daily hint, flashes the next block |
+| **Consumed** | Full opacity, no counter | Re-shows the same nudge for free |
+| **Disabled** | Faded (30% opacity) + counter | No effect (or shows "Reset to use hints" if hints remain) |
 
-**When the hint icon appears:** After the player resets a level twice (signals genuine struggle, not first attempt).
+**Hint eligibility chain.** Hints can only be used in an unbroken chain from the level's initial state:
 
-**Hints exhausted:** Shows "Come back tomorrow for more hints" — no upsell, no additional purchase options.
+1. At the **start of a level** (no moves made), the hint is available.
+2. After a **hinted move** (player follows the nudge), the hint remains available for the next move.
+3. After a **non-hinted move** outside the hinted range, the icon becomes disabled until the player resets.
+4. Within the **previously hinted range** (moves 1–N where N hints were consumed on prior attempts), the player can freely re-show nudges at no cost — regardless of whether they follow them.
 
-**Challenge mode:** Hints are disabled to preserve the competitive integrity.
+This design prevents information leakage: the player cannot deduce whether they are stuck by observing whether a hint is available.
 
-**Implementation notes:**
-- Hint count and daily reset timestamp persisted in `SaveData`
-- Solution path extracted from `PuzzleSolver` (extend `is_solvable` to return the move sequence)
-- Nudge only needs the first move from the solver
+**Per-level persistence.** The number of hinted moves is stored per-level in `SaveData` as:
+
+```json
+"hints": [[10, 5], [14, 2]]
+```
+
+Each entry is `[level_number, hinted_move_count]`. This means level 10 has 5 hinted moves from the start, level 14 has 2. When the player returns to a level:
+- Moves within the hinted range show as "consumed" (free re-show)
+- The next move beyond the range switches to "available" (costs 1 daily hint)
+- Hint data is cleared when the level is completed
+
+**Move tracking.** `_move_index` tracks how many moves the player has made since level start/reset. Compared against `_level_hints_used` (from persistence) to determine whether the current move is within the free range or requires a new hint.
+
+**Example flow** — level 10 with `hints: [[10, 3]]`:
+
+| Move | _move_index | _level_hints_used | Icon state | Cost |
+|---|---|---|---|---|
+| Start | 0 | 3 | Consumed | Free |
+| After move 1 | 1 | 3 | Consumed | Free |
+| After move 2 | 2 | 3 | Consumed | Free |
+| After move 3 | 3 | 3 | Available | 1 hint |
+| Player taps hint | 3 | 4 | Consumed | — |
+| After move 4 | 4 | 4 | Available | 1 hint |
+| Player swipes without hint | 4 | 4 | Disabled | — |
 
 ### 13.3 Purchase Flow
 
@@ -759,13 +796,12 @@ This approach prioritizes:
 > $1.99 — one-time purchase
 
 **After purchase:**
-- Hint icon becomes available during gameplay (after 2 resets on a level)
-- Subtle daily hint counter near the hint icon: `○○○○○` → fills as hints are used
+- Daily hint limit increases from 1 to 5
 - Optional "thank you" acknowledgment in the About screen
 
 **Technical:**
 - StoreKit 2 (iOS) / Google Play Billing (Android)
-- Purchase state persisted locally in `SaveData` with receipt validation
+- Purchase state persisted locally in `SaveData` (`supporter_purchased`)
 
 ---
 
@@ -781,6 +817,10 @@ This approach prioritizes:
 | `sfx_enabled` | bool | true | Sound effects toggle state |
 | `haptics_enabled` | bool | true | Haptic feedback toggle state |
 | `best_streak` | int | 0 | Best challenge mode streak |
+| `supporter_purchased` | bool | false | Whether the $1.99 IAP was purchased |
+| `hints_remaining` | int | 1 | Daily hints left (reset at midnight) |
+| `last_hint_reset_date` | string | "" | Date string of last daily reset (e.g. "2026-03-29") |
+| `hints` | array | [] | Per-level hint progress: `[[level, count], ...]` |
 
 Uses a load-merge-save pattern to preserve other fields when writing individual values.
 

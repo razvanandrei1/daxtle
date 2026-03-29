@@ -6,6 +6,7 @@ signal challenge_pressed
 signal select_level_pressed
 signal settings_pressed
 signal about_pressed
+signal support_pressed
 
 var _font_bold: Font  = GameTheme.FONT_BOLD
 
@@ -14,6 +15,7 @@ var _challenge_rect:      Rect2
 var _select_rect:       Rect2
 var _settings_rect:     Rect2
 var _about_rect:        Rect2
+var _support_rect:      Rect2
 var _play_scale:         float = 1.0
 var _challenge_scale:      float = 1.0
 var _select_scale:       float = 1.0
@@ -40,6 +42,7 @@ var _about_tex:    Texture2D
 var _challenge_tex:  Texture2D
 var _play_tex:       Texture2D
 var _safe_top: float
+var _support_alpha: float = 0.0
 
 func _ready() -> void:
 	_settings_tex = preload("res://assets/img/icon_settings.svg")
@@ -89,6 +92,7 @@ func _play_title_intro() -> void:
 	var btn_delay := slide_delay + (n - 1) * slide_stagger + _SLIDE_DUR * 0.6
 	_ui_alpha = 1.0
 	_btn_intro_scales = [0.0, 0.0, 0.0, 0.0, 0.0]
+	_support_alpha = 0.0
 	for i in 5:
 		var delay := btn_delay + i * _BTN_CHAIN_STAGGER
 		var idx := i
@@ -98,6 +102,15 @@ func _play_title_intro() -> void:
 			queue_redraw()
 		, 0.0, 1.0, _BTN_CHAIN_DUR) \
 			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	# Phase 4: fade in supporter panel after all buttons are done
+	var support_delay := btn_delay + 4 * _BTN_CHAIN_STAGGER + _BTN_CHAIN_DUR
+	var st := create_tween()
+	st.tween_method(func(v: float) -> void:
+		_support_alpha = v
+		queue_redraw()
+	, 0.0, 1.0, 0.4) \
+		.set_delay(support_delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func replay_intro() -> void:
@@ -110,6 +123,7 @@ func replay_intro() -> void:
 	_slide_progress.fill(1.0)
 	_ui_alpha = 1.0
 	_btn_intro_scales = [1.0, 1.0, 1.0, 1.0, 1.0]
+	_support_alpha = 1.0
 	queue_redraw()
 
 
@@ -158,6 +172,45 @@ func _draw() -> void:
 	_about_rect = _draw_icon_button(
 		sec_x0 + (sec_size + sec_gap) * 2, sec_cy, sec_size,
 		_about_scale * _btn_intro_scales[4], "about")
+
+	# Bottom status: supporter or "Support Daxtle"
+	_support_rect = Rect2()
+	if _support_alpha <= 0.0:
+		return
+
+	var safe_bot := GameTheme.get_safe_area_bottom()
+	var bottom_y := vp.y - maxf(safe_bot, 40.0) - 20.0
+	var font := _font_bold
+	var text_col := GameTheme.ACTIVE["text"]
+
+	SaveData.check_and_reset_daily_hints()
+	if SaveData.get_supporter_purchased():
+		# Line 1: Supporter
+		var label := "Supporter"
+		var fs1 := 36
+		var tw1 := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs1).x
+		var col1 := text_col
+		col1.a = _support_alpha * 0.6
+		draw_string(font, Vector2((vp.x - tw1) * 0.5, bottom_y - 28), label,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, fs1, col1)
+		# Line 2: hints remaining
+		var hints_text := "%d/%d hints today" % [SaveData.get_hints_remaining(), SaveData.get_daily_hint_limit()]
+		var fs2 := 30
+		var tw2 := font.get_string_size(hints_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2).x
+		var col2 := text_col
+		col2.a = _support_alpha * 0.4
+		draw_string(font, Vector2((vp.x - tw2) * 0.5, bottom_y), hints_text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, col2)
+	else:
+		var label := "Support Daxtle"
+		var fs := 34
+		var tw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var col := text_col
+		col.a = _support_alpha * 0.5
+		var asc := font.get_ascent(fs)
+		var text_pos := Vector2((vp.x - tw) * 0.5, bottom_y)
+		draw_string(font, text_pos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		_support_rect = Rect2(text_pos.x - 10, text_pos.y - asc - 10, tw + 20, asc + 20)
 
 
 func _draw_title_blocks(vp: Vector2) -> void:
@@ -318,6 +371,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif _about_rect.has_point(pos):
 		get_viewport().set_input_as_handled()
 		_pulse_button("about")
+	elif _support_rect.size != Vector2.ZERO and _support_rect.has_point(pos):
+		get_viewport().set_input_as_handled()
+		support_pressed.emit()
 
 
 func _pulse_button(which: String) -> void:

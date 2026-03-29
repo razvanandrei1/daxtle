@@ -60,3 +60,13 @@ func _draw() -> void:
 		var lx := (vp.x - lw) * 0.5
 		draw_string(_font, Vector2(lx, start_y + i * line_h),
 			line, HORIZONTAL_ALIGNMENT_LEFT, -1, body_fs, body_col)
+
+	# Supporter thank you
+	if SaveData.get_supporter_purchased():
+		var ty := start_y + lines.size() * line_h + line_h
+		var thank_col := GameTheme.ACTIVE["blocks"][0]
+		thank_col.a = 0.8
+		var msg := "Thank you for your support!"
+		var tw := _font.get_string_size(msg, HORIZONTAL_ALIGNMENT_LEFT, -1, body_fs).x
+		draw_string(_font, Vector2((vp.x - tw) * 0.5, ty),
+			msg, HORIZONTAL_ALIGNMENT_LEFT, -1, body_fs, thank_col)
