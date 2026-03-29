@@ -1,9 +1,9 @@
 # =============================================================================
-# Game.gd — Core gameplay controller
+# Game.gd — Core gameplay controller (orchestrator)
 # =============================================================================
-# Manages the game board, blocks, teleports, and all gameplay animations.
-# Handles swipe input, movement resolution, win/stuck detection, and
-# level transitions (intro, exit, reset).
+# Manages the game board, blocks, teleports, swipe input, and level transitions.
+# Delegates animations to GameAnimations, state checks to GameLogic,
+# and challenge mode to ChallengeMode.
 # =============================================================================
 class_name Game
 extends Node2D
@@ -16,179 +16,58 @@ const DestroyBlockScene  := preload("res://scenes/entities/DestroyBlock.tscn")
 const _MOVE_DURATION_DEFAULT := 0.13  # fallback if no slide SFX loaded
 var MOVE_DURATION: float = _MOVE_DURATION_DEFAULT
 
-const WIN_BRIGHT := Color(1.5, 1.5, 1.5, 1.0)
-const WIN_NORMAL := Color(1.0, 1.0, 1.0, 1.0)
-const WIN_FADE   := Color(1.0, 1.0, 1.0, 0.0)
-
 # --- Game mode ---
 enum Mode { CAMPAIGN, CHALLENGE }
 var mode: Mode = Mode.CAMPAIGN
-var _challenge_streak: int = 0
-
-# --- Challenge timer ---
-const CHALLENGE_TIME_START := 30.0   # seconds for first puzzle
-const CHALLENGE_TIME_DECAY := 1.5    # seconds removed per streak point
-const CHALLENGE_TIME_MIN   := 10.0   # minimum time allowed
-const CHALLENGE_POOL_RATIO := 0.4    # fraction of easy/medium pool used as streak threshold
-var _challenge_time_left: float = 0.0
-var _challenge_time_max:  float = 0.0
-var _challenge_timer_active: bool = false
-var _challenge_timer_alpha: float = 0.5
 
 # --- Signals communicated to Main.gd via connections ---
-signal level_loaded(n: int)          # emitted after a level is fully loaded
-signal menu_pressed                  # emitted when menu icon is tapped
-signal message_changed(text: String, board_bottom: float)  # level tutorial message
-signal intro_finished                # intro animation done (triggers message display)
-signal dismiss_message               # hide tutorial message (on win)
-signal all_levels_completed          # last level beaten — triggers completion popup
+signal level_loaded(n: int)
+signal menu_pressed
+signal message_changed(text: String, board_bottom: float)
+signal intro_finished
+signal dismiss_message
+signal all_levels_completed
 signal challenge_game_over(streak: int, best_streak: int)
 var _has_message: bool = false
 
 var current_level: int = 20
 var _moved: bool = false
-var _active: bool = false   # false while stopped or transitioning out
-var _current_level_data: Dictionary = {}  # stored for reset with destroy blocks
-var value_a: float = 0.0    # cell size in pixels, computed by Board.setup()
+var _active: bool = false
+var _current_level_data: Dictionary = {}
+var value_a: float = 0.0
 
 var _board: Board
 var _blocks: Array[Block] = []
 var _fixed_blocks: Array[FixedBlock] = []
 var _destroy_blocks: Array[DestroyBlock] = []
-var _board_set:    Dictionary = {}   # Vector2i -> true, for fast cell lookup
-var _fixed_set:    Dictionary = {}   # Vector2i -> true, C block occupied cells
-var _destroy_set:  Dictionary = {}   # Vector2i -> DestroyBlock
-var _teleport_map: Dictionary = {}   # Vector2i -> Vector2i, portal entrance -> exit
+var _original_destroy_data: Array = []
+var _original_blocks_data: Array = []
+var _board_set:    Dictionary = {}
+var _fixed_set:    Dictionary = {}
+var _destroy_set:  Dictionary = {}
+var _teleport_map: Dictionary = {}
 var _teleports:    Array[Teleport] = []
 var _swipe_detector: SwipeDetector
-var _intro_tweens: Array[Tween] = []
+
+# --- Composition ---
+var challenge: ChallengeMode
+var anim: GameAnimations
+var logic: GameLogic
 
 @onready var _header: SceneHeader = $SceneHeader
 @onready var _reset:  ResetIcon   = $ResetIcon
 
 
 func _process(delta: float) -> void:
-	if mode != Mode.CHALLENGE or not _challenge_timer_active:
+	if mode != Mode.CHALLENGE:
 		return
-	_challenge_time_left -= delta
-	queue_redraw()
-	if _challenge_time_left <= 0.0:
-		_challenge_time_left = 0.0
-		_challenge_timer_active = false
-		_on_stuck()
+	challenge.process(delta)
 
 
 func _draw() -> void:
 	if mode != Mode.CHALLENGE:
 		return
-	var vp := get_viewport().get_visible_rect().size
-
-	# Timer — rounded frame around the board that shrinks from a corner
-	if _challenge_timer_alpha > 0.0 and _board:
-		var ratio := clampf(_challenge_time_left / _challenge_time_max, 0.0, 1.0)
-		if ratio > 0.0:
-			var timer_col := GameTheme.ACTIVE["text"]
-			timer_col.a = _challenge_timer_alpha
-			_draw_timer_frame(ratio, timer_col)
-
-	# Best streak text at bottom
-	var font := GameTheme.FONT_BOLD
-	var best := maxi(SaveData.get_best_streak(), _challenge_streak)
-	var text := "Best: %d" % best
-	var fs := 42
-	var col := GameTheme.ACTIVE["text"]
-	col.a = 0.5
-	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var safe_bot := GameTheme.get_safe_area_bottom()
-	var y := vp.y - maxf(safe_bot, 40.0) - 20.0
-	draw_string(font, Vector2((vp.x - tw) * 0.5, y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-
-
-func _draw_timer_frame(ratio: float, col: Color) -> void:
-	# Build a rounded rect path around the board
-	var padding := value_a * 0.14
-	var mn := _board.board_squares[0]
-	var mx := mn
-	for sq in _board.board_squares:
-		mn = Vector2i(mini(mn.x, sq.x), mini(mn.y, sq.y))
-		mx = Vector2i(maxi(mx.x, sq.x), maxi(mx.y, sq.y))
-	var cols_count := mx.x - mn.x + 1
-	var rows_count := mx.y - mn.y + 1
-
-	var rect_pos := _board.position - Vector2(padding, padding)
-	var rect_size := Vector2(cols_count, rows_count) * value_a + Vector2(padding * 2, padding * 2)
-	var r := value_a * GameTheme.CORNER_FRACTION * 2.0
-	r = minf(r, minf(rect_size.x, rect_size.y) * 0.5)
-
-	# Generate points along the rounded rect (clockwise from top-center)
-	var pts := PackedVector2Array()
-	var x0 := rect_pos.x
-	var y0 := rect_pos.y
-	var x1 := rect_pos.x + rect_size.x
-	var y1 := rect_pos.y + rect_size.y
-	var cx := (x0 + x1) * 0.5
-	var arc_steps := 8
-
-	# Start at top-center, go right
-	pts.append(Vector2(cx, y0))
-	pts.append(Vector2(x1 - r, y0))
-	# Top-right corner
-	for i in arc_steps + 1:
-		var a := -PI * 0.5 + float(i) / float(arc_steps) * PI * 0.5
-		pts.append(Vector2(x1 - r + cos(a) * r, y0 + r + sin(a) * r))
-	# Right edge
-	pts.append(Vector2(x1, y1 - r))
-	# Bottom-right corner
-	for i in arc_steps + 1:
-		var a := float(i) / float(arc_steps) * PI * 0.5
-		pts.append(Vector2(x1 - r + cos(a) * r, y1 - r + sin(a) * r))
-	# Bottom edge (right to left)
-	pts.append(Vector2(x0 + r, y1))
-	# Bottom-left corner
-	for i in arc_steps + 1:
-		var a := PI * 0.5 + float(i) / float(arc_steps) * PI * 0.5
-		pts.append(Vector2(x0 + r + cos(a) * r, y1 - r + sin(a) * r))
-	# Left edge
-	pts.append(Vector2(x0, y0 + r))
-	# Top-left corner
-	for i in arc_steps + 1:
-		var a := PI + float(i) / float(arc_steps) * PI * 0.5
-		pts.append(Vector2(x0 + r + cos(a) * r, y0 + r + sin(a) * r))
-	# Top edge back to center
-	pts.append(Vector2(cx, y0))
-
-	# Calculate cumulative distances
-	var total_len := 0.0
-	var lengths := PackedFloat32Array()
-	lengths.append(0.0)
-	for i in range(1, pts.size()):
-		total_len += pts[i].distance_to(pts[i - 1])
-		lengths.append(total_len)
-
-	# Draw only the portion corresponding to ratio
-	var draw_len := total_len * ratio
-	var draw_pts := PackedVector2Array()
-	for i in pts.size():
-		if lengths[i] <= draw_len:
-			draw_pts.append(pts[i])
-		else:
-			# Interpolate the final point
-			if i > 0:
-				var seg_len := lengths[i] - lengths[i - 1]
-				if seg_len > 0:
-					var t := (draw_len - lengths[i - 1]) / seg_len
-					draw_pts.append(pts[i - 1].lerp(pts[i], t))
-			break
-
-	if draw_pts.size() >= 2:
-		var width := value_a * 0.055
-		# Flash red when below 5 seconds
-		var draw_col := col
-		if _challenge_time_left < 5.0 and _challenge_timer_active:
-			draw_col = GameTheme.ACTIVE["blocks"][1]  # coral/red
-			var flash := (sin(Time.get_ticks_msec() * 0.006) + 1.0) * 0.5
-			draw_col.a = lerpf(0.3, col.a, flash)
-		draw_polyline(draw_pts, draw_col, width, true)
+	challenge.draw()
 
 
 func _ready() -> void:
@@ -196,6 +75,10 @@ func _ready() -> void:
 	var sfx_dur := AudioManager.get_sfx_duration("slide")
 	if sfx_dur > 0.0:
 		MOVE_DURATION = sfx_dur
+
+	challenge = ChallengeMode.new(self)
+	anim = GameAnimations.new(self)
+	logic = GameLogic.new(self)
 
 	_swipe_detector = $SwipeDetector
 	_swipe_detector.swiped.connect(_on_swipe)
@@ -215,21 +98,14 @@ func _ready() -> void:
 
 func set_level(n: int) -> void:
 	if mode == Mode.CHALLENGE:
-		_header.set_title("%d" % _challenge_streak)
+		_header.set_title("%d" % challenge.streak)
 	else:
 		_header.set_title("%d" % n)
 	_reset.visible = false
 
 
 func show_reset() -> void:
-	if mode == Mode.CHALLENGE:
-		return
-	if not _reset.visible:
-		_reset.visible = true
-		_reset.scale = Vector2.ZERO
-		var tween := create_tween()
-		tween.tween_property(_reset, "scale", Vector2.ONE, 0.2) \
-			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	anim.show_reset()
 
 
 func _hide_reset() -> void:
@@ -246,124 +122,14 @@ func load_level(n: int) -> void:
 	_load_level(n)
 
 
-func _start_challenge_timer() -> void:
-	if mode != Mode.CHALLENGE:
-		return
-	_challenge_time_max = maxf(
-		CHALLENGE_TIME_START - _challenge_streak * CHALLENGE_TIME_DECAY,
-		CHALLENGE_TIME_MIN
-	)
-	_challenge_time_left = _challenge_time_max
-	_challenge_timer_alpha = 0.0
-	_challenge_timer_active = true
-	var fade_in := create_tween()
-	fade_in.tween_method(func(v: float) -> void:
-		_challenge_timer_alpha = v
-		queue_redraw()
-	, 0.0, 0.5, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
-
 func start_challenge() -> void:
 	mode = Mode.CHALLENGE
-	_challenge_streak = 0
-	_challenge_timer_active = false
-	_challenge_timer_alpha = 0.0
-	_challenge_time_left = 0.0
-	queue_redraw()
-	_build_challenge_pools()
-	_load_challenge_next()
-
-
-# Difficulty pools: easy (1), medium (2), hard (3)
-var _pool_easy:   Array[int] = []
-var _pool_medium: Array[int] = []
-var _pool_hard:   Array[int] = []
-
-func _build_challenge_pools() -> void:
-	_pool_easy.clear()
-	_pool_medium.clear()
-	_pool_hard.clear()
-	for i in LevelLoader.count_challenge_easy():
-		_pool_easy.append(i + 1)
-	for i in LevelLoader.count_challenge_medium():
-		_pool_medium.append(i + 1)
-	for i in LevelLoader.count_challenge_hard():
-		_pool_hard.append(i + 1)
-	_pool_easy.shuffle()
-	_pool_medium.shuffle()
-	_pool_hard.shuffle()
-
-
-func _pick_from_pool(pool: Array[int]) -> int:
-	if pool.is_empty():
-		return -1
-	var n: int = pool.pop_back()
-	return n
-
-
-func _pick_challenge() -> Dictionary:
-	## Returns {"n": level_number, "tier": 1/2/3} or empty if nothing available.
-	## Thresholds: easy for streak < half of easy pool, then medium for half of medium pool, then hard.
-	var easy_threshold  := int(LevelLoader.count_challenge_easy() * CHALLENGE_POOL_RATIO)
-	var medium_threshold := easy_threshold + int(LevelLoader.count_challenge_medium() * CHALLENGE_POOL_RATIO)
-	var tier := 2
-	var n := -1
-
-	if _challenge_streak < easy_threshold:
-		tier = 1; n = _pick_from_pool(_pool_easy)
-		if n == -1:
-			tier = 2; n = _pick_from_pool(_pool_medium)
-	elif _challenge_streak < medium_threshold:
-		tier = 2; n = _pick_from_pool(_pool_medium)
-		if n == -1:
-			tier = 3; n = _pick_from_pool(_pool_hard)
-	else:
-		tier = 3; n = _pick_from_pool(_pool_hard)
-		if n == -1:
-			tier = 2; n = _pick_from_pool(_pool_medium)
-
-	# Fallback: any non-empty pool
-	if n == -1:
-		var pools: Array[Array] = [_pool_easy, _pool_medium, _pool_hard]
-		for t in [1, 2, 3]:
-			if not pools[t - 1].is_empty():
-				tier = t; n = _pick_from_pool(pools[t - 1])
-				break
-
-	# Hard pool exhausted — reshuffle hard only (easy/medium don't repeat)
-	if n == -1:
-		_pool_hard.clear()
-		for i in LevelLoader.count_challenge_hard():
-			_pool_hard.append(i + 1)
-		_pool_hard.shuffle()
-		tier = 3; n = _pick_from_pool(_pool_hard)
-
-	if n == -1:
-		return {}
-	return {"n": n, "tier": tier}
-
-
-func _load_challenge_next() -> void:
-	var pick := _pick_challenge()
-	if pick.is_empty():
-		return
-	var level_data: Dictionary
-	match pick["tier"]:
-		1: level_data = LevelLoader.load_challenge_easy(pick["n"])
-		2: level_data = LevelLoader.load_challenge_medium(pick["n"])
-		3: level_data = LevelLoader.load_challenge_hard(pick["n"])
-	if level_data.is_empty():
-		return
-	_load_level_data(level_data)
+	challenge.start()
 
 
 func _load_level_data(level_data: Dictionary) -> void:
 	_current_level_data = level_data
-	# Shared level loading logic — used by both campaign and challenge
-	for tw in _intro_tweens:
-		if tw:
-			tw.kill()
-	_intro_tweens.clear()
+	anim.kill_intro_tweens()
 
 	if _board:
 		_board.queue_free()
@@ -394,6 +160,7 @@ func _load_level_data(level_data: Dictionary) -> void:
 			_fixed_set[cell] = true
 
 	var destroy_data := LevelLoader.get_destroy_blocks(level_data)
+	_original_destroy_data = destroy_data.duplicate()
 	for dd in destroy_data:
 		var db := DestroyBlockScene.instantiate() as DestroyBlock
 		_board.add_child(db)
@@ -420,6 +187,7 @@ func _load_level_data(level_data: Dictionary) -> void:
 		var block_num := int(bd.id.substr(1)) if bd.id is String else int(bd.id)
 		if targets.has(block_num):
 			bd.target_origins.assign(targets[block_num])
+	_original_blocks_data = blocks_data.duplicate()
 	_board.set_targets(blocks_data)
 	for block_data in blocks_data:
 		var block := BlockScene.instantiate() as Block
@@ -440,30 +208,24 @@ func _load_level_data(level_data: Dictionary) -> void:
 	_has_message = not msg.is_empty()
 	message_changed.emit(msg, board_bottom)
 	queue_redraw()
-	_play_intro_animation()
+	anim.play_intro()
 
 
-# Debug: skip intro animation and jump to a level instantly
 func stop() -> void:
 	_active = false
-	_challenge_timer_active = false
-	_challenge_timer_alpha = 0.0
-	_challenge_time_left = 0.0
+	if mode == Mode.CHALLENGE:
+		challenge.timer_active = false
+		challenge.timer_alpha = 0.0
+		challenge.time_left = 0.0
 	queue_redraw()
 	_swipe_detector.enabled = false
-	for tw in _intro_tweens:
-		if tw:
-			tw.kill()
-	_intro_tweens.clear()
+	anim.kill_intro_tweens()
 
 
 # --- Swipe handling ---
-# Called when the player swipes in a direction. Resolves movement via Movement.resolve(),
-# then animates movers (normal slide or teleport sequence) and shakes invalid blocks.
 func _on_swipe(direction: String) -> void:
 	if not _active:
 		return
-	# Collect blocks that match the swipe direction
 	var candidates: Array[Block] = []
 	for block in _blocks:
 		if block.data.dir == direction:
@@ -479,14 +241,12 @@ func _on_swipe(direction: String) -> void:
 		"down":  dv = Vector2i( 0,  1)
 		_:       dv = Vector2i( 0, -1)
 
-	# Resolve which blocks can move, which are blocked, and which teleport
 	var result            := Movement.resolve(candidates, _blocks, _board_set, direction, _fixed_set, _teleport_map)
 	var movers:            Array[Block] = result["movers"]
 	var invalid:           Array[Block] = result["invalid"]
 	var teleport_exits:    Dictionary   = result["teleport_exits"]
 	var teleport_entries:  Dictionary   = result["teleport_entries"]
 
-	# Don't shake blocks that are already on their target and can't move further
 	var filtered_invalid: Array[Block] = []
 	for block in invalid:
 		if not block.data.target_origins.has(block.grid_origin):
@@ -495,6 +255,19 @@ func _on_swipe(direction: String) -> void:
 
 	if movers.is_empty() and invalid.is_empty():
 		return
+
+	# Debug: log movers landing on a target
+	for block in movers:
+		var landing: Vector2i
+		if teleport_exits.has(block):
+			landing = teleport_exits[block]
+		else:
+			landing = block.grid_origin + dv
+		if block.data.target_origins.has(landing):
+			var block_col := BlockColors.get_color(block.data.id)
+			var target_col := BlockColors.get_target_color(block.data.id)
+			var match := block_col == target_col
+			print("B%s → %s | color=%s target_color=%s match=%s ✓" % [block.data.id, landing, block_col, target_col, match])
 
 	if not _moved:
 		_moved = true
@@ -505,7 +278,6 @@ func _on_swipe(direction: String) -> void:
 	if not movers.is_empty():
 		AudioManager.play_sfx("slide")
 		Haptics.tap()
-		# Separate normal movers from teleporters so they can use different animations
 		var par := create_tween().set_parallel(true)
 		var has_teleport := false
 		var max_tp_dur   := 0.0
@@ -523,7 +295,6 @@ func _on_swipe(direction: String) -> void:
 				var final_pos := _board.grid_to_local(block.grid_origin)
 				var has_cont  := (final_pos != exit_pos)
 
-				# Sequential: slide → shrink → jump → pop → slide
 				const SHRINK := 0.14
 				const POP    := 0.18
 				var tp := create_tween()
@@ -534,7 +305,7 @@ func _on_swipe(direction: String) -> void:
 					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 				tp.tween_callback(func() -> void:
 					block.position = exit_pos
-					_pulse_portal_pair(entry, exit_cell)
+					anim.pulse_portal_pair(entry, exit_cell)
 				)
 				tp.tween_method(func(v: float) -> void: block.block_scale = v,
 					0.0, 1.0, POP) \
@@ -552,12 +323,12 @@ func _on_swipe(direction: String) -> void:
 					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 		var on_done := func() -> void:
-			_handle_destroy_collisions(func() -> void:
-				if _check_win():
+			anim.handle_destroy_collisions(func() -> void:
+				if logic.check_win():
 					_on_win()
-				elif _is_stuck():
+				elif logic.is_stuck():
 					_on_stuck()
-				elif mode == Mode.CHALLENGE and not _is_winnable():
+				elif mode == Mode.CHALLENGE and not logic.is_winnable():
 					_on_stuck()
 				else:
 					_swipe_detector.enabled = true
@@ -570,137 +341,14 @@ func _on_swipe(direction: String) -> void:
 			par.finished.connect(on_done)
 
 	if not invalid.is_empty():
-		_shake_blocks(invalid, direction, movers.is_empty())
-
-
-# Plays a nudge-and-spring-back animation on blocks that can't move (hit a wall/obstacle).
-func _shake_blocks(blocks: Array[Block], direction: String, re_enable_after: bool) -> void:
-	AudioManager.play_sfx("invalid")
-	var dv := Vector2i.ZERO
-	match direction:
-		"right": dv = Vector2i( 1,  0)
-		"left":  dv = Vector2i(-1,  0)
-		"down":  dv = Vector2i( 0,  1)
-		_:       dv = Vector2i( 0, -1)
-
-	var nudge    := Vector2(dv) * value_a * 0.18
-	var duration := MOVE_DURATION
-
-	var tween := create_tween().set_parallel(true)
-	for block in blocks:
-		var origin_pos := block.position
-		# Nudge toward the wall …
-		tween.tween_property(block, "position", origin_pos + nudge, duration * 0.45) \
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		# … then spring back
-		tween.tween_property(block, "position", origin_pos, duration * 0.85) \
-			.set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT) \
-			.set_delay(duration * 0.45)
-
-	tween.finished.connect(func() -> void:
-		if re_enable_after:
-			_swipe_detector.enabled = true
-	)
-
-
-func _handle_destroy_collisions(on_done: Callable) -> void:
-	var to_destroy_blocks: Array[Block] = []
-	var to_destroy_dbs: Array[DestroyBlock] = []
-
-	for block in _blocks:
-		if _destroy_set.has(block.grid_origin):
-			to_destroy_blocks.append(block)
-			to_destroy_dbs.append(_destroy_set[block.grid_origin])
-
-	if to_destroy_blocks.is_empty():
-		on_done.call()
-		return
-
-	const FLASH_DUR := 0.10
-	const DESTROY_DUR := 0.18
-
-	# Remove D blocks immediately
-	for db in to_destroy_dbs:
-		_destroy_blocks.erase(db)
-		_destroy_set.erase(db.grid_origin)
-		db.queue_free()
-
-	get_tree().create_timer(0.18).timeout.connect(func() -> void:
-		AudioManager.play_sfx("destroy")
-	)
-
-	# Flash B block: fade out then fade in, then shrink away
-	var flash := create_tween()
-	flash.tween_method(func(v: float) -> void:
-		for block in to_destroy_blocks:
-			block.modulate.a = v,
-		1.0, 0.0, FLASH_DUR) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	flash.tween_method(func(v: float) -> void:
-		for block in to_destroy_blocks:
-			block.modulate.a = v,
-		0.0, 1.0, FLASH_DUR) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
-	flash.finished.connect(func() -> void:
-		var anim := create_tween()
-		anim.tween_method(func(v: float) -> void:
-			for block in to_destroy_blocks:
-				block.block_scale = v,
-			1.0, 1.15, 0.08) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		anim.tween_method(func(v: float) -> void:
-			for block in to_destroy_blocks:
-				block.block_scale = v,
-			1.15, 0.0, DESTROY_DUR) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		anim.finished.connect(func() -> void:
-			for block in to_destroy_blocks:
-				_blocks.erase(block)
-				block.queue_free()
-			on_done.call()
-		)
-	)
-
-
-# Returns true if every block is sitting on one of its target cells.
-func _check_win() -> bool:
-	for block in _blocks:
-		if not block.data.target_origins.has(block.grid_origin):
-			return false
-	return true
-
-
-# Returns true if no block can move in any direction from the current state.
-func _is_stuck() -> bool:
-	for dir in ["left", "right", "up", "down"]:
-		var candidates: Array[Block] = []
-		for block in _blocks:
-			if block.data.dir == dir:
-				candidates.append(block)
-		if candidates.is_empty():
-			continue
-		var result := Movement.resolve(candidates, _blocks, _board_set, dir, _fixed_set, _teleport_map)
-		if not (result["movers"] as Array[Block]).is_empty():
-			return false
-	return true
-
-
-# Returns true if the current board state can still be solved (BFS check).
-func _is_winnable() -> bool:
-	return PuzzleSolver.is_solvable(_blocks, _board_set, _fixed_set, _teleport_map, _destroy_set)
+		anim.shake_blocks(invalid, direction, movers.is_empty())
 
 
 # Called when no block can move or position is no longer winnable.
 func _on_stuck() -> void:
 	_swipe_detector.enabled = false
-	_challenge_timer_active = false
 	if mode == Mode.CHALLENGE:
-		var fade := create_tween()
-		fade.tween_method(func(v: float) -> void:
-			_challenge_timer_alpha = v
-			queue_redraw()
-		, _challenge_timer_alpha, 0.0, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		challenge.fade_out_timer()
 	Haptics.fail()
 	AudioManager.play_sfx("invalid")
 
@@ -720,179 +368,76 @@ func _on_stuck() -> void:
 			if mode == Mode.CHALLENGE:
 				_active = false
 				var best := SaveData.get_best_streak()
-				if _challenge_streak > best:
-					SaveData.set_best_streak(_challenge_streak)
-					best = _challenge_streak
-				challenge_game_over.emit(_challenge_streak, best)
+				if challenge.streak > best:
+					SaveData.set_best_streak(challenge.streak)
+					best = challenge.streak
+				challenge_game_over.emit(challenge.streak, best)
 			else:
 				reset_level()
 	)
 
 
-# --- Win sequence: flash B blocks → exit chain animation → load next level (or complete) ---
 func _on_win() -> void:
-	_swipe_detector.enabled = false
-	_challenge_timer_active = false
-	if mode == Mode.CHALLENGE:
-		var fade := create_tween()
-		fade.tween_method(func(v: float) -> void:
-			_challenge_timer_alpha = v
-			queue_redraw()
-		, _challenge_timer_alpha, 0.0, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	get_tree().create_timer(0.3).timeout.connect(func() -> void:
-		AudioManager.play_sfx("win")
-	)
-	_hide_reset()
-
-	# Advance progress if this is the furthest level completed (campaign only)
-	if mode == Mode.CAMPAIGN:
-		var next := current_level + 1
-		if next > SaveData.get_progress_level():
-			SaveData.set_progress_level(next)
-
-	if _has_message:
-		dismiss_message.emit()
-
-	Haptics.win()
-	# Hide targets, A cells under B blocks, and teleports before the flash
-	_board.clear_targets()
-	for block in _blocks:
-		_board.set_cell_scale(block.grid_origin, 0.0)
-	for tp in _teleports:
-		tp.visible = false
-	for db in _destroy_blocks:
-		db.visible = false
-
-	# --- Shrink arrows on B blocks, then flash ---
-	var arrow_shrink := create_tween().set_parallel(true)
-	for block in _blocks:
-		arrow_shrink.tween_method(func(v: float) -> void: block.arrow_scale = v,
-			1.0, 0.0, 0.25) \
-			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-
-	arrow_shrink.finished.connect(func() -> void:
-		# Smooth double fade flash on B blocks
-		var flash := create_tween().set_parallel(true)
-		for block in _blocks:
-			flash.tween_property(block, "modulate:a", 0.0, 0.15) \
-				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-			flash.tween_property(block, "modulate:a", 1.0, 0.20).set_delay(0.20) \
-				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-			flash.tween_property(block, "modulate:a", 0.0, 0.15).set_delay(0.43) \
-				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-			flash.tween_property(block, "modulate:a", 1.0, 0.20).set_delay(0.63) \
-				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-
-		flash.finished.connect(func() -> void:
-			_play_exit_chain()
-		)
-	)
-
-
-# Exit animation: all elements scale down in a diagonal wave (bottom-right → top-left),
-# then loads the next level or emits all_levels_completed.
-func _play_exit_chain() -> void:
-	var sorted_squares := _board.board_squares.duplicate()
-	sorted_squares.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
-		return (a.x + a.y) > (b.x + b.y)
-	)
-	var n       := sorted_squares.size()
-	var stagger := _INTRO_CHAIN_TOTAL / maxi(n - 1, 1)
-
-	# Board squares scale down in reverse wave
-	for i in n:
-		var sq: Vector2i = sorted_squares[i]
-		var delay := i * stagger
-		var t := create_tween()
-		t.tween_method(func(v: float) -> void: _board.set_cell_scale(sq, v),
-			1.0, 0.0, _INTRO_CHAIN_SCALE) \
-			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-
-	# B blocks scale down during the same wave, timed by their cell diagonal
-	for block in _blocks:
-		var diag := block.grid_origin.x + block.grid_origin.y
-		var wave_index := 0
-		for j in n:
-			if (sorted_squares[j].x + sorted_squares[j].y) >= diag:
-				wave_index = j
-		var delay := wave_index * stagger
-		var captured := block
-		var t := create_tween()
-		t.tween_method(func(v: float) -> void: captured.block_scale = v,
-			1.0, 0.0, _INTRO_CHAIN_SCALE) \
-			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-
-	# Fixed blocks scale down in the same wave
-	for fb in _fixed_blocks:
-		var fb_diag := fb.data.origin.x + fb.data.origin.y
-		for sq in fb.data.squares:
-			var cell := fb.data.origin + sq
-			fb_diag = maxi(fb_diag, cell.x + cell.y)
-		var wave_index := 0
-		for j in n:
-			if (sorted_squares[j].x + sorted_squares[j].y) >= fb_diag:
-				wave_index = j
-		var delay := wave_index * stagger
-		var captured := fb
-		var t := create_tween()
-		t.tween_method(func(v: float) -> void: captured.block_scale = v,
-			1.0, 0.0, _INTRO_CHAIN_SCALE) \
-			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-
-	# Teleport portals scale down in the same wave
-	for tp in _teleports:
-		var diag := tp.portal_cell.x + tp.portal_cell.y
-		var wave_index := 0
-		for j in n:
-			if (sorted_squares[j].x + sorted_squares[j].y) >= diag:
-				wave_index = j
-		var delay := wave_index * stagger
-		var captured := tp
-		var t := create_tween()
-		t.tween_method(func(v: float) -> void: captured.block_scale = v,
-			1.0, 0.0, _INTRO_CHAIN_SCALE) \
-			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-
-	var total := _INTRO_CHAIN_TOTAL + _INTRO_CHAIN_SCALE + 0.15
-	get_tree().create_timer(total).timeout.connect(func() -> void:
-		if _active:
-			if mode == Mode.CHALLENGE:
-				_challenge_streak += 1
-				if _challenge_streak > SaveData.get_best_streak():
-					SaveData.set_best_streak(_challenge_streak)
-				_load_challenge_next()
-			elif current_level >= LevelLoader.count_levels():
-				all_levels_completed.emit()
-			else:
-				_load_level(current_level + 1)
-	)
+	anim.play_win()
 
 
 func reset_level() -> void:
 	AudioManager.play_sfx("reset")
 	_swipe_detector.enabled = false
 	_moved = false
-	level_loaded.emit(current_level)  # triggers UI to hide reset icon via set_level
+	level_loaded.emit(current_level)
 
-	# If any destroy blocks were consumed, do a full reload
-	var needs_full_reload := false
-	if not _current_level_data.is_empty() and _current_level_data.has("D"):
-		var original_count := (_current_level_data["D"] as Array).size()
-		if _destroy_blocks.size() < original_count:
-			needs_full_reload = true
+	# Restore consumed D blocks
+	if _original_destroy_data.size() > _destroy_blocks.size():
+		var existing_origins: Dictionary = {}
+		for db in _destroy_blocks:
+			existing_origins[db.grid_origin] = true
+		for dd in _original_destroy_data:
+			if not existing_origins.has(dd.origin):
+				var db := DestroyBlockScene.instantiate() as DestroyBlock
+				_board.add_child(db)
+				db.setup(dd, value_a, _board)
+				db.block_scale = 0.0
+				_destroy_blocks.append(db)
+				_destroy_set[dd.origin] = db
 
-	if needs_full_reload:
-		_load_level_data(_current_level_data)
-		return
+	# Restore destroyed B blocks
+	if _original_blocks_data.size() > _blocks.size():
+		var existing_blocks: Dictionary = {}
+		for block in _blocks:
+			existing_blocks[block.data.origin] = true
+		for block_data in _original_blocks_data:
+			if not existing_blocks.has(block_data.origin):
+				var block := BlockScene.instantiate() as Block
+				_board.add_child(block)
+				block.setup(block_data, value_a, _board)
+				block.block_scale = 0.0
+				_blocks.append(block)
 
+	# Slide all B blocks back to their starting positions
 	var slide := create_tween().set_parallel(true)
 	for block in _blocks:
 		block.grid_origin = block.data.origin
 		var target_pos := _board.grid_to_local(block.grid_origin)
-		slide.tween_property(block, "position", target_pos, MOVE_DURATION * 2.5) \
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	slide.finished.connect(func() -> void:
+		if block.block_scale < 1.0:
+			block.position = target_pos
+		else:
+			slide.tween_property(block, "position", target_pos, MOVE_DURATION * 2.5) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 
+	slide.finished.connect(func() -> void:
+		for db in _destroy_blocks:
+			if db.block_scale < 1.0:
+				var pop := create_tween()
+				pop.tween_method(func(v: float) -> void: db.block_scale = v,
+					0.0, 1.0, 0.2) \
+					.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		for block in _blocks:
+			if block.block_scale < 1.0:
+				var pop := create_tween()
+				pop.tween_method(func(v: float) -> void: block.block_scale = v,
+					0.0, 1.0, 0.2) \
+					.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		_swipe_detector.enabled = true
 	)
 
@@ -905,9 +450,6 @@ func go_prev_level() -> void:
 	_load_level(clamp(current_level - 1, 1, LevelLoader.count_levels()))
 
 
-# --- Level loading ---
-# Clears the current level, parses JSON data via LevelLoader, instantiates
-# all entities (board, blocks, fixed blocks, teleports), and plays the intro animation.
 func _load_level(level_number: int) -> void:
 	var level_data := LevelLoader.load_level(level_number)
 	if level_data.is_empty():
@@ -915,131 +457,3 @@ func _load_level(level_number: int) -> void:
 		return
 	current_level = level_number
 	_load_level_data(level_data)
-
-
-# --- Level intro animation ---
-# Sequence: board fades in → blocks slide in from above (staggered) → arrows fade in.
-# Re-enables input when complete.
-
-const _INTRO_CHAIN_DELAY   := 0.10   # delay before chain starts
-const _INTRO_CHAIN_TOTAL   := 0.72   # total chain spread duration (stagger span), constant regardless of square count
-const _INTRO_CHAIN_SCALE   := 0.66   # scale-up duration per square
-const _INTRO_STAGGER       := 0.09   # delay between successive blocks
-const _INTRO_SLIDE_DUR     := 0.36   # each block's slide duration
-const _INTRO_ARROW_DUR     := 0.10   # arrow fade-in duration after block lands
-const _INTRO_HOLD          := 0.20   # pause after last arrow before input opens
-
-func _play_intro_animation() -> void:
-	_swipe_detector.enabled = false
-
-	# Chain scale across board squares — diagonal wave top-left → bottom-right
-	var sorted_squares := _board.board_squares.duplicate()
-	sorted_squares.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
-		return (a.x + a.y) < (b.x + b.y)
-	)
-	var n := sorted_squares.size()
-	var stagger := _INTRO_CHAIN_TOTAL / maxi(n - 1, 1)
-	for i in n:
-		var sq: Vector2i = sorted_squares[i]
-		_board.set_cell_scale(sq, 0.0)
-		var delay := _INTRO_CHAIN_DELAY + i * stagger
-		var t     := create_tween()
-		_intro_tweens.append(t)
-		t.tween_method(func(v: float) -> void: _board.set_cell_scale(sq, v),
-			0.0, 1.0, _INTRO_CHAIN_SCALE) \
-			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-
-	# Fixed blocks (C) scale in during the same wave, timed by their diagonal position
-	for fb in _fixed_blocks:
-		fb.block_scale = 0.0
-		var fb_diag := fb.data.origin.x + fb.data.origin.y
-		for sq in fb.data.squares:
-			var cell := fb.data.origin + sq
-			fb_diag = mini(fb_diag, cell.x + cell.y)
-		var wave_index := 0
-		for j in sorted_squares.size():
-			if (sorted_squares[j].x + sorted_squares[j].y) <= fb_diag:
-				wave_index = j
-		var delay := _INTRO_CHAIN_DELAY + wave_index * stagger
-		var captured_fb := fb
-		var t := create_tween()
-		_intro_tweens.append(t)
-		t.tween_method(func(v: float) -> void: captured_fb.block_scale = v,
-			0.0, 1.0, _INTRO_CHAIN_SCALE) \
-			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-
-	# Destroy blocks scale in during the same wave
-	for db in _destroy_blocks:
-		db.block_scale = 0.0
-		var db_diag := db.grid_origin.x + db.grid_origin.y
-		var wave_index := 0
-		for j in sorted_squares.size():
-			if (sorted_squares[j].x + sorted_squares[j].y) <= db_diag:
-				wave_index = j
-		var delay := _INTRO_CHAIN_DELAY + wave_index * stagger
-		var captured_db := db
-		var t := create_tween()
-		_intro_tweens.append(t)
-		t.tween_method(func(v: float) -> void: captured_db.block_scale = v,
-			0.0, 1.0, _INTRO_CHAIN_SCALE) \
-			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-
-	# Teleport portals scale in during the same wave, timed by their cell diagonal
-	for tp in _teleports:
-		tp.block_scale = 0.0
-		var diag := tp.portal_cell.x + tp.portal_cell.y
-		var wave_index := 0
-		for j in sorted_squares.size():
-			if (sorted_squares[j].x + sorted_squares[j].y) <= diag:
-				wave_index = j
-		var delay      := _INTRO_CHAIN_DELAY + wave_index * stagger
-		var captured   := tp
-		var t          := create_tween()
-		_intro_tweens.append(t)
-		t.tween_method(func(v: float) -> void: captured.block_scale = v,
-			0.0, 1.0, _INTRO_CHAIN_SCALE) \
-			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-
-	# Blocks scale up immediately after the chain finishes (no gap)
-	var chain_end := _INTRO_CHAIN_DELAY + _INTRO_CHAIN_TOTAL + _INTRO_CHAIN_SCALE
-
-	for i in _blocks.size():
-		var block := _blocks[i]
-		block.block_scale = 0.0
-		block.arrow_alpha = 0.0
-
-		var delay := chain_end + i * _INTRO_STAGGER
-		var t     := create_tween()
-		_intro_tweens.append(t)
-		t.tween_method(func(v: float) -> void: block.block_scale = v,
-			0.0, 1.0, _INTRO_SLIDE_DUR) \
-			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		t.tween_method(func(v: float) -> void: block.arrow_alpha = v,
-			0.0, 1.0, _INTRO_ARROW_DUR) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
-	# Enable input once all animations have finished
-	var total := chain_end \
-		+ maxi(_blocks.size() - 1, 0) * _INTRO_STAGGER \
-		+ _INTRO_SLIDE_DUR + _INTRO_ARROW_DUR + _INTRO_HOLD
-
-	get_tree().create_timer(total).timeout.connect(func() -> void:
-		if not _active:
-			return
-		_swipe_detector.enabled = true
-		_start_challenge_timer()
-		intro_finished.emit()
-	)
-
-# --- Teleport portal visual feedback ---
-
-# Flash the two nodes of a portal pair when a block passes through.
-func _pulse_portal_pair(entry: Vector2i, exit_cell: Vector2i) -> void:
-	AudioManager.play_sfx("teleport")
-	for tp in _teleports:
-		if tp.portal_cell == entry or tp.portal_cell == exit_cell:
-			var t := create_tween()
-			t.tween_property(tp, "modulate:a", 0.0, 0.10) \
-				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-			t.tween_property(tp, "modulate:a", 1.0, 0.14) \
-				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)

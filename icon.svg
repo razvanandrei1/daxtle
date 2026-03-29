@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <!-- Variant F — B element with sliding trail effect -->
-  <rect width="1024" height="1024" fill="#FFFFFF"/>
+  <rect width="1024" height="1024" fill="#F8F8F8"/>
 
   <!-- Trailing ghost squares (fading left-to-right to suggest rightward slide) -->
   <!-- Trail 3 — farthest, most faded -->

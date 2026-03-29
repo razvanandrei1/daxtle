@@ -116,7 +116,7 @@ func _draw() -> void:
 					var dim := GameTheme.ACTIVE["surface"]
 					dim.a   = 0.35
 					_draw_rounded_rect(rect, dim, radius)
-				elif not Globals.LEVEL_EDITOR_MODE and level_n > _progress:
+				elif not Globals.LEVEL_EDITOR_MODE and not Globals.ALL_LEVELS_AVAILABLE and level_n > _progress:
 					# Locked — dimmed surface with faded number
 					var locked_col := GameTheme.ACTIVE["surface"]
 					locked_col.a = 0.35
@@ -255,7 +255,7 @@ func _handle_tap(pos: Vector2) -> void:
 			var level_n := _current_page * LEVELS_PER_PAGE + idx + 1
 			if level_n > _total_levels:
 				continue
-			if not Globals.LEVEL_EDITOR_MODE and level_n > _progress:
+			if not Globals.LEVEL_EDITOR_MODE and not Globals.ALL_LEVELS_AVAILABLE and level_n > _progress:
 				continue
 			var cx := fx + _grid_origin.x + col * (_cell_size + CELL_GAP)
 			var cy := _frame_y + _grid_origin.y + row * (_cell_size + CELL_GAP)

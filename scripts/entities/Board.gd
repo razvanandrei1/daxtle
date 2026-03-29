@@ -11,7 +11,7 @@ var board_squares: Array[Vector2i] = []
 var _min_grid := Vector2i.ZERO
 var _target_colors: Dictionary = {}  # Vector2i -> Color
 var _cell_scale: Dictionary = {}  # Vector2i -> float (0..1), missing key = fully drawn
-var _target_overlay: Node2D  # draws target borders behind blocks
+var _target_overlay: Node2D
 
 
 # Called by Game after the node is in the scene tree.
@@ -31,7 +31,7 @@ func setup(squares: Array[Vector2i]) -> float:
 	position = (viewport_size - Vector2(cols, rows) * value_a) / 2.0
 
 	_target_overlay = Node2D.new()
-	_target_overlay.z_index = 1
+	_target_overlay.z_index = 0
 	_target_overlay.draw.connect(_draw_target_borders)
 	add_child(_target_overlay)
 

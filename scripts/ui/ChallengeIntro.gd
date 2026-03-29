@@ -31,8 +31,8 @@ func _draw() -> void:
 	var start_y := vp.y * 0.30
 
 	var best := SaveData.get_best_streak()
-	var timer_start := int(Game.CHALLENGE_TIME_START)
-	var timer_decay := Game.CHALLENGE_TIME_DECAY
+	var timer_start := int(ChallengeMode.TIME_START)
+	var timer_decay := ChallengeMode.TIME_DECAY
 	var lines := [
 		"Solve as many puzzles",
 		"as you can in a row.",

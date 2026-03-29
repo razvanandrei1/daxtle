@@ -12,6 +12,9 @@ static var LEVEL_EDITOR_MODE: bool:
 			return false
 		return false
 
+## When true: all levels are unlocked regardless of progress.
+const ALL_LEVELS_AVAILABLE := false
+
 ## Temporary storage for level data passed between editor and play-test scene.
 var editor_level_data: Dictionary = {}
 var editor_level_number: int = -1
