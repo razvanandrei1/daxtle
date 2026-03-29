@@ -75,6 +75,7 @@ const ACTIVE := WARM_SAND
 const GAP_FRACTION    := 0.064   # gap between cells as a fraction of cell size
 const CORNER_FRACTION       := 0.126   # corner radius for squares
 const ARROW_CORNER_FRACTION := 0.08   # corner radius for arrow triangles (unchanged)
+const BLOCK_INSET_FRACTION  := 0.0725  # block shrink per side so target border is visible
 
 # ── Teleport portal colour ───────────────────────────────────────────────────
 # Returns the colour for teleport pair at the given index (0-based), cycling if needed.

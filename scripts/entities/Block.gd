@@ -20,6 +20,12 @@ var arrow_alpha: float = 1.0:
 		arrow_alpha = v
 		queue_redraw()
 
+# When true, block draws at full cell size (no inset) to cover the target frame
+var full_size: bool = false:
+	set(v):
+		full_size = v
+		queue_redraw()
+
 # Tweened to shrink arrow independently of block_scale (e.g. win effect)
 var arrow_scale: float = 1.0:
 	set(v):
@@ -39,8 +45,10 @@ func setup(block_data: BlockData, va: float, board: Board) -> void:
 func _draw() -> void:
 	if block_scale <= 0.0:
 		return
-	var sq_size := value_a * (1.0 - GameTheme.GAP_FRACTION)
-	var radius  := value_a * GameTheme.CORNER_FRACTION
+	var full_sq := value_a * (1.0 - GameTheme.GAP_FRACTION)
+	var inset   := 0.0 if full_size else value_a * GameTheme.BLOCK_INSET_FRACTION * 2.0
+	var sq_size := full_sq - inset
+	var radius  := value_a * GameTheme.CORNER_FRACTION * (sq_size / full_sq)
 	var size    := sq_size * block_scale
 	var r       := radius * block_scale
 	var center := Vector2(value_a, value_a) * 0.5
@@ -52,6 +60,7 @@ func _draw_rounded_rect(rect: Rect2, col: Color, radius: float) -> void:
 	var style := StyleBoxFlat.new()
 	style.bg_color = col
 	style.set_corner_radius_all(int(radius))
+	style.anti_aliasing = false
 	style.draw(get_canvas_item(), rect)
 
 

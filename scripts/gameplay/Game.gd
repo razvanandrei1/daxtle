@@ -256,18 +256,6 @@ func _on_swipe(direction: String) -> void:
 	if movers.is_empty() and invalid.is_empty():
 		return
 
-	# Debug: log movers landing on a target
-	for block in movers:
-		var landing: Vector2i
-		if teleport_exits.has(block):
-			landing = teleport_exits[block]
-		else:
-			landing = block.grid_origin + dv
-		if block.data.target_origins.has(landing):
-			var block_col := BlockColors.get_color(block.data.id)
-			var target_col := BlockColors.get_target_color(block.data.id)
-			var match := block_col == target_col
-			print("B%s → %s | color=%s target_color=%s match=%s ✓" % [block.data.id, landing, block_col, target_col, match])
 
 	if not _moved:
 		_moved = true

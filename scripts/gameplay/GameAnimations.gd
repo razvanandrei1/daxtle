@@ -332,9 +332,10 @@ func play_win() -> void:
 		game.dismiss_message.emit()
 
 	Haptics.win()
-	# Hide targets, A cells under B blocks, and teleports before the flash
+	# Expand blocks to full size so they cover the target, making one unified square
 	game._board.clear_targets()
 	for block in game._blocks:
+		block.full_size = true
 		game._board.set_cell_scale(block.grid_origin, 0.0)
 	for tp in game._teleports:
 		tp.visible = false

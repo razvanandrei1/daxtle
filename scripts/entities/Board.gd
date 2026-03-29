@@ -11,7 +11,6 @@ var board_squares: Array[Vector2i] = []
 var _min_grid := Vector2i.ZERO
 var _target_colors: Dictionary = {}  # Vector2i -> Color
 var _cell_scale: Dictionary = {}  # Vector2i -> float (0..1), missing key = fully drawn
-var _target_overlay: Node2D
 
 
 # Called by Game after the node is in the scene tree.
@@ -30,11 +29,6 @@ func setup(squares: Array[Vector2i]) -> float:
 	# Position the node so the board is centered on screen
 	position = (viewport_size - Vector2(cols, rows) * value_a) / 2.0
 
-	_target_overlay = Node2D.new()
-	_target_overlay.z_index = 0
-	_target_overlay.draw.connect(_draw_target_borders)
-	add_child(_target_overlay)
-
 	queue_redraw()
 	return value_a
 
@@ -42,19 +36,17 @@ func setup(squares: Array[Vector2i]) -> float:
 func set_targets(blocks_data: Array[BlockData]) -> void:
 	_target_colors.clear()
 	for block_data in blocks_data:
-		var tint := BlockColors.get_target_color(block_data.id)
+		var tint := BlockColors.get_color(block_data.id)
 		for cell in block_data.target_origins:
 			_target_colors[cell] = tint
 	queue_redraw()
-	if _target_overlay:
-		_target_overlay.queue_redraw()
+
 
 
 func clear_targets() -> void:
 	_target_colors.clear()
 	queue_redraw()
-	if _target_overlay:
-		_target_overlay.queue_redraw()
+
 
 
 func set_cell_scale(cell: Vector2i, s: float) -> void:
@@ -63,8 +55,7 @@ func set_cell_scale(cell: Vector2i, s: float) -> void:
 	else:
 		_cell_scale[cell] = s
 	queue_redraw()
-	if _target_overlay:
-		_target_overlay.queue_redraw()
+
 
 
 func _draw() -> void:
@@ -78,7 +69,10 @@ func _draw() -> void:
 		var center := r.position + r.size * 0.5
 		var size   := sq_size * s
 		_draw_rounded_rect(Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), COLOR_SURFACE, radius * s)
-	# Target cells: muted color fill (beneath blocks)
+	# Target cells: full colored square + inner block-sized square
+	var inset := value_a * GameTheme.BLOCK_INSET_FRACTION * 2.0
+	var block_size_base := sq_size - inset - 2.0  # same size as B element, 1px tighter each side
+	var block_radius_base := radius * (block_size_base / sq_size)
 	for cell in _target_colors:
 		var s := _cell_scale.get(cell, 1.0) as float
 		if s <= 0.0:
@@ -86,30 +80,17 @@ func _draw() -> void:
 		var r      := _square_rect(cell)
 		var center := r.position + r.size * 0.5
 		var size   := sq_size * s
+		# Full target square
 		_draw_rounded_rect(Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), _target_colors[cell], radius * s)
+		# Inner block-sized square with faded target color background
+		var inner_size := block_size_base * s
+		var bg_col: Color = _target_colors[cell]
+		bg_col.a = 0.15
+		var inner_rect := Rect2(center - Vector2(inner_size, inner_size) * 0.5, Vector2(inner_size, inner_size))
+		_draw_rounded_rect(inner_rect, COLOR_SURFACE, block_radius_base * s)
+		_draw_rounded_rect(inner_rect, bg_col, block_radius_base * s)
 
 
-func _draw_target_borders() -> void:
-	var sq_size := value_a * (1.0 - GameTheme.GAP_FRACTION)
-	var radius  := value_a * GameTheme.CORNER_FRACTION
-	for cell in _target_colors:
-		var s := _cell_scale.get(cell, 1.0) as float
-		if s <= 0.0:
-			continue
-		var r      := _square_rect(cell)
-		var center := r.position + r.size * 0.5
-		var size   := sq_size * s
-		var border := value_a * 0.0725 * s
-		var border_col: Color = _target_colors[cell]
-		border_col.a = 1.0
-		var rect   := Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size))
-		var style  := StyleBoxFlat.new()
-		style.bg_color = Color.TRANSPARENT
-		style.border_color = border_col
-		style.set_border_width_all(int(border))
-		style.set_corner_radius_all(int(radius * s))
-		style.anti_aliasing = false
-		style.draw(_target_overlay.get_canvas_item(), rect)
 
 
 func _draw_rounded_rect(rect: Rect2, col: Color, radius: float) -> void:
